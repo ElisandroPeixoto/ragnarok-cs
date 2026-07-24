@@ -1,0 +1,1 @@
+from models.character_model import CharacterModel
