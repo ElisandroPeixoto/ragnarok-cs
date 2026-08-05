@@ -35,7 +35,8 @@ def start_game():
                                              size=16
                                              ),
                              bgcolor=t.BUTTON_PRIMARY,
-                             color=t.NORMAL_TEXT
+                             color=t.NORMAL_TEXT,
+                             on_click=lambda e: ft.context.page.navigate("/char_selection")
                              )
 
     footer_disclaimer = ft.Text("FAN-MADE. NOT AFFILIATED WITH GRAVITY.CO",
