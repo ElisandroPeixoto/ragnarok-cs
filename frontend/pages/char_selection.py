@@ -2,7 +2,7 @@ import flet as ft
 import themes as t
 
 
-# Mock data - REPLACE AFTER INTEGRATE BACKEND
+########## Mock data - REPLACE AFTER INTEGRATE BACKEND
 MOCK_CHARACTERS = [
     {"name": "DarknessChar", "job": "Novice", "level": 1, "hp": 50, "max_hp": 50, "sp": 10, "max_sp": 10, "sprite": "sprites/0.Novice_Idle.gif"},
 ]
@@ -11,6 +11,7 @@ MOCK_CHARACTERS = [
 SLOT_COUNT = 6
 SLOT_WIDTH = 160
 SLOT_HEIGHT = 248
+####################
 
 
 def character_slot(character: dict | None, on_click, is_selected: bool = False):
@@ -101,13 +102,13 @@ def character_selection():
                 controls=[
                     ft.Button(
                         content=ft.Text("CREATE CHARACTER", font_family="Cinzel", size=13, color=t.NORMAL_TEXT, text_align=ft.TextAlign.CENTER),
-                        bgcolor=t.BUTTON_CREATE,
+                        bgcolor=t.BUTTON_SECONDARY,
                         width=145,
                         on_click=lambda e: ft.context.page.navigate("/char_creation")
                     ),
                     ft.Button(
                         content=ft.Text("DELETE CHARACTER", font_family="Cinzel", size=13, color=t.NORMAL_TEXT, text_align=ft.TextAlign.CENTER),
-                        bgcolor=t.BUTTON_DELETE,
+                        bgcolor=t.BUTTON_ALERT,
                         width=145,
                     ),
                 ],
