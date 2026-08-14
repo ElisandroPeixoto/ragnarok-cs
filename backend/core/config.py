@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     """Application settings"""
     DEBUG: bool = True
     DB_URL_DEV: str = "sqlite+aiosqlite:///./ragnarokcs.db"
-    DB_URL_PROD: str
+    DB_URL_PROD: str = ""
     algorith: str = "HS256"
     acess_token_expire_minutes: int = 60
     API_V1_STR: str = "/api/v1"

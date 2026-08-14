@@ -1,11 +1,10 @@
 import flet as ft
 import themes as t
+from services.character_service import CharacterService
+from services.api_client import ApiError
 
 
-########## Mock data - REPLACE AFTER INTEGRATE BACKEND
-MOCK_CHARACTERS = [
-    {"name": "DarknessChar", "job": "Novice", "level": 1, "hp": 50, "max_hp": 50, "sp": 10, "max_sp": 10, "sprite": "sprites/0.Novice_Idle.gif"},
-]
+NOVICE_SPRITE = "sprites/0.Novice_Idle.gif"  # TODO: Criar função para selecionar a sprite correspondente (Task 2.9)
 
 
 SLOT_COUNT = 6
@@ -83,11 +82,29 @@ def info_panel(character: dict | None):
 @ft.component
 def character_selection():
     selected, set_selected = ft.use_state(0)
+    characters, set_characters = ft.use_state([])
 
-    slots = MOCK_CHARACTERS + [None] * (SLOT_COUNT - len(MOCK_CHARACTERS))
+    def on_mount():
+        async def fetch():
+            try:
+                data = await CharacterService.get_characters()  # API Call
+                for c in data:
+                    c.setdefault("sprite", NOVICE_SPRITE)
+                    c.setdefault("sp", 0)  # TODO: Adicionar o SP no endpoint da API (Task 2.10)
+                set_characters(data)
+            except ApiError as e:
+                print(f"Failed to load characters: {e.detail}")
+
+        ft.context.page.run_task(fetch)
+        return None
+
+    ft.use_effect(on_mount, [])
+
+    slots = characters + [None] * (SLOT_COUNT - len(characters))
 
     def make_click(index):
         return lambda e: set_selected(index)
+
 
     grid = ft.Column(
         controls=[ft.Row(controls=[character_slot(slots[row * 3 + col], make_click(row * 3 + col), is_selected=(selected == row * 3 + col)) for col in range(3)],
