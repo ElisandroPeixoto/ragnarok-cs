@@ -19,9 +19,9 @@ def start_game():
 
     logo = ft.Container(
         content=ft.Image(
-            src="logo_with_words.png",
-            width=350,
-            height=350,
+            src="Logo_bg.png",
+            width=600,
+            height=600,
             fit=ft.BoxFit.CONTAIN,
         ),
         opacity=1 if visible else 0,
@@ -47,11 +47,11 @@ def start_game():
 
     page_content = ft.Column(controls=[logo,
                                        start_button,
-                                       ft.Container(height=80),  # Spacer
+                                       ft.Container(height=50),  # Spacer
                                        footer_disclaimer],
                              alignment=ft.MainAxisAlignment.CENTER,
                              horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                             spacing=30
+                             spacing=20
                              )
 
     background_layer = ft.Container(
