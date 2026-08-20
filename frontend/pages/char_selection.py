@@ -90,7 +90,6 @@ def character_selection():
                 data = await CharacterService.get_characters()  # API Call
                 for c in data:
                     c.setdefault("sprite", NOVICE_SPRITE)
-                    c.setdefault("sp", 0)  # TODO: Adicionar o SP no endpoint da API (Task 2.10)
                 set_characters(data)
             except ApiError as e:
                 print(f"Failed to load characters: {e.detail}")

@@ -14,6 +14,7 @@ class CharacterSchemaResponse(CharacterSchemaBase):
     level: int
     exp: int
     hp: int
+    sp: int
     current_map: str
     max_hp: int
     max_sp: int
