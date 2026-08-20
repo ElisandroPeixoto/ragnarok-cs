@@ -1,11 +1,26 @@
 import flet as ft
 import themes as t
+from services.character_service import CharacterService
+from services.api_client import ApiError
 
 
 @ft.component
 def character_creation():
 
     name_value, set_name_value = ft.use_state("")
+
+    def handle_create(e):
+        async def create():
+            if not name_value.strip():
+                return
+            try:
+                await CharacterService.create_character(name_value)
+                ft.context.page.navigate("/char_selection")
+            except ApiError as error:
+                print(f"Failed to create character: {error.detail}")
+
+        ft.context.page.run_task(create)
+
 
     title = ft.Text(
         "Character Creation",
@@ -60,7 +75,7 @@ def character_creation():
         color=t.NORMAL_TEXT,
         width=140,
         height=44,
-        on_click=lambda e: ft.context.page.navigate("/char_selection"),
+        on_click=handle_create,
     )
 
     return_button = ft.Button(

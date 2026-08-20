@@ -29,5 +29,8 @@ class ApiClient:
         response = await self._client.get(path, params=params)
         return await self._handle(response)
 
+    async def post(self, path: str, json: dict | None = None) -> dict:
+        response = await self._client.post(path, json=json)
+        return await self._handle(response)
 
 api = ApiClient()
