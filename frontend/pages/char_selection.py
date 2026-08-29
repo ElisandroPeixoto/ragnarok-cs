@@ -2,6 +2,7 @@ import flet as ft
 import themes as t
 from services.character_service import CharacterService
 from services.api_client import ApiError
+from services.sprite_selector import sprite_selector
 
 
 NOVICE_SPRITE = "sprites/0.Novice_Idle.gif"  # TODO: Criar função para selecionar a sprite correspondente (Task 2.9)
@@ -89,7 +90,7 @@ def character_selection():
             try:
                 data = await CharacterService.get_characters()  # API Call
                 for c in data:
-                    c.setdefault("sprite", NOVICE_SPRITE)
+                    c.setdefault("sprite", sprite_selector(c["job"]))
                 set_characters(data)
             except ApiError as e:
                 print(f"Failed to load characters: {e.detail}")
