@@ -5,9 +5,6 @@ from services.api_client import ApiError
 from services.sprite_selector import sprite_selector
 
 
-NOVICE_SPRITE = "sprites/0.Novice_Idle.gif"  # TODO: Criar função para selecionar a sprite correspondente (Task 2.9)
-
-
 SLOT_COUNT = 6
 SLOT_WIDTH = 160
 SLOT_HEIGHT = 248
@@ -113,7 +110,7 @@ def character_selection():
         spacing=15,
     )
 
-    action_buttons = ft.Column(
+    action_buttons = ft.Column(  # TODO: REFACTOR - TURN INTO A FUNCTION
         controls=[
             ft.Row(
                 controls=[
@@ -135,6 +132,7 @@ def character_selection():
                 content=ft.Text("START GAME", font_family="Cinzel", size=15, color=t.NORMAL_TEXT, text_align=ft.TextAlign.CENTER),
                 bgcolor=t.BUTTON_PRIMARY,
                 width=300,
+                on_click=lambda e: ft.context.page.navigate("/profile_page")
             ),
         ],
         spacing=10,
