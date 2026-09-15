@@ -3,22 +3,8 @@ import themes as t
 from components.sidebar import sidebar
 from components.zeny_badge import zeny_badge
 from components.status_bars import status_bar
-
-# Mocked data — backend integration deferred
-MOCK_CHARACTER = {
-    "name": "CharName",
-    "job": "Novice",
-    "level": 1,
-    "job_level": 1,
-    "hp": 20,
-    "max_hp": 50,
-    "exp": 0,
-    "max_exp": 100,
-    "current_map": "Novice Academy",
-    "zeny": 200,
-    "sprite": "sprites/0.Novice_Idle.gif",
-    "map_thumbnail": "maps/0_novice_academy.jpg",
-}
+from services.map_router_manager import navigate_to_map
+from mockup import MOCK_CHARACTER
 
 
 def character_card(character: dict):
@@ -59,7 +45,8 @@ def current_place_card(character: dict):
                                                  ft.Button(content=ft.Text("Enter", font_family="Cinzel", weight=ft.FontWeight.BOLD, size=14),
                                                            bgcolor=t.BUTTON_PRIMARY,
                                                            color=t.NORMAL_TEXT,
-                                                           width=110)]
+                                                           width=110,
+                                                           on_click=lambda e: navigate_to_map(character["current_map_id"]))]
                                        ))
 
 def info_panel(title: str):
