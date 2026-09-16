@@ -9,8 +9,8 @@ def character_badge(character: dict):
         height=32,
         border_radius=16,
         bgcolor="#1A1712",
-        image=ft.DecorationImage(src=character["sprite"], fit=ft.BoxFit.COVER)
-        if character.get("sprite") else None,
+        image=ft.DecorationImage(src=character["badge"], fit=ft.BoxFit.COVER)
+        if character.get("badge") else None,
     )
 
     return ft.Container(

@@ -14,7 +14,8 @@ MOCK_CHARACTER = {
     "current_map_id": "novice_academy",
     "zeny": 200,
     "sprite": "sprites/0.Novice_Idle.gif",
-    "map_thumbnail": "maps/0_novice_academy.jpg",
+    "map_thumbnail": "maps/novice_academy.jpg",
+    "badge": "characters_badges/0_novice_badge.png"
 
 }
 
@@ -23,15 +24,16 @@ MOCK_MAPS = {
     "novice_academy": {
         "name": "Novice Academy",
         "level_range": "1 - 10",
-        "image": "maps/0_novice_academy.jpg",
+        "image": "maps/novice_academy.jpg",
         "about": "Lorem ipsum dolor sit amet...",
         "npcs": [
-            {"name": "Hostess", "image": "npcs/hostess.png"},
-            {"name": "Sailor", "image": "npcs/sailor.png"},
+            {"name": "Hostess", "image": "npcs/hostess.gif"},
+            {"name": "Sailor", "image": "npcs/sailor.gif"},
         ],
         "monsters": [],  # pode ficar vazio mesmo — section_panel já trata isso
         "navigation": [
-            {"name": "Training Field 1", "image": "maps/training_field_1_thumb.jpg", "map_id": "training_field_1"},
+            {"name": "Academy", "image": "places/academy.jpg", "map_id": "academy"},
+            {"name": "Training Field 1", "image": "maps/training_field_1.jpg", "map_id": "training_field_1"},
         ],
     },
     "training_field_1": {
@@ -39,12 +41,12 @@ MOCK_MAPS = {
         "level_range": "5 - 15",
         "image": "maps/training_field_1.jpg",
         "about": "...",
-        "npcs": [],
+        "npcs": [{"name": "Hostess", "image": "npcs/trainer.gif"}],
         "monsters": [
-            {"name": "Poring", "image": "monsters/poring.gif"}, {"name": "Lunatic", "image": "monsters/lunatic.gif"}, {"name": "Wilow", "image": "monsters/wilow.gif"}
+            {"name": "Poring", "image": "monsters/poring.gif", "spawn_rate": 40}, {"name": "Lunatic", "image": "monsters/lunatic.gif", "spawn_rate": 40}, {"name": "Wilow", "image": "monsters/wilow.gif", "spawn_rate": 20}
         ],
         "navigation": [
-            {"name": "Novice Academy", "image": "maps/0_novice_academy_thumb.jpg", "map_id": "novice_academy"},
+            {"name": "Novice Academy", "image": "maps/novice_academy.jpg", "map_id": "novice_academy"},
         ],
     },
 }
