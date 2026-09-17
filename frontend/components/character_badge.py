@@ -1,16 +1,19 @@
 import flet as ft
 import themes as t
-
+from services.sprite_selector import badge_selector
 
 def character_badge(character: dict):
     """Small avatar + name badge shown at the top of map screens."""
+
+    badge = badge_selector(character["job"])
+
     avatar = ft.Container(
         width=32,
         height=32,
         border_radius=16,
         bgcolor="#1A1712",
-        image=ft.DecorationImage(src=character["badge"], fit=ft.BoxFit.COVER)
-        if character.get("badge") else None,
+        image=ft.DecorationImage(src=badge, fit=ft.BoxFit.COVER)
+        if badge else None,
     )
 
     return ft.Container(

@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from decimal import Decimal
 
 
 class CharacterSchemaBase(BaseModel):
@@ -14,8 +15,9 @@ class CharacterSchemaResponse(CharacterSchemaBase):
     level: int
     exp: int
     hp: int
-    sp: int
     current_map: str
+    current_map_id: str
+    zeny: Decimal
     max_hp: int
     max_sp: int
 

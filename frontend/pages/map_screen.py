@@ -6,8 +6,8 @@ from components.character_badge import character_badge
 from components.section_panel import section_panel
 from components.item_card import item_card
 from services.map_router_manager import map_route
-
-from mockup import MOCK_CHARACTER, MOCK_MAPS  # TODO: REMOVE AFTER INTEGRATION WITH BACKEND
+from services.session_state import get_current_character
+from mockup import MOCK_MAPS  # TODO: REMOVE AFTER INTEGRATION WITH BACKEND
 
 
 def get_map_data(map_id: str) -> dict | None:
@@ -103,15 +103,21 @@ def build_map_page(map_id: str):
         def toggle_sidebar(e):
             set_collapsed(not collapsed)
 
+        character = get_current_character()
         map_data = get_map_data(map_id)
 
-        if map_data is None:
+        if character is None:
+            content = ft.Container(
+                expand=True, alignment=ft.Alignment.CENTER,
+                content=ft.Text("No character selected", color=t.NORMAL_TEXT, font_family="Cinzel"),
+            )
+        elif map_data is None:
             content = ft.Container(
                 expand=True, alignment=ft.Alignment.CENTER,
                 content=ft.Text(f"Map '{map_id}' not found", color=t.NORMAL_TEXT, font_family="Cinzel"),
             )
         else:
-            content = map_screen(map_data, MOCK_CHARACTER)
+            content = map_screen(map_data, character)
 
         return ft.Container(
             expand=True,

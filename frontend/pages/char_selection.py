@@ -3,12 +3,21 @@ import themes as t
 from services.character_service import CharacterService
 from services.api_client import ApiError
 from services.sprite_selector import sprite_selector
+from services.session_state import set_current_character
+from services.session_state import set_current_character
 
 
 SLOT_COUNT = 6
 SLOT_WIDTH = 160
 SLOT_HEIGHT = 248
 ####################
+
+
+def handle_start_game(e, character: dict):
+    if character is None:
+        return
+    set_current_character(character)
+    ft.context.page.navigate("/profile_page")
 
 
 def character_slot(character: dict | None, on_click, is_selected: bool = False):
@@ -49,8 +58,6 @@ def info_panel(character: dict | None):
     """Right side panel showing HP/SP of the selected character."""
     hp = character["hp"] if character else 0
     max_hp = character["max_hp"] if character else 0
-    sp = character["sp"] if character else 0
-    max_sp = character["max_sp"] if character else 0
 
     def stat_row(label, value):
         return ft.Row(
@@ -71,7 +78,6 @@ def info_panel(character: dict | None):
         content=ft.Column(
             controls=[
                 stat_row("HP:", f"{hp}/{max_hp}"),
-                stat_row("SP:", f"{sp}/{max_sp}"),
             ],
             spacing=14,
         ),
@@ -132,7 +138,7 @@ def character_selection():
                 content=ft.Text("START GAME", font_family="Cinzel", size=15, color=t.NORMAL_TEXT, text_align=ft.TextAlign.CENTER),
                 bgcolor=t.BUTTON_PRIMARY,
                 width=300,
-                on_click=lambda e: ft.context.page.navigate("/profile_page")
+                on_click=lambda e: handle_start_game(e, slots[selected])
             ),
         ],
         spacing=10,

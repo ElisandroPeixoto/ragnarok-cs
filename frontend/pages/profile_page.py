@@ -4,7 +4,11 @@ from components.sidebar import sidebar
 from components.zeny_badge import zeny_badge
 from components.status_bars import status_bar
 from services.map_router_manager import navigate_to_map
-from mockup import MOCK_CHARACTER
+from services.session_state import get_current_character
+from services.sprite_selector import sprite_selector
+from services.map_thumbnail_selector import map_thumbnail_selector
+
+MAX_EXP_DEFAULT = 100  # TODO: calculate from level/job progression table
 
 
 def character_card(character: dict):
@@ -15,17 +19,18 @@ def character_card(character: dict):
                         padding=20,
                         content=ft.Column(horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                           spacing=10,
-                                          controls=[ft.Image(src=character["sprite"], width=90, height=190, fit=ft.BoxFit.CONTAIN),
+                                          controls=[ft.Image(src=sprite_selector(character["job"]), width=90, height=190, fit=ft.BoxFit.CONTAIN),
                                                     ft.Text(character["name"], size=22, font_family="Cinzel", color=t.NORMAL_TEXT, weight=ft.FontWeight.BOLD),
                                                     ft.Text(character["job"], size=15, font_family="Cinzel", color=t.TITLE_TEXT),
                                                     ft.Container(height=8),
                                                     ft.Text(f"Level: {character['level']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
-                                                    ft.Text(f"Job: {character['job_level']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
+                                                    ft.Text(f"Job: {character['job']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
                                                     ft.Container(height=4),
-                                                    status_bar("HP", character["hp"], character["max_hp"],t.HP_BAR_COLOR),
-                                                    status_bar("EXP", character["exp"], character["max_exp"],t.EXP_BAR_COLOR)]))
+                                                    status_bar("HP", character["hp"], character["max_hp"], t.HP_BAR_COLOR),
+                                                    status_bar("EXP", character["exp"], MAX_EXP_DEFAULT, t.EXP_BAR_COLOR)]))
 
 def current_place_card(character: dict):
+    thumbnail = map_thumbnail_selector(character["current_map_id"])
     return ft.Container(bgcolor=t.CARD_BG,
                         border=ft.Border.all(1, t.CARD_BORDER),
                         border_radius=6,
@@ -36,7 +41,7 @@ def current_place_card(character: dict):
                                                               height=60,
                                                               border_radius=4,
                                                               bgcolor="#1A1712",
-                                                              image=ft.DecorationImage(src=character["map_thumbnail"], fit=ft.BoxFit.COVER),
+                                                              image=ft.DecorationImage(src=thumbnail, fit=ft.BoxFit.COVER) if thumbnail else None,
                                                               ),
                                                  ft.Column(spacing=2,
                                                            controls=[ft.Text("Current Place:", size=13, color=t.MUTED_TEXT, font_family="Cinzel"),
@@ -78,8 +83,23 @@ def skills_panel():
 
 @ft.component
 def profile_page():
-    character = MOCK_CHARACTER  # TODO: INSERT BACKEND
+    character = get_current_character()
     collapsed, set_collapsed = ft.use_state(False)
+
+    if character is None:
+        return ft.Container(
+            expand=True,
+            alignment=ft.Alignment.CENTER,
+            bgcolor=t.BACKGROUND_OPACITY,
+            content=ft.Column(
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Text("No character selected", color=t.NORMAL_TEXT, font_family="Cinzel"),
+                    ft.Button(content=ft.Text("Back to Character Selection", font_family="Cinzel"),
+                              on_click=lambda e: ft.context.page.navigate("/char_selection")),
+                ],
+            ),
+        )
 
     def toggle_sidebar(e):
         set_collapsed(not collapsed)
