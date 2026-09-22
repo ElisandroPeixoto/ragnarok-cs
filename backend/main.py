@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from api.v1.api import api_router
 from core.config import settings
+import models.__all_models
 
 
 app = FastAPI(title="Ragnarok Chaos Saga API", version="1.0.0")
