@@ -13,5 +13,5 @@ class MapModel(DBBaseModel):
     about: str = Column(Text, nullable=False, default="")
 
     npcs = relationship("NpcModel", lazy="selectin")
-    monster_spaws = relationship("MapMonsterModel", lazy="selectin")
+    monster_spawns = relationship("MapMonsterModel", lazy="selectin")
     connections = relationship("MapConnectionModel", foreign_keys="MapConnectionModel.from_map_id", lazy="selectin")
