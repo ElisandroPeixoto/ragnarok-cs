@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List
-from npc_schema import NpcSchema
-from monster_schema import MonsterSchema
+from schemas.npc_schema import NpcSchema
+from schemas.monster_schema import MonsterSchema
 
 class NavigationSchema(BaseModel):
     name: str

@@ -7,14 +7,9 @@ from components.section_panel import section_panel
 from components.item_card import item_card
 from services.map_router_manager import map_route
 from services.session_state import get_current_character
-from mockup import MOCK_MAPS  # TODO: REMOVE AFTER INTEGRATION WITH BACKEND
-
-
-def get_map_data(map_id: str) -> dict | None:
-    """Fonte de dados dos mapas. Hoje lê do dict estático em frontend/maps.py;
-    quando migrar pro backend, só trocar o corpo desta função por uma chamada
-    a MapService.get_map(map_id) — nada mais no arquivo muda."""
-    return MOCK_MAPS.get(map_id)
+from services.map_service import MapService
+from services.api_client import ApiError
+from typing import cast
 
 
 def npc_item(item: dict):
@@ -99,18 +94,36 @@ def build_map_page(map_id: str):
     @ft.component
     def _map_page():
         collapsed, set_collapsed = ft.use_state(False)
+        map_data, set_map_data = ft.use_state(cast("dict | None", None))
+        loading, set_loading = ft.use_state(True)
+
+        def on_mount():
+            async def fetch():
+                try:
+                    set_map_data(await MapService.get_map(map_id))
+                except ApiError as e:
+                    print(f"Failed to load map: {e.detail}")
+                finally:
+                    set_loading(False)
+
+            ft.context.page.run_task(fetch)
+            return None
+
+        ft.use_effect(on_mount, [])
 
         def toggle_sidebar(e):
             set_collapsed(not collapsed)
 
         character = get_current_character()
-        map_data = get_map_data(map_id)
 
         if character is None:
             content = ft.Container(
                 expand=True, alignment=ft.Alignment.CENTER,
                 content=ft.Text("No character selected", color=t.NORMAL_TEXT, font_family="Cinzel"),
             )
+        elif loading:
+            content = ft.Container(expand=True, alignment=ft.Alignment.CENTER,
+                                   content=ft.ProgressRing())
         elif map_data is None:
             content = ft.Container(
                 expand=True, alignment=ft.Alignment.CENTER,

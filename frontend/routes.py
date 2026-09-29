@@ -5,7 +5,7 @@ from pages.start_game import start_game
 from pages.profile_page import profile_page
 from pages.map_screen import build_map_page
 from services.map_router_manager import map_route
-from mockup import MOCK_MAPS  # TODO: REMOVE AFTER INTEGRATION WITH BACKEND
+from services.map_service import MapService
 
 
 def view_wrapper(component, route, appbar_visible=True):
@@ -30,5 +30,5 @@ routes: list[ft.Route] = [
 routes += [
     ft.Route(path=map_route(map_id),
              component=view_wrapper(build_map_page(map_id), map_route(map_id), appbar_visible=False))
-    for map_id in MOCK_MAPS
+    for map_id in MapService.get_map_ids_sync()
 ]

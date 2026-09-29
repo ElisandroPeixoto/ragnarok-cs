@@ -5,7 +5,7 @@ from typing import List, cast
 from models.maps_model import MapModel
 from schemas.map_schema import MapSchemaResponse, MapSchemaSummary
 from core.deps import get_session
-
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
@@ -37,7 +37,7 @@ async def get_maps(db: AsyncSession = Depends(get_session)):
 
 
 """Retrieve a map with its NPCs, monsters and navigation"""
-@router.get("/{map_id}", status_code=status.HTTP_200_OK, response_model=MapSchemaResponse)
+@router.get("/{map_id}", status_code=status.HTTP_200_OK, response_model=MapSchemaResponse)  # TODO: ENDPOINT NOT WORKING
 async def get_map_by_id(map_id: str, db: AsyncSession = Depends(get_session)):
     game_map = cast(MapModel | None,await db.get(MapModel, map_id))  # cast: Type checker only
 
