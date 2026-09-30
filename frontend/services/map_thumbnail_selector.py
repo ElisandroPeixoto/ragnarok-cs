@@ -1,5 +1,10 @@
-from mockup import MOCK_MAPS  # TODO: REMOVE AFTER MAP BACKEND MIGRATION
+from services.map_service import MapService
+from services.api_client import ApiError
 
 
-def map_thumbnail_selector(map_id: str):
-    return MOCK_MAPS.get(map_id, {}).get("image")
+async def map_thumbnail_selector(map_id: str) -> str | None:
+    try:
+        map_data = await MapService.get_map(map_id)
+        return map_data.get("image")
+    except ApiError:
+        return None

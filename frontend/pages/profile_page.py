@@ -7,6 +7,7 @@ from services.map_router_manager import navigate_to_map
 from services.session_state import get_current_character
 from services.sprite_selector import sprite_selector
 from services.map_thumbnail_selector import map_thumbnail_selector
+from typing import cast
 
 MAX_EXP_DEFAULT = 100  # TODO: calculate from level/job progression table
 
@@ -29,8 +30,7 @@ def character_card(character: dict):
                                                     status_bar("HP", character["hp"], character["max_hp"], t.HP_BAR_COLOR),
                                                     status_bar("EXP", character["exp"], MAX_EXP_DEFAULT, t.EXP_BAR_COLOR)]))
 
-def current_place_card(character: dict):
-    thumbnail = map_thumbnail_selector(character["current_map_id"])
+def current_place_card(character: dict, thumbnail: str | None):
     return ft.Container(bgcolor=t.CARD_BG,
                         border=ft.Border.all(1, t.CARD_BORDER),
                         border_radius=6,
@@ -85,6 +85,18 @@ def skills_panel():
 def profile_page():
     character = get_current_character()
     collapsed, set_collapsed = ft.use_state(False)
+    thumbnail, set_thumbnail = ft.use_state(cast("str | None", None))
+
+    def on_mount():
+        async def fetch_thumbnail():
+            if character:
+                set_thumbnail(await map_thumbnail_selector(character["current_map_id"]))
+
+        ft.context.page.run_task(fetch_thumbnail)
+        return None
+
+    ft.use_effect(on_mount, [])
+
 
     if character is None:
         return ft.Container(
@@ -113,7 +125,7 @@ def profile_page():
 
     right_column = ft.Column(expand=True,
                              spacing=16,
-                             controls=[current_place_card(character), stats_row])
+                             controls=[current_place_card(character, thumbnail), stats_row])
 
     top_row = ft.Row(vertical_alignment=ft.CrossAxisAlignment.STRETCH,
                      spacing=16,

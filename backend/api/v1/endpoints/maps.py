@@ -6,6 +6,8 @@ from models.maps_model import MapModel
 from schemas.map_schema import MapSchemaResponse, MapSchemaSummary
 from core.deps import get_session
 from sqlalchemy.orm import selectinload
+from models.map_monster_model import MapMonsterModel
+from models.map_connection_model import MapConnectionModel
 
 router = APIRouter()
 
@@ -37,9 +39,19 @@ async def get_maps(db: AsyncSession = Depends(get_session)):
 
 
 """Retrieve a map with its NPCs, monsters and navigation"""
-@router.get("/{map_id}", status_code=status.HTTP_200_OK, response_model=MapSchemaResponse)  # TODO: ENDPOINT NOT WORKING
+@router.get("/{map_id}", status_code=status.HTTP_200_OK, response_model=MapSchemaResponse)
 async def get_map_by_id(map_id: str, db: AsyncSession = Depends(get_session)):
-    game_map = cast(MapModel | None,await db.get(MapModel, map_id))  # cast: Type checker only
+    query = (
+        select(MapModel)
+        .where(MapModel.id == map_id)
+        .options(
+            selectinload(MapModel.npcs),
+            selectinload(MapModel.monster_spawns).selectinload(MapMonsterModel.monster),
+            selectinload(MapModel.connections).selectinload(MapConnectionModel.to_map),
+        )
+    )
+    result = await db.execute(query)
+    game_map = result.scalar_one_or_none()
 
     if game_map is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Map not found")
