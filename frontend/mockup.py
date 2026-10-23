@@ -16,13 +16,12 @@ INITIAL_UNITS = {
 
     "monster": {
         "name": "Poring", "team": "enemy",
-        "sprite": "monsters/poring.gif", "width": 50, "height": 50,
+        "sheet": "poring", "facing": "nw",
         "avatar": "monsters/poring.gif",
         "ai": "approach_and_attack",
 
         "col": 9, "row": 4, "is_draggable": False,
-        "placeholder_color": "#B3261E",
-        "offset_x": 0, "offset_y": 6,
+        "offset_x": 0, "offset_y": 0,
 
         "hp": 50, "max_hp": 50,
         "ap": 2, "max_ap": 2,

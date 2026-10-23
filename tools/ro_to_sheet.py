@@ -49,6 +49,8 @@ DRAW_ORDER = {d: ("body", "head", "weapon") for d in DIRECTIONS.values()}
 SNAP_GAP = 1.5
 SNAP_MAX_SHIFT = 24
 
+MIN_ALPHA = 0.5
+
 CLIP_RULES = {
     "idle": {"loop": True},
     "walk": {"loop": True},
@@ -82,15 +84,19 @@ def read_act(path: str) -> list[dict]:
             for _ in range(n_layers):
                 x, y, spr, flags = struct.unpack_from("<iiiI", d, pos); pos += 16
                 xs = ys = 1.0
+                color = (255, 255, 255, 255)
                 if ver >= 0x0200:
-                    pos += 4                                  # cor
-                    xs = ys = struct.unpack_from("<f", d, pos)[0]; pos += 4
+                    color = tuple(d[pos:pos + 4]);
+                    pos += 4  # R, G, B, A
+                    xs = ys = struct.unpack_from("<f", d, pos)[0];
+                    pos += 4
                     if ver >= 0x0204:
-                        ys = struct.unpack_from("<f", d, pos)[0]; pos += 4
-                    pos += 8                                  # rotação + tipo de sprite
+                        ys = struct.unpack_from("<f", d, pos)[0];
+                        pos += 4
+                    pos += 8  # rotação + tipo de sprite
                     if ver >= 0x0205:
                         pos += 8
-                layers.append((x, y, spr, bool(flags & 1), xs, ys))
+                layers.append((x, y, spr, bool(flags & 1), xs, ys, color))
             anchors = []
             if ver >= 0x0200:
                 pos += 4                                      # id de evento
@@ -116,16 +122,26 @@ class Part:
         self.actions = read_act(base + ".act")
 
 
+def tint(img, color):
+    """Aplica a cor/alpha do layer (multiplica RGBA)."""
+    arr = np.asarray(img).astype(np.float32) * (np.array(color, dtype=np.float32) / 255.0)
+    return Image.fromarray(arr.round().astype(np.uint8), "RGBA")
+
+
 def place(layer, frames):
-    """(imagem já espelhada/escalada, x, y do canto sup. esq. relativo à origem) ou None."""
-    x, y, spr, mirror, xs, ys = layer
+    """(imagem já espelhada/escalada/tingida, x, y do canto sup. esq. relativo à origem) ou None."""
+    x, y, spr, mirror, xs, ys, color = layer
     if not 0 <= spr < len(frames):
         return None                                           # layer vazio (índice -1)
+    if color[3] / 255 < MIN_ALPHA:
+        return None                                           # quase transparente
     img = frames[spr]
     if mirror:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
     if (xs, ys) != (1.0, 1.0):
         img = img.resize((max(1, round(img.width * xs)), max(1, round(img.height * ys))), Image.NEAREST)
+    if color != (255, 255, 255, 255):
+        img = tint(img, color)
     return img, x - img.width // 2, y - img.height // 2
 
 
@@ -297,5 +313,9 @@ if __name__ == "__main__":
     ap.add_argument("--preview", help="salva uma prévia PNG com a grade dos frames")
     ap.add_argument("--no-snap", action="store_true", help="não encaixa a arma na mão (usa só os anchors)")
     a = ap.parse_args()
+    ap.add_argument("--min-alpha", type=float, default=0.5,
+                    help="ignora layers com alpha menor que isso (0 a 1; 0 mantém tudo)")
+    a = ap.parse_args()
+    MIN_ALPHA = a.min_alpha
     build(a.body, a.name, a.out or f"assets/sprites/{a.name}", a.head, a.weapon,
           a.kind, a.idle, a.attack, a.preview, not a.no_snap)

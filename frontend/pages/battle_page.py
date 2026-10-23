@@ -12,6 +12,7 @@ from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
 from services.battle_actions import SKILLS
 from services.map_router_manager import navigate_back_from_battle
+from components.sidebar import sidebar
 
 
 board_config = BoardConfig()
@@ -34,6 +35,7 @@ def battle_page():
     state, _ = ft.use_state(BattleState(INITIAL_UNITS, board_config))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
+    collapsed, set_collapsed = ft.use_state(True)
 
     def refresh(clear_skill: bool = False):
         """Chamado depois de QUALQUER mudança no estado: re-renderiza a página."""
@@ -128,9 +130,8 @@ def battle_page():
         ],
     )
 
-    return ft.Container(
+    battle_area = ft.Container(
         expand=True,
-        bgcolor=t.PAGE_BACKGROUND_COLOR,
         content=ft.Column(
             expand=True,
             scroll=ft.ScrollMode.AUTO,
@@ -141,6 +142,20 @@ def battle_page():
                     padding=ft.Padding.symmetric(vertical=16),
                     content=ft.Column(spacing=GAP, controls=[top_row, bottom_row]),
                 ),
+            ],
+        ),
+    )
+
+    return ft.Container(
+        expand=True,
+        bgcolor=t.PAGE_BACKGROUND_COLOR,
+        content=ft.Row(
+            expand=True,
+            spacing=0,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            controls=[
+                sidebar(collapsed, lambda e: set_collapsed(not collapsed)),
+                battle_area,
             ],
         ),
     )
