@@ -1,5 +1,5 @@
 import os
-from frontend.main import ASSETS_DIR
+from config import ASSETS_DIR
 
 
 def asset_file_exists(file_name: str) -> bool:

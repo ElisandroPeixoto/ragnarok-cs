@@ -10,6 +10,17 @@ from services.session_state import get_current_character
 from services.map_service import MapService
 from services.api_client import ApiError
 from typing import cast
+from services.map_router_manager import map_route, navigate_to_battle
+
+
+# TODO: TEST ONLY
+def battle_test_button(map_id: str):
+    return ft.Button(
+        content=ft.Text("Test Battle", font_family="Cinzel", size=14),
+        bgcolor=t.BUTTON_ALERT,
+        color=t.NORMAL_TEXT,
+        on_click=lambda e: navigate_to_battle(map_route(map_id)),
+    )
 
 
 def npc_item(item: dict):
@@ -57,9 +68,14 @@ def map_info_card(map_data: dict):
 
 
 def map_screen(map_data: dict, character: dict):
+
+    right_controls = [zeny_badge(character["zeny"])]
+    if map_data.get("monsters"):
+        right_controls.insert(0, battle_test_button(map_data["id"]))
+
     top_bar = ft.Row(
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[character_badge(character), zeny_badge(character["zeny"])],
+        controls=[character_badge(character), ft.Row(spacing=12, controls=right_controls)],
     )
 
     right_column = ft.Column(

@@ -1,9 +1,7 @@
 import flet as ft
 from routes import routes
-import os
+from config import ASSETS_DIR
 
-
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
 
 def app():
     return ft.Router(routes=routes, manage_views=True)

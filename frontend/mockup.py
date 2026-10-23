@@ -16,8 +16,8 @@ INITIAL_UNITS = {
 
     "monster": {
         "name": "Poring", "team": "enemy",
-        "sprite": "monster.gif", "width": 50, "height": 50,
-        "avatar": "monster.gif",
+        "sprite": "monsters/poring.gif", "width": 50, "height": 50,
+        "avatar": "monsters/poring.gif",
         "ai": "approach_and_attack",
 
         "col": 9, "row": 4, "is_draggable": False,

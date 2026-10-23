@@ -4,7 +4,7 @@ from services.battle_animation import get_sheet
 
 class BoardConfig:
     def __init__(self):
-        self.background_image: str = "battle_field.jpg"
+        self.background_image: str = "battle_boards/forest_battlefield.jpg"
         self.show_grid: bool = True
 
         # The stage has a FIXED pixel size so that board maths and pointer

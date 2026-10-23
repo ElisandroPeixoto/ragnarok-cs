@@ -11,6 +11,8 @@ from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
 from services.battle_actions import SKILLS
+from services.map_router_manager import navigate_back_from_battle
+
 
 board_config = BoardConfig()
 
@@ -102,9 +104,7 @@ def battle_page():
 
     def handle_leave(e):
         state.closed = True
-        # TODO: no jogo principal, navegar de volta ao mapa: navigate_to_map(character["current_map_id"])
-        print("Leave: no laboratório só encerra o loop de turnos.")
-        refresh(clear_skill=True)
+        navigate_back_from_battle()
 
     # ---------- layout ----------
     log_width = CONTENT_WIDTH - LEFT_WIDTH - RIGHT_PANEL_WIDTH - 2 * GAP
