@@ -3,3 +3,4 @@
 __pycache__/
 ragnarokcs.db
 art_source/
+.claude/
