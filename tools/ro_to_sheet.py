@@ -14,23 +14,26 @@ Só corpo (jogador sem cabeça, ou monstro):
 
     python tools/ro_to_sheet.py art_source/poring/poring poring --kind monster
 
+Para jogador, além dos clips de combate (idle/walk/attack/hurt/dead nas 4 diagonais), sai o
+clip "stand_s": a pose Idle fora de combate, parado de frente, com a cabeça virando como no
+GIF da seleção de personagem do RO. É o que as telas de personagem/perfil mostram.
+
 Saída padrão: assets/sprites/<nome>/<nome>_sheet.png e <nome>.json
 Use --preview prévia.png para gerar uma imagem com a grade dos frames para conferir.
 """
 import argparse
 import json
-import struct
 import sys
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
-from spr_to_frames import read_spr
+from spr_to_frames import read_spr, read_act, STAND_FRONT_ACTION
 
 # clip -> tipo de ação do RO (índice // 8). Jogadores e monstros têm layouts diferentes.
 CLIP_TYPES = {
-    "player": {"idle": 0, "walk": 1, "attack": 5, "hurt": 6, "dead": 8},
+    "player": {"idle": 0, "walk": 1, "attack": 5, "hurt": 6, "dead": 8, "stand": STAND_FRONT_ACTION // 8},
     "monster": {"idle": 0, "walk": 1, "attack": 2, "hurt": 3, "dead": 4},
 }
 # Jogador armado: o RO só desenha a arma em standby (4) e attack2 (10) neste arquivo de arma.
@@ -40,9 +43,14 @@ STATIC_PLAYER_TYPES = {0, 2}
 
 # Direção do RO (índice % 8). No tabuleiro isométrico: +col = SE, -col = NW, +row = SW, -row = NE
 DIRECTIONS = {7: "se", 1: "sw", 3: "nw", 5: "ne"}
+# Clips com direções próprias. "stand" (pose Idle fora de combate) só existe de frente (sul), e
+# os seus 3 motions são a cabeça olhando para frente/lados, não um frame só como no "idle".
+CLIP_DIRECTIONS = {"stand": {STAND_FRONT_ACTION % 8: "s"}}
+STAND_FPS = 0.5                                               # 2 s em cada virada de cabeça, como no GIF
 # Ordem de desenho das partes (da de trás para a da frente). Ajuste aqui se a arma
 # ficar na frente/atrás errada em alguma direção.
-DRAW_ORDER = {d: ("body", "head", "weapon") for d in DIRECTIONS.values()}
+DRAW_ORDER = {d: ("body", "head", "weapon")
+              for dirs in (DIRECTIONS, *CLIP_DIRECTIONS.values()) for d in dirs.values()}
 
 # Encaixe da arma na mão: se a arma ficar a SNAP_GAP px ou mais do corpo, ela é deslocada
 # até o cabo encostar na mão (ponto do corpo mais extremo na direção da arma).
@@ -57,62 +65,13 @@ CLIP_RULES = {
     "attack": {"loop": False},
     "hurt": {"loop": False},
     "dead": {"loop": False, "hold_last": True},
+    "stand": {"loop": True, "fps": STAND_FPS},
 }
 
 
 def strip_ext(path: str) -> str:
     p = Path(path)
     return str(p.with_suffix("")) if p.suffix.lower() in (".spr", ".act") else str(p)
-
-
-def read_act(path: str) -> list[dict]:
-    """Ações -> motions -> layers (x, y, sprite, espelhado, xs, ys) + anchors [(x, y)]."""
-    d = Path(path).read_bytes()
-    if d[:2] != b"AC":
-        raise ValueError(f"{path}: não é um arquivo ACT")
-    ver = d[3] * 256 + d[2]
-    n_actions = struct.unpack_from("<H", d, 4)[0]
-    pos = 16
-    actions = []
-    for _ in range(n_actions):
-        n_motions = struct.unpack_from("<I", d, pos)[0]; pos += 4
-        motions = []
-        for _ in range(n_motions):
-            pos += 32
-            n_layers = struct.unpack_from("<I", d, pos)[0]; pos += 4
-            layers = []
-            for _ in range(n_layers):
-                x, y, spr, flags = struct.unpack_from("<iiiI", d, pos); pos += 16
-                xs = ys = 1.0
-                color = (255, 255, 255, 255)
-                if ver >= 0x0200:
-                    color = tuple(d[pos:pos + 4]);
-                    pos += 4  # R, G, B, A
-                    xs = ys = struct.unpack_from("<f", d, pos)[0];
-                    pos += 4
-                    if ver >= 0x0204:
-                        ys = struct.unpack_from("<f", d, pos)[0];
-                        pos += 4
-                    pos += 8  # rotação + tipo de sprite
-                    if ver >= 0x0205:
-                        pos += 8
-                layers.append((x, y, spr, bool(flags & 1), xs, ys, color))
-            anchors = []
-            if ver >= 0x0200:
-                pos += 4                                      # id de evento
-            if ver >= 0x0203:
-                n_anchors = struct.unpack_from("<i", d, pos)[0]; pos += 4
-                for _ in range(n_anchors):
-                    _, ax, ay, _ = struct.unpack_from("<iiii", d, pos); pos += 16
-                    anchors.append((ax, ay))
-            motions.append({"layers": layers, "anchors": anchors})
-        actions.append({"motions": motions, "delay_ms": 150.0})
-    if ver >= 0x0201:
-        pos += 4 + 40 * struct.unpack_from("<I", d, pos)[0]
-    if ver >= 0x0202:
-        for a in actions:
-            a["delay_ms"] = struct.unpack_from("<f", d, pos)[0] * 25; pos += 4
-    return actions
 
 
 class Part:
@@ -236,14 +195,14 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     # 1) lista de (clip, ação) e extensão máxima do corpo em torno da origem
     wanted = []
     for clip, type_id in clip_types.items():
-        for dir_id, dir_name in DIRECTIONS.items():
+        for dir_id, dir_name in CLIP_DIRECTIONS.get(clip, DIRECTIONS).items():
             idx = type_id * 8 + dir_id
             if idx < n_actions and parts["body"].actions[idx]["motions"]:
                 wanted.append((f"{clip}_{dir_name}", clip, type_id, dir_name, idx))
 
     def motions_for(clip, type_id, idx):
         count = len(parts["body"].actions[idx]["motions"])
-        if kind == "player" and type_id in STATIC_PLAYER_TYPES:
+        if kind == "player" and type_id in STATIC_PLAYER_TYPES and clip not in CLIP_DIRECTIONS:
             count = 1
         return range(count)
 
@@ -269,6 +228,13 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
         rows.append(row)
         fps = round(1000 / parts["body"].actions[idx]["delay_ms"], 1)
         clips[clip_name] = {"row": r, "frames": len(row), "fps": fps, **CLIP_RULES[clip]}
+        # caixa (x, y, w, h) com pixel opaco em algum frame do clip: permite exibir o clip
+        # recortado e ampliado (ex.: stand na tela de perfil) sem a sobra do canvas único
+        bboxes = [b for b in (frame.getbbox() for frame in row) if b]
+        if bboxes:
+            x0, y0 = min(b[0] for b in bboxes), min(b[1] for b in bboxes)
+            x1, y1 = max(b[2] for b in bboxes), max(b[3] for b in bboxes)
+            clips[clip_name]["box"] = [x0, y0, x1 - x0, y1 - y0]
 
     cols = max(len(r) for r in rows)
     sheet = Image.new("RGBA", (frame_w * cols, frame_h * len(rows)))
@@ -312,7 +278,6 @@ if __name__ == "__main__":
     ap.add_argument("--attack", type=int, help="força o tipo de ação do clip attack")
     ap.add_argument("--preview", help="salva uma prévia PNG com a grade dos frames")
     ap.add_argument("--no-snap", action="store_true", help="não encaixa a arma na mão (usa só os anchors)")
-    a = ap.parse_args()
     ap.add_argument("--min-alpha", type=float, default=0.5,
                     help="ignora layers com alpha menor que isso (0 a 1; 0 mantém tudo)")
     a = ap.parse_args()

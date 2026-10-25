@@ -2,6 +2,7 @@ import flet as ft
 import themes as t
 from services.character_service import CharacterService
 from services.api_client import ApiError
+from components.job_sprite import job_sprite
 
 
 @ft.component
@@ -37,12 +38,7 @@ def character_creation():
         border=ft.Border.all(1, t.BUTTON_PRIMARY),
         border_radius=4,
         alignment=ft.Alignment.CENTER,
-        content=ft.Image(
-            src="sprites/0.Novice_Idle.gif",
-            width=62,
-            height=133,
-            fit=ft.BoxFit.CONTAIN,
-        ),
+        content=job_sprite("Novice", height=133),
     )
 
     name_label = ft.Text(

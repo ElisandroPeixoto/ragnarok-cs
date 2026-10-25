@@ -19,6 +19,7 @@ class Clip:
     fps: float = 8
     loop: bool = True
     hold_last: bool = False
+    box: tuple[int, int, int, int] | None = None   # (x, y, w, h) da área desenhada dentro do frame
 
     @property
     def duration(self) -> float:

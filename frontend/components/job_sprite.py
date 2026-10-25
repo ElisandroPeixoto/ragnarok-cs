@@ -1,0 +1,46 @@
+import asyncio
+import flet as ft
+from services.battle_animation import get_sheet
+from services.sprite_selector import sheet_selector, sprite_selector
+from components.unit_sprite import sheet_frame
+
+# Pose Idle fora de combate: parado, de frente (clip gerado pelo tools/ro_to_sheet.py)
+STAND_CLIP = "stand_s"
+
+
+@ft.component
+def job_sprite(job: str, height: float):
+    """Personagem parado de frente nas telas de seleção/criação/perfil.
+    Usa o clip stand_s da sheet da classe; sem sheet, cai no GIF antigo."""
+    sheet_name = sheet_selector(job)
+    frame, set_frame = ft.use_state(0)
+    loop_state, _ = ft.use_state(lambda: {"closed": False})
+
+    def on_mount():
+        if not sheet_name:
+            return
+        clip = get_sheet(sheet_name).clips[STAND_CLIP]
+
+        async def anim_loop():
+            while not loop_state["closed"]:
+                await asyncio.sleep(1 / clip.fps)
+                if not loop_state["closed"]:
+                    set_frame(lambda index: (index + 1) % clip.frames)
+
+        ft.context.page.run_task(anim_loop)
+
+    def on_unmount():
+        loop_state["closed"] = True
+
+    ft.use_effect(on_mount, [], cleanup=on_unmount)
+
+    if not sheet_name:
+        gif = sprite_selector(job)
+        if gif:
+            return ft.Image(src=gif, height=height, fit=ft.BoxFit.CONTAIN)
+        return ft.Container(height=height)
+
+    sheet = get_sheet(sheet_name)
+    clip = sheet.clips[STAND_CLIP]
+    box = clip.box or (0, 0, sheet.frame_w, sheet.frame_h)
+    return sheet_frame(sheet, clip.row, frame % clip.frames, box, scale=height / box[3])

@@ -2,7 +2,7 @@ import flet as ft
 import themes as t
 from services.character_service import CharacterService
 from services.api_client import ApiError
-from services.sprite_selector import sprite_selector
+from components.job_sprite import job_sprite
 from services.session_state import set_current_character
 from services.session_state import set_current_character
 
@@ -29,8 +29,7 @@ def character_slot(character: dict | None, on_click, is_selected: bool = False):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=6,
             controls=[
-                ft.Image(src=character["sprite"], width=62, height=133, fit=ft.BoxFit.CONTAIN)
-                if character.get("sprite") else ft.Container(height=90),
+                job_sprite(character["job"], height=133),
                 ft.Text(character["name"], size=14, color=t.TITLE_TEXT, font_family="Cinzel", weight=ft.FontWeight.BOLD),
                 ft.Text(character["job"], size=12, color=t.NORMAL_TEXT, font_family="Cinzel"),
                 ft.Text(f"Level: {character['level']}", size=12, color=t.NORMAL_TEXT, font_family="Cinzel"),
@@ -92,8 +91,6 @@ def character_selection():
         async def fetch():
             try:
                 data = await CharacterService.get_characters()  # API Call
-                for c in data:
-                    c.setdefault("sprite", sprite_selector(c["job"]))
                 set_characters(data)
             except ApiError as e:
                 print(f"Failed to load characters: {e.detail}")

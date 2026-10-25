@@ -3,7 +3,7 @@
   "frame_w": 110,
   "frame_h": 106,
   "cols": 9,
-  "rows": 20,
+  "rows": 21,
   "anchor_x": 55,
   "anchor_y": 81,
   "clips": {
@@ -11,125 +11,257 @@
       "row": 0,
       "frames": 6,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        22,
+        2,
+        59,
+        89
+      ]
     },
     "idle_sw": {
       "row": 1,
       "frames": 6,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        30,
+        2,
+        58,
+        89
+      ]
     },
     "idle_nw": {
       "row": 2,
       "frames": 6,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        37,
+        1,
+        37,
+        91
+      ]
     },
     "idle_ne": {
       "row": 3,
       "frames": 6,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        37,
+        1,
+        38,
+        91
+      ]
     },
     "walk_se": {
       "row": 4,
       "frames": 8,
       "fps": 13.3,
-      "loop": true
+      "loop": true,
+      "box": [
+        36,
+        1,
+        44,
+        92
+      ]
     },
     "walk_sw": {
       "row": 5,
       "frames": 8,
       "fps": 13.3,
-      "loop": true
+      "loop": true,
+      "box": [
+        32,
+        1,
+        44,
+        92
+      ]
     },
     "walk_nw": {
       "row": 6,
       "frames": 8,
       "fps": 13.3,
-      "loop": true
+      "loop": true,
+      "box": [
+        31,
+        2,
+        45,
+        90
+      ]
     },
     "walk_ne": {
       "row": 7,
       "frames": 8,
       "fps": 13.3,
-      "loop": true
+      "loop": true,
+      "box": [
+        36,
+        2,
+        45,
+        90
+      ]
     },
     "attack_se": {
       "row": 8,
       "frames": 9,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        15,
+        4,
+        94,
+        87
+      ]
     },
     "attack_sw": {
       "row": 9,
       "frames": 9,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        1,
+        4,
+        96,
+        87
+      ]
     },
     "attack_nw": {
       "row": 10,
       "frames": 9,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        20,
+        8,
+        75,
+        87
+      ]
     },
     "attack_ne": {
       "row": 11,
       "frames": 9,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        16,
+        5,
+        76,
+        90
+      ]
     },
     "hurt_se": {
       "row": 12,
       "frames": 3,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        40,
+        15,
+        35,
+        77
+      ]
     },
     "hurt_sw": {
       "row": 13,
       "frames": 3,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        37,
+        15,
+        35,
+        77
+      ]
     },
     "hurt_nw": {
       "row": 14,
       "frames": 3,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        33,
+        9,
+        47,
+        81
+      ]
     },
     "hurt_ne": {
       "row": 15,
       "frames": 3,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        32,
+        9,
+        47,
+        81
+      ]
     },
     "dead_se": {
       "row": 16,
       "frames": 1,
       "fps": 10.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        17,
+        47,
+        65,
+        53
+      ]
     },
     "dead_sw": {
       "row": 17,
       "frames": 1,
       "fps": 10.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        30,
+        47,
+        65,
+        53
+      ]
     },
     "dead_nw": {
       "row": 18,
       "frames": 1,
       "fps": 10.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        29,
+        59,
+        69,
+        46
+      ]
     },
     "dead_ne": {
       "row": 19,
       "frames": 1,
       "fps": 10.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        14,
+        59,
+        67,
+        46
+      ]
+    },
+    "stand_s": {
+      "row": 20,
+      "frames": 3,
+      "fps": 0.5,
+      "loop": true,
+      "box": [
+        37,
+        1,
+        36,
+        91
+      ]
     }
   }
 }

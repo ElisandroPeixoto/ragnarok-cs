@@ -5,7 +5,7 @@ from components.zeny_badge import zeny_badge
 from components.status_bars import status_bar
 from services.map_router_manager import navigate_to_map
 from services.session_state import get_current_character
-from services.sprite_selector import sprite_selector
+from components.job_sprite import job_sprite
 from services.map_thumbnail_selector import map_thumbnail_selector
 from typing import cast
 
@@ -20,7 +20,7 @@ def character_card(character: dict):
                         padding=20,
                         content=ft.Column(horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                           spacing=10,
-                                          controls=[ft.Image(src=sprite_selector(character["job"]), width=90, height=190, fit=ft.BoxFit.CONTAIN),
+                                          controls=[job_sprite(character["job"], height=190),
                                                     ft.Text(character["name"], size=22, font_family="Cinzel", color=t.NORMAL_TEXT, weight=ft.FontWeight.BOLD),
                                                     ft.Text(character["job"], size=15, font_family="Cinzel", color=t.TITLE_TEXT),
                                                     ft.Container(height=8),
