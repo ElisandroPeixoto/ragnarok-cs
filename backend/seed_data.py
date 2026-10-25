@@ -23,7 +23,7 @@ MAPS = {
         "navigation": ["training_field_1"],
     },
     "training_field_1": {
-        "name": "Training Field 1", "level_range": "5 - 15",
+        "name": "Training Field 1", "level_range": "1 - 10",
         "image": "maps/training_field_1.jpg", "about": "...",
         "npcs": [("Trainer", "npcs/trainer.gif")],
         "monsters": [("Poring", 40), ("Lunatic", 40), ("Wilow", 20)],
@@ -46,7 +46,10 @@ async def seed() -> None:
     async with Session() as db:
         # 1) maps, npcs, monsters
         for map_id, data in MAPS.items():
-            if await db.get(MapModel, map_id):
+            existing = await db.get(MapModel, map_id)
+            if existing:  # mapa já existe: só atualiza os dados básicos (NPCs/monstros não são duplicados)
+                existing.name, existing.level_range = data["name"], data["level_range"]
+                existing.image, existing.about = data["image"], data["about"]
                 continue
             db.add(MapModel(id=map_id, name=data["name"], level_range=data["level_range"],
                             image=data["image"], about=data["about"]))

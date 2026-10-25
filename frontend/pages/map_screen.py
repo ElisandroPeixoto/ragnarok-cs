@@ -157,7 +157,7 @@ def map_screen(map_data: dict, character: dict):
 def build_map_page(map_id: str):
     @ft.component
     def _map_page():
-        collapsed, set_collapsed = ft.use_state(False)
+        collapsed, set_collapsed = ft.use_state(True)
         map_data, set_map_data = ft.use_state(cast("dict | None", None))
         loading, set_loading = ft.use_state(True)
 

@@ -15,7 +15,7 @@ def section_panel(title: str, content: ft.Control, expand: int = 1):
         border_radius=10,
         padding=ft.Padding.symmetric(horizontal=8),
         alignment=ft.Alignment.CENTER_LEFT,
-        content=ft.Text(title, size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, font_family="Cinzel"),
+        content=ft.Text(title, size=17, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, font_family="Cinzel"),
     )
 
     return ft.Container(

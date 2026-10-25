@@ -84,7 +84,7 @@ def skills_panel():
 @ft.component
 def profile_page():
     character = get_current_character()
-    collapsed, set_collapsed = ft.use_state(False)
+    collapsed, set_collapsed = ft.use_state(True)
     thumbnail, set_thumbnail = ft.use_state(cast("str | None", None))
 
     def on_mount():
