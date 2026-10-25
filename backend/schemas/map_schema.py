@@ -7,6 +7,7 @@ class NavigationSchema(BaseModel):
     name: str
     image: str
     map_id: str
+    level_range: str
 
 
 class MapSchemaSummary(BaseModel):

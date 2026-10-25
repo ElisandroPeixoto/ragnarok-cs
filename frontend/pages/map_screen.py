@@ -4,13 +4,21 @@ from components.sidebar import sidebar
 from components.zeny_badge import zeny_badge
 from components.character_badge import character_badge
 from components.section_panel import section_panel
-from components.item_card import item_card
-from services.map_router_manager import map_route
+from components.item_card import item_card, card_image
 from services.session_state import get_current_character
 from services.map_service import MapService
 from services.api_client import ApiError
 from typing import cast
 from services.map_router_manager import map_route, navigate_to_battle
+
+
+BANNER_HEIGHT = 494
+GAP = 15
+
+# Lugares visitáveis dentro de cada mapa (This Area). TODO: INSERT ON BACKEND; o destino dos botões é futuro
+MAP_PLACES = {
+    "novice_academy": [{"name": "Academy", "image": "places/academy.png"}],
+}
 
 
 # TODO: TEST ONLY
@@ -24,84 +32,124 @@ def battle_test_button(map_id: str):
 
 
 def npc_item(item: dict):
-    return item_card(item["image"], item["name"])
+    return item_card(card_image(item["image"]), item["name"])
 
-
-def navigation_item(item: dict):
-    return item_card(item["image"], item["name"],
-                     on_click=lambda e: ft.context.page.navigate(map_route(item["map_id"])), image_fit=ft.BoxFit.COVER)
 
 def monster_item(item: dict):
     spawn_rate = item.get("spawn_rate")
     subtitle = f"{spawn_rate}%" if spawn_rate is not None else None
-    return item_card(item["image"], item["name"], subtitle=subtitle, image_size=50)
+    return item_card(card_image(item["image"]), item["name"], subtitle=subtitle)
 
 
-def map_info_card(map_data: dict):
+def place_item(item: dict):
+    return item_card(card_image(item["image"], width=56, height=73), item["name"],
+                     width=170, height=84, tooltip="Coming soon", on_click=lambda e: None)
+
+
+def navigation_item(item: dict):
+    level_range = item.get("level_range")
+    return item_card(ft.Icon(ft.Icons.ARROW_UPWARD, size=28, color=t.MAP_LIGHT_TEXT), item["name"],
+                     subtitle=f"(Lv {level_range.replace(' ', '')})" if level_range else None,
+                     width=184, height=84,
+                     on_click=lambda e: ft.context.page.navigate(map_route(item["map_id"])))
+
+
+def card_grid(cards: list):
+    return ft.Row(wrap=True, spacing=10, run_spacing=10, controls=cards)
+
+
+def empty_text(message: str):
+    return ft.Text(message, size=14, color=t.MUTED_TEXT, font_family="Cinzel")
+
+
+def label(text: str):
+    return ft.Text(text, size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, font_family="Cinzel")
+
+
+def map_banner(map_data: dict):
+    """Imagem do mapa com o título e o nível sobrepostos no canto superior esquerdo."""
+    title_box = ft.Container(
+        left=0, top=5,
+        bgcolor=t.MAP_TITLE_OVERLAY,
+        border_radius=10,
+        padding=ft.Padding(left=15, top=8, right=15, bottom=12),
+        content=ft.Column(spacing=4, controls=[
+            ft.Text(map_data["name"], size=32, weight=ft.FontWeight.BOLD, color=t.MAP_TITLE_TEXT, font_family="Cinzel"),
+            ft.Text(f"Level: {map_data.get('level_range', '-')}", size=18, weight=ft.FontWeight.BOLD,
+                    color=t.MAP_LIGHT_TEXT, font_family="Cinzel"),
+        ]),
+    )
+    top_shadow = ft.Container(  # sombra interna no topo da imagem (inset 0 120px 80px rgba(0,0,0,.3))
+        left=0, top=0, right=0, height=200,
+        gradient=ft.LinearGradient(begin=ft.Alignment.TOP_CENTER, end=ft.Alignment.BOTTOM_CENTER,
+                                   colors=[ft.Colors.with_opacity(0.3, ft.Colors.BLACK), ft.Colors.TRANSPARENT]),
+    )
+    return ft.Container(
+        height=BANNER_HEIGHT,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        content=ft.Stack(expand=True, controls=[
+            ft.Container(left=0, top=0, right=0, bottom=0,
+                         image=ft.DecorationImage(src=map_data.get("image", ""), fit=ft.BoxFit.COVER)),
+            top_shadow,
+            title_box,
+        ]),
+    )
+
+
+def monsters_content(monsters: list):
+    if monsters:
+        return ft.Column(scroll=ft.ScrollMode.AUTO, controls=[card_grid([monster_item(m) for m in monsters])])
     return ft.Container(
         expand=True,
-        bgcolor=t.CARD_BG,
-        border=ft.Border.all(1, t.CARD_BORDER),
-        border_radius=6,
-        padding=20,
-        content=ft.Column(
-            spacing=12,
-            scroll=ft.ScrollMode.AUTO,
-            controls=[
-                ft.Text(map_data["name"], size=26, weight=ft.FontWeight.BOLD,
-                        color=t.NORMAL_TEXT, font_family="Cinzel"),
-                ft.Text(f"Level: {map_data.get('level_range', '-')}", size=14,
-                        color=t.TITLE_TEXT, font_family="Cinzel"),
-                ft.Container(
-                    width=480,
-                    height=270,  # proporção 16:9 fixa — independe da tela
-                    border=ft.Border.all(1, t.BUTTON_PRIMARY),
-                    border_radius=4,
-                    clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
-                    image=ft.DecorationImage(src=map_data.get("image", ""), fit=ft.BoxFit.COVER),
-                ),
-                ft.Text("About:", size=15, color=t.TITLE_TEXT, font_family="Cinzel", weight=ft.FontWeight.BOLD),
-                ft.Text(map_data.get("about", ""), size=14, color=t.NORMAL_TEXT, font_family="Cinzel"),
-            ],
-        ),
+        alignment=ft.Alignment.CENTER,
+        content=ft.Row(alignment=ft.MainAxisAlignment.CENTER, spacing=8, controls=[
+            ft.Text("Safe Zone", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, font_family="Cinzel"),
+            ft.Icon(ft.Icons.SHIELD, size=90, color=t.MAP_PANEL_HEADER),
+        ]),
     )
+
+
+def go_to_content(map_data: dict):
+    places = MAP_PLACES.get(map_data["id"], [])
+    navigation = map_data.get("navigation", [])
+    return ft.Column(scroll=ft.ScrollMode.AUTO, spacing=4, controls=[
+        label("This Area"),
+        card_grid([place_item(p) for p in places]) if places else empty_text("Nothing to visit here"),
+        label("Nearby"),
+        card_grid([navigation_item(n) for n in navigation]) if navigation else empty_text("No routes available"),
+    ])
 
 
 def map_screen(map_data: dict, character: dict):
-
-    right_controls = [zeny_badge(character["zeny"])]
-    if map_data.get("monsters"):
-        right_controls.insert(0, battle_test_button(map_data["id"]))
-
+    top_controls = [character_badge(character), zeny_badge(character["zeny"])]
     top_bar = ft.Row(
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[character_badge(character), ft.Row(spacing=12, controls=right_controls)],
+        controls=[ft.Row(spacing=8, controls=top_controls),
+                  battle_test_button(map_data["id"]) if map_data.get("monsters") else ft.Container()],
     )
 
-    right_column = ft.Column(
-        width=320,
-        spacing=16,
-        controls=[
-            section_panel("NPCs", map_data.get("npcs", []), "No NPCs nearby", npc_item),
-            section_panel("Navigation", map_data.get("navigation", []), "No routes available", navigation_item),
-            section_panel("Monsters", map_data.get("monsters", []), "There are no monsters nearby", monster_item),
-        ],
-    )
+    npcs = map_data.get("npcs", [])
+    people = (ft.Column(scroll=ft.ScrollMode.AUTO, controls=[card_grid([npc_item(n) for n in npcs])])
+              if npcs else empty_text("No one around"))
 
-    body = ft.Row(
-        spacing=16,
+    panels = ft.Row(
+        spacing=GAP,
         vertical_alignment=ft.CrossAxisAlignment.START,
-        controls=[map_info_card(map_data), right_column],
+        controls=[  # proporção das larguras do Figma: 348 / 348 / 483
+            section_panel("People in the area", people, expand=348),
+            section_panel("Monsters", monsters_content(map_data.get("monsters", [])), expand=348),
+            section_panel("Go To", go_to_content(map_data), expand=483),
+        ],
     )
 
     return ft.Container(
         expand=True,
-        padding=24,
+        padding=ft.Padding(left=27, top=49, right=43, bottom=24),
         content=ft.Column(
             expand=True,
-            spacing=16,
+            spacing=6,
             scroll=ft.ScrollMode.AUTO,
-            controls=[top_bar, body],
+            controls=[top_bar, map_banner(map_data), ft.Container(height=7), panels],
         ),
     )
 
