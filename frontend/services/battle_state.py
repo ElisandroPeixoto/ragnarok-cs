@@ -1,13 +1,35 @@
 import copy
+import random
 from services.battle_geometry import BoardConfig
 from services.battle_log import BattleLog, LogEntry
 
 TURN_DURATION = 30
 
+# Colunas onde cada time pode nascer; a row é sorteada
+SPAWN_COLUMNS = {"player": (0,), "enemy": (7, 8, 9)}
+SPAWN_FACING = {"player": "se", "enemy": "nw"}
+
+
+def spawn_units(units: dict, board: BoardConfig) -> None:
+    """Sorteia o tile inicial de cada unidade (sem repetir tile) e define facing/drag pelo time."""
+    taken = set(board.blocked_tiles)
+    for unit in units.values():
+        team = unit["team"]
+        free_tiles = [(col, row) for col in SPAWN_COLUMNS[team] for row in range(board.row_count)
+                      if (col, row) not in taken]
+        unit["col"], unit["row"] = random.choice(free_tiles)
+        taken.add((unit["col"], unit["row"]))
+        unit["facing"] = SPAWN_FACING[team]
+        unit["is_draggable"] = team == "player"
+
+
 class BattleState:
-    def __init__(self, units: dict, board: BoardConfig, turn_duration: int = TURN_DURATION):
+    def __init__(self, units: dict, skills: dict, board: BoardConfig, turn_duration: int = TURN_DURATION):
+        """units/skills vêm do backend (BattleService.start_battle); a posição é sorteada aqui."""
         self.units = copy.deepcopy(units)
+        self.skills = skills
         self.board = board
+        spawn_units(self.units, board)
         self.turn_order: list[str] = list(self.units.keys())
         self.turn_index : int = 0
         self.round : int = 1

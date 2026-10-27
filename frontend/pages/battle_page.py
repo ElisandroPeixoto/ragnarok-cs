@@ -1,7 +1,6 @@
 import asyncio
 import flet as ft
 import themes as t
-from mockup import INITIAL_UNITS
 from services.battle_state import BattleState
 from services.battle_ai import iter_ai_turn
 from components.battle_board import battle_board
@@ -10,8 +9,8 @@ from components.skills_panel import skills_panel
 from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
-from services.battle_actions import SKILLS
 from services.map_router_manager import navigate_back_from_battle
+from services.session_state import get_battle_setup
 from components.sidebar import sidebar
 
 
@@ -32,7 +31,19 @@ ANIM_INTERVAL = 1 / 12      # ~12 re-renders por segundo; baixe para 1/8 se pesa
 
 @ft.component
 def battle_page():
-    state, _ = ft.use_state(BattleState(INITIAL_UNITS, board_config))
+    setup = get_battle_setup()
+    if setup is None:  # rota aberta sem passar pelo botão Hunt
+        return ft.Container(
+            expand=True, bgcolor=t.PAGE_BACKGROUND_COLOR, alignment=ft.Alignment.CENTER,
+            content=ft.Text("No battle in progress", color=t.NORMAL_TEXT, font_family="Cinzel"),
+        )
+    return battle_screen(setup)
+
+
+@ft.component
+def battle_screen(setup: dict):
+    # lambda: cria (e sorteia as posições) só no primeiro render, não a cada re-render
+    state, _ = ft.use_state(lambda: BattleState(setup["units"], setup["skills"], board_config))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)
@@ -94,7 +105,7 @@ def battle_page():
     def handle_select_skill(name: str):
         if not player_can_act():
             return
-        if state.current_unit()["ap"] < SKILLS[name]["ap_cost"]:
+        if state.current_unit()["ap"] < state.skills[name]["ap_cost"]:
             return
         set_selected_skill(None if selected_skill == name else name)
 

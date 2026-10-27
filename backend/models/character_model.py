@@ -1,5 +1,5 @@
 from core.config import DBBaseModel
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from decimal import Decimal
 
 
@@ -9,7 +9,7 @@ class CharacterModel(DBBaseModel):
 
     id: int = Column(Integer, primary_key=True, autoincrement=True)
     name: str = Column(String(255), nullable=False)
-    job: str = Column(String(255), nullable=False, default="Novice")
+    job: str = Column(String(255), ForeignKey("jobs.name"), nullable=False, default="Novice")
     level: int = Column(Integer, nullable=False, default=1)
     exp: int = Column(Integer, nullable=False, default=0)
     hp: int = Column(Integer, nullable=False, default=50)

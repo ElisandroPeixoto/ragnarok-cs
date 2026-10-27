@@ -10,6 +10,8 @@ from services.map_service import MapService
 from services.api_client import ApiError
 from typing import cast
 from services.map_router_manager import map_route, navigate_to_battle
+from services.battle_service import BattleService
+from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
 BANNER_HEIGHT = 494
@@ -21,13 +23,23 @@ MAP_PLACES = {
 }
 
 
-# TODO: TEST ONLY
-def battle_test_button(map_id: str):
+def hunt_button(map_id: str, character: dict):
+    def handle_hunt(e):
+        async def start():
+            try:
+                setup = await BattleService.start_battle(character["id"], map_id)
+            except ApiError as error:
+                print(f"Failed to start battle: {error.detail}")
+                return
+            navigate_to_battle(map_route(map_id), setup)
+
+        ft.context.page.run_task(start)
+
     return ft.Button(
-        content=ft.Text("Test Battle", font_family="Cinzel", size=14),
-        bgcolor=t.BUTTON_ALERT,
+        content=ft.Text("Hunt", font_family="Cinzel", size=14),
+        bgcolor=t.BUTTON_PRIMARY,
         color=t.NORMAL_TEXT,
-        on_click=lambda e: navigate_to_battle(map_route(map_id)),
+        on_click=handle_hunt,
     )
 
 
@@ -96,9 +108,12 @@ def map_banner(map_data: dict):
     )
 
 
-def monsters_content(monsters: list):
+def monsters_content(map_id: str, monsters: list, character: dict):
     if monsters:
-        return ft.Column(scroll=ft.ScrollMode.AUTO, controls=[card_grid([monster_item(m) for m in monsters])])
+        return ft.Column(spacing=8, controls=[
+            ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, controls=[card_grid([monster_item(m) for m in monsters])]),
+            ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[hunt_button(map_id, character)]),
+        ])
     return ft.Container(
         expand=True,
         alignment=ft.Alignment.CENTER,
@@ -122,11 +137,7 @@ def go_to_content(map_data: dict):
 
 def map_screen(map_data: dict, character: dict):
     top_controls = [character_badge(character), zeny_badge(character["zeny"])]
-    top_bar = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[ft.Row(spacing=8, controls=top_controls),
-                  battle_test_button(map_data["id"]) if map_data.get("monsters") else ft.Container()],
-    )
+    top_bar = ft.Row(spacing=8, controls=top_controls)
 
     npcs = map_data.get("npcs", [])
     people = (ft.Column(scroll=ft.ScrollMode.AUTO, controls=[card_grid([npc_item(n) for n in npcs])])
@@ -137,7 +148,7 @@ def map_screen(map_data: dict, character: dict):
         vertical_alignment=ft.CrossAxisAlignment.START,
         controls=[  # proporção das larguras do Figma: 348 / 348 / 483
             section_panel("People in the area", people, expand=348),
-            section_panel("Monsters", monsters_content(map_data.get("monsters", [])), expand=348),
+            section_panel("Monsters", monsters_content(map_data["id"], map_data.get("monsters", []), character), expand=348),
             section_panel("Go To", go_to_content(map_data), expand=483),
         ],
     )
@@ -147,9 +158,14 @@ def map_screen(map_data: dict, character: dict):
         padding=ft.Padding(left=27, top=49, right=43, bottom=24),
         content=ft.Column(
             expand=True,
-            spacing=6,
             scroll=ft.ScrollMode.AUTO,
-            controls=[top_bar, map_banner(map_data), ft.Container(height=7), panels],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Container(  # width é o teto: em janelas mais estreitas o conteúdo encolhe junto
+                    width=BATTLE_CONTENT_WIDTH,
+                    content=ft.Column(spacing=6, controls=[top_bar, map_banner(map_data), ft.Container(height=7), panels]),
+                ),
+            ],
         ),
     )
 

@@ -4,17 +4,6 @@ from services.battle_log import LogEntry
 from services.battle_animation import play, face_towards
 
 
-SKILLS = {  # TODO: INSERT ON BACKEND
-    "Basic Attack": {
-        "ap_cost": 1,
-        "damage": 10,
-        "range": 1,
-        "icon": "skills/Basic Attack.png"
-    }
-}
-
-
-
 def manhattan(col1: int, row1: int, col2: int, row2: int) -> int:
     return abs(col1 - col2) + abs(row1 - row2)
 
@@ -37,7 +26,7 @@ def can_attack(state: BattleState, attacker_id: str, target_id: str, skill_name:
 
     attacker = state.units[attacker_id]
     target = state.units.get(target_id)
-    skill = SKILLS.get(skill_name)
+    skill = state.skills.get(skill_name)
 
     if skill is None or skill_name not in attacker.get("skills", []):
         return False, "unit does not know this skill"
@@ -59,7 +48,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
 
     attacker = state.units[attacker_id]
     target = state.units[target_id]
-    skill = SKILLS[skill_name]
+    skill = state.skills[skill_name]
 
     attacker["ap"] -= skill["ap_cost"]
     target["hp"] = max(0, target["hp"] - skill["damage"])
@@ -83,7 +72,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
 def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[tuple[int, int]]:
     """Tiles que a skill alcança a partir da posição atual (para destacar na UI)."""
     unit = state.units[unit_id]
-    skill_range = SKILLS[skill_name]["range"]
+    skill_range = state.skills[skill_name]["range"]
     tiles = []
     for distance in range(1, skill_range + 1):
         for delta_col, delta_row in ((1, 0), (-1, 0), (0, 1), (0, -1)):
