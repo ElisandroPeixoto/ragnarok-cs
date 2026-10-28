@@ -27,7 +27,7 @@ def skills_panel(state, selected_skill: str | None, on_select, width: int, heigh
     unit = state.current_unit() if player_turn else None
 
     buttons = []
-    for name in state.units["hero"]["skills"]:       # skills do personagem do jogador
+    for name in state.units["hero"]["skills"]:       # the player character's skills
         skill = state.skills[name]
         enabled = bool(unit) and unit["ap"] >= skill["ap_cost"]
         buttons.append(skill_button(name, skill, selected_skill == name, enabled,

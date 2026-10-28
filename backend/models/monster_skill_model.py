@@ -8,6 +8,6 @@ class MonsterSkillModel(DBBaseModel):
 
     monster_id: int = Column(Integer, ForeignKey("monsters.id"), primary_key=True)
     skill_id: int = Column(Integer, ForeignKey("skills.id"), primary_key=True)
-    slot: int = Column(Integer, nullable=False, default=0)  # slot 0 = skill principal da IA
+    slot: int = Column(Integer, nullable=False, default=0)  # slot 0 = the AI's main skill
 
     skill = relationship("SkillModel", lazy="selectin")

@@ -9,7 +9,7 @@ Ragnarok Chaos Saga: a Ragnarok Online–themed desktop RPG. Two Python processe
 - `backend/` — FastAPI + async SQLAlchemy (SQLite via aiosqlite), serves `/api/v1/characters` and `/api/v1/maps` on port **8001**.
 - `frontend/` — Flet 0.86 desktop app (declarative `@ft.component` / `ft.use_state` style with `ft.Router`), talks to the backend over httpx.
 
-There is no test suite, linter config, or build step. Comments/docstrings are a mix of English and Portuguese.
+There is no test suite, linter config, or build step. Comments and docstrings are written in English.
 
 ## Commands
 

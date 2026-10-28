@@ -31,9 +31,9 @@ def get_pointer_position(event) -> tuple[float, float]:
 
 # ============================================================
 # COMPONENT
-# state e selected_skill vêm da página; on_change(clear_skill=False) avisa a página
-# que o estado mudou (para atualizar cards, log e timer).
-# `version` só existe para a página poder forçar o re-render deste componente.
+# state and selected_skill come from the page; on_change(clear_skill=False) tells the page
+# the state changed (so it refreshes the cards, log and timer).
+# `version` only exists so the page can force this component to re-render.
 # ============================================================
 @ft.component
 def battle_board(state: BattleState, version: int, selected_skill: str | None, on_change):
@@ -53,7 +53,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
     def handle_drag_start(event):
         if not player_can_act():
             return
-        unit_id = state.current_unit_id            # só a unidade da vez pode ser arrastada
+        unit_id = state.current_unit_id            # only the unit whose turn it is can be dragged
         unit = units[unit_id]
         if not unit.get("is_draggable"):
             return
@@ -84,7 +84,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
         if unit_id is None:
             return
         target_col, target_row = pixel_to_tile(_drag_state["token_x"], _drag_state["token_y"], board)
-        result = perform_move(state, unit_id, target_col, target_row)   # valida PA, ocupação, limites
+        result = perform_move(state, unit_id, target_col, target_row)   # validates AP, occupancy, bounds
         _drag_state["unit_id"] = None
         force_rerender()
         if result["ok"]:
@@ -93,7 +93,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
             print(f"[move] {result['reason']}")
 
     def handle_tap(event):
-        """Modo ataque: com uma skill selecionada, clicar no inimigo ataca."""
+        """Attack mode: with a skill selected, clicking an enemy attacks it."""
         if not selected_skill or not player_can_act():
             return
         attacker_id = state.current_unit_id
@@ -121,12 +121,12 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
         background = ft.Container(width=board.width, height=board.height,
                                   bgcolor=t.PLACEHOLDER_BACKGROUND_COLOR)
 
-    # ---------- layer 2: grid + destaques ----------
+    # ---------- layer 2: grid + highlights ----------
     grid_shapes = list(STATIC_GRID_SHAPES)
     dragged_unit_id = _drag_state["unit_id"]
 
     if dragged_unit_id is not None:
-        # destino do arraste: verde se can_move, vermelho se não
+        # drag destination: green if can_move, red otherwise
         hover_col, hover_row = pixel_to_tile(_drag_state["token_x"], _drag_state["token_y"], board)
         if is_inside_board(hover_col, hover_row, board) and (hover_col, hover_row) != (
                 units[dragged_unit_id]["col"], units[dragged_unit_id]["row"]):
@@ -134,19 +134,19 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
             color = t.VALID_TILE_COLOR if is_valid else t.INVALID_TILE_COLOR
             grid_shapes.append(create_tile_diamond(hover_col, hover_row, create_fill_paint(color), board))
     elif selected_skill and player_can_act():
-        # modo ataque: destaca os tiles que a skill alcança
+        # attack mode: highlight the tiles the skill reaches
         for col, row in get_attack_tiles(state, state.current_unit_id, selected_skill):
             grid_shapes.append(create_tile_diamond(col, row, create_fill_paint(t.ATTACK_TILE_COLOR), board))
 
     grid_layer = cv.Canvas(shapes=grid_shapes, width=board.width, height=board.height)
 
-    # ---------- layer 3: sprites (só unidades vivas) ----------
+    # ---------- layer 3: sprites (living units only) ----------
     drawn_ids = []
     sprite_controls = []
     for unit_id, unit in sort_units_by_depth(units):
         has_sheet = bool(unit.get("sheet"))
         if unit["hp"] <= 0 and not has_sheet:
-            continue  # sem sheet não há animação de morte: some na hora
+            continue  # no sheet means no death animation: it disappears right away
         if unit_id == dragged_unit_id:
             center_x, center_y = _drag_state["token_x"], _drag_state["token_y"]
         else:

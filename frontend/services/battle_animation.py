@@ -1,5 +1,5 @@
-"""Animação por sprite sheet: carrega o JSON, guarda o clip atual da unidade
-e calcula qual frame desenhar a partir do tempo (função pura)."""
+"""Sprite sheet animation: loads the JSON, stores the unit's current clip
+and computes which frame to draw from the time (pure function)."""
 import json
 import time
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ class Clip:
     fps: float = 8
     loop: bool = True
     hold_last: bool = False
-    box: tuple[int, int, int, int] | None = None   # (x, y, w, h) da área desenhada dentro do frame
+    box: tuple[int, int, int, int] | None = None   # (x, y, w, h) of the drawn area inside the frame
 
     @property
     def duration(self) -> float:
@@ -33,7 +33,7 @@ class SpriteSheet:
     frame_h: int
     cols: int
     rows: int
-    anchor_x: int      # pés do personagem dentro do frame
+    anchor_x: int      # character's feet inside the frame
     anchor_y: int
     clips: dict
 
@@ -47,7 +47,7 @@ def get_sheet(name: str) -> SpriteSheet:
 
 
 def _find_clip(sheet: SpriteSheet, anim: str, facing: str) -> Clip:
-    """Clip pedido; se não existir, idle na mesma direção; por último, o primeiro clip."""
+    """Requested clip; if missing, idle in the same direction; as a last resort, the first clip."""
     for key in (f"{anim}_{facing}", f"{DEFAULT_ANIM}_{facing}"):
         if key in sheet.clips:
             return sheet.clips[key]
@@ -55,7 +55,7 @@ def _find_clip(sheet: SpriteSheet, anim: str, facing: str) -> Clip:
 
 
 def play(unit: dict, anim: str) -> None:
-    """Começa um clip ("attack", "hurt", "dead"...). Unidade morta não troca mais de clip."""
+    """Starts a clip ("attack", "hurt", "dead"...). A dead unit no longer changes clips."""
     if unit.get("anim") == "dead":
         return
     unit["anim"] = anim
@@ -63,7 +63,7 @@ def play(unit: dict, anim: str) -> None:
 
 
 def face_towards(unit: dict, to_col: int, to_row: int) -> None:
-    """Vira a unidade para o tile de destino. +col=SE, -col=NW, +row=SW, -row=NE."""
+    """Turns the unit toward the target tile. +col=SE, -col=NW, +row=SW, -row=NE."""
     delta_col, delta_row = to_col - unit["col"], to_row - unit["row"]
     if delta_col == 0 and delta_row == 0:
         return
@@ -74,7 +74,7 @@ def face_towards(unit: dict, to_col: int, to_row: int) -> None:
 
 
 def current_frame(unit: dict, now: float | None = None) -> tuple[int, int]:
-    """(linha, coluna) do frame atual na sheet. Não altera a unidade."""
+    """(row, column) of the current frame in the sheet. Doesn't modify the unit."""
     sheet = get_sheet(unit["sheet"])
     now = time.monotonic() if now is None else now
     facing = unit.get("facing", DEFAULT_FACING)
@@ -89,7 +89,7 @@ def current_frame(unit: dict, now: float | None = None) -> tuple[int, int]:
     if clip.hold_last:
         return clip.row, clip.frames - 1
 
-    # clip de uma vez só terminou: volta para idle
+    # one-shot clip finished: back to idle
     idle = _find_clip(sheet, DEFAULT_ANIM, facing)
     idle_index = int((elapsed - clip.duration) * idle.fps)
     return idle.row, idle_index % idle.frames

@@ -1,25 +1,25 @@
-"""Converte .spr + .act do Ragnarok Online em sprite sheet PNG + JSON de clips.
+"""Converts Ragnarok Online .spr + .act into a PNG sprite sheet + a JSON of clips.
 
-No RO, corpo, cabeça e arma são arquivos separados que o cliente junta em tempo real.
-Este script faz o mesmo: cabeça e arma são encaixadas no corpo pelos anchors do .act
-(posição = anchor do corpo - anchor da peça). Cada clip é montado num canvas único,
-com os pés fixos.
+In RO, body, head and weapon are separate files that the client combines in real time.
+This script does the same: head and weapon are attached to the body using the .act anchors
+(position = body anchor - part anchor). Each clip is built on a single canvas,
+with the feet fixed.
 
-Corpo + cabeça + arma (caminhos com ou sem extensão):
+Body + head + weapon (paths with or without extension):
 
     python tools/ro_to_sheet.py art_source/novice/novice novice \\
         --head art_source/novice/novice_head --weapon art_source/novice/weapon
 
-Só corpo (jogador sem cabeça, ou monstro):
+Body only (player without a head, or monster):
 
     python tools/ro_to_sheet.py art_source/poring/poring poring --kind monster
 
-Para jogador, além dos clips de combate (idle/walk/attack/hurt/dead nas 4 diagonais), sai o
-clip "stand_s": a pose Idle fora de combate, parado de frente, com a cabeça virando como no
-GIF da seleção de personagem do RO. É o que as telas de personagem/perfil mostram.
+For players, besides the combat clips (idle/walk/attack/hurt/dead on the 4 diagonals), there is
+the "stand_s" clip: the out-of-combat Idle pose, standing and facing front, with the head turning
+like the RO character selection GIF. That's what the character/profile screens show.
 
-Saída padrão: assets/sprites/<nome>/<nome>_sheet.png e <nome>.json
-Use --preview prévia.png para gerar uma imagem com a grade dos frames para conferir.
+Default output: assets/sprites/<name>/<name>_sheet.png and <name>.json
+Use --preview preview.png to generate an image with the frame grid for checking.
 """
 import argparse
 import json
@@ -31,29 +31,29 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).parent))
 from spr_to_frames import read_spr, read_act, STAND_FRONT_ACTION
 
-# clip -> tipo de ação do RO (índice // 8). Jogadores e monstros têm layouts diferentes.
+# clip -> RO action type (index // 8). Players and monsters have different layouts.
 CLIP_TYPES = {
     "player": {"idle": 0, "walk": 1, "attack": 5, "hurt": 6, "dead": 8, "stand": STAND_FRONT_ACTION // 8},
     "monster": {"idle": 0, "walk": 1, "attack": 2, "hurt": 3, "dead": 4},
 }
-# Jogador armado: o RO só desenha a arma em standby (4) e attack2 (10) neste arquivo de arma.
+# Armed player: RO only draws the weapon in standby (4) and attack2 (10) in this weapon file.
 ARMED_TYPES = {"idle": 4, "attack": 10}
-# No jogador, os 3 "frames" de stand(0)/sit(2) são variações da virada de cabeça, não animação.
+# For players, the 3 "frames" of stand(0)/sit(2) are head-turn variations, not animation.
 STATIC_PLAYER_TYPES = {0, 2}
 
-# Direção do RO (índice % 8). No tabuleiro isométrico: +col = SE, -col = NW, +row = SW, -row = NE
+# RO direction (index % 8). On the isometric board: +col = SE, -col = NW, +row = SW, -row = NE
 DIRECTIONS = {7: "se", 1: "sw", 3: "nw", 5: "ne"}
-# Clips com direções próprias. "stand" (pose Idle fora de combate) só existe de frente (sul), e
-# os seus 3 motions são a cabeça olhando para frente/lados, não um frame só como no "idle".
+# Clips with their own directions. "stand" (out-of-combat Idle pose) only exists facing front (south), and
+# its 3 motions are the head looking forward/sideways, not a single frame like "idle".
 CLIP_DIRECTIONS = {"stand": {STAND_FRONT_ACTION % 8: "s"}}
-STAND_FPS = 0.5                                               # 2 s em cada virada de cabeça, como no GIF
-# Ordem de desenho das partes (da de trás para a da frente). Ajuste aqui se a arma
-# ficar na frente/atrás errada em alguma direção.
+STAND_FPS = 0.5                                               # 2 s on each head turn, like the GIF
+# Drawing order of the parts (back to front). Adjust here if the weapon
+# ends up wrongly in front of/behind the body in some direction.
 DRAW_ORDER = {d: ("body", "head", "weapon")
               for dirs in (DIRECTIONS, *CLIP_DIRECTIONS.values()) for d in dirs.values()}
 
-# Encaixe da arma na mão: se a arma ficar a SNAP_GAP px ou mais do corpo, ela é deslocada
-# até o cabo encostar na mão (ponto do corpo mais extremo na direção da arma).
+# Weapon-to-hand snapping: if the weapon is SNAP_GAP px or more away from the body, it is shifted
+# until the grip touches the hand (the body's outermost point toward the weapon).
 SNAP_GAP = 1.5
 SNAP_MAX_SHIFT = 24
 
@@ -82,18 +82,18 @@ class Part:
 
 
 def tint(img, color):
-    """Aplica a cor/alpha do layer (multiplica RGBA)."""
+    """Applies the layer's color/alpha (multiplies RGBA)."""
     arr = np.asarray(img).astype(np.float32) * (np.array(color, dtype=np.float32) / 255.0)
     return Image.fromarray(arr.round().astype(np.uint8), "RGBA")
 
 
 def place(layer, frames):
-    """(imagem já espelhada/escalada/tingida, x, y do canto sup. esq. relativo à origem) ou None."""
+    """(image already mirrored/scaled/tinted, x, y of the top-left corner relative to the origin) or None."""
     x, y, spr, mirror, xs, ys, color = layer
     if not 0 <= spr < len(frames):
-        return None                                           # layer vazio (índice -1)
+        return None                                           # empty layer (index -1)
     if color[3] / 255 < MIN_ALPHA:
-        return None                                           # quase transparente
+        return None                                           # almost transparent
     img = frames[spr]
     if mirror:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -116,7 +116,7 @@ def first_anchor(motion):
 
 
 def _points(layers) -> np.ndarray:
-    """Pixels opacos (x, y) de uma lista [(img, x, y)], relativos à origem."""
+    """Opaque pixels (x, y) of a list [(img, x, y)], relative to the origin."""
     pts = []
     for img, x, y in layers:
         ys, xs = np.nonzero(np.asarray(img)[:, :, 3] > 0)
@@ -125,7 +125,7 @@ def _points(layers) -> np.ndarray:
 
 
 def snap_to_hand(body_layers, weapon_layers) -> tuple[int, int]:
-    """Deslocamento (dx, dy) que leva o cabo da arma até a mão, ou (0, 0) se ela já encosta no corpo."""
+    """Offset (dx, dy) that moves the weapon's grip to the hand, or (0, 0) if it already touches the body."""
     body, weapon = _points(body_layers), _points(weapon_layers)
     if not len(body) or not len(weapon):
         return 0, 0
@@ -134,8 +134,8 @@ def snap_to_hand(body_layers, weapon_layers) -> tuple[int, int]:
     direction = weapon.mean(axis=0) - body.mean(axis=0)
     direction = direction / (np.linalg.norm(direction) or 1.0)
     projection = body @ direction
-    hand = body[projection >= projection.max() - 1.5].mean(axis=0)      # extremo do corpo rumo à arma
-    grip = weapon[np.argmin(np.linalg.norm(weapon - hand, axis=1))]     # pixel da arma mais perto da mão
+    hand = body[projection >= projection.max() - 1.5].mean(axis=0)      # body's outermost point toward the weapon
+    grip = weapon[np.argmin(np.linalg.norm(weapon - hand, axis=1))]     # weapon pixel closest to the hand
     shift = hand - grip
     if np.linalg.norm(shift) > SNAP_MAX_SHIFT:
         return 0, 0
@@ -143,7 +143,7 @@ def snap_to_hand(body_layers, weapon_layers) -> tuple[int, int]:
 
 
 def render_parts(parts: dict, action: int, motion: int, order: tuple, snap: bool = True) -> list:
-    """[(img, x, y)] relativos à origem (pés) do corpo, na ordem de desenho."""
+    """[(img, x, y)] relative to the body's origin (feet), in drawing order."""
     body_anchor = first_anchor(motion_of(parts["body"], action, motion))
     placed = {}
     for name in order:
@@ -152,7 +152,7 @@ def render_parts(parts: dict, action: int, motion: int, order: tuple, snap: bool
         if not m:
             continue
         dx = dy = 0
-        if name != "body":                                    # cabeça/arma: anchor do corpo - anchor da peça
+        if name != "body":                                    # head/weapon: body anchor - part anchor
             part_anchor = first_anchor(m)
             if body_anchor and part_anchor:
                 dx, dy = body_anchor[0] - part_anchor[0], body_anchor[1] - part_anchor[1]
@@ -179,7 +179,7 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     if weapon:
         parts["weapon"] = Part(weapon)
     n_actions = len(parts["body"].actions)
-    if kind == "auto":                                        # ACT de jogador tem ~100 ações; monstro ~40
+    if kind == "auto":                                        # a player ACT has ~100 actions; a monster ~40
         kind = "monster" if n_actions <= 48 else "player"
     print(f"{n_actions} ações no .act do corpo -> tratado como {kind} | partes: {', '.join(parts)}")
 
@@ -192,7 +192,7 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
         clip_types["attack"] = attack
     print("tipos de ação:", clip_types)
 
-    # 1) lista de (clip, ação) e extensão máxima do corpo em torno da origem
+    # 1) list of (clip, action) and the body's maximum extent around the origin
     wanted = []
     for clip, type_id in clip_types.items():
         for dir_id, dir_name in CLIP_DIRECTIONS.get(clip, DIRECTIONS).items():
@@ -216,7 +216,7 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     frame_w, frame_h = half * 2, bottom - top
     anchor_x, anchor_y = half, -top
 
-    # 2) renderiza cada frame no canvas único
+    # 2) render each frame on the single canvas
     rows, clips = [], {}
     for r, (clip_name, clip, type_id, dir_name, idx) in enumerate(wanted):
         row = []
@@ -228,8 +228,8 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
         rows.append(row)
         fps = round(1000 / parts["body"].actions[idx]["delay_ms"], 1)
         clips[clip_name] = {"row": r, "frames": len(row), "fps": fps, **CLIP_RULES[clip]}
-        # caixa (x, y, w, h) com pixel opaco em algum frame do clip: permite exibir o clip
-        # recortado e ampliado (ex.: stand na tela de perfil) sem a sobra do canvas único
+        # box (x, y, w, h) with an opaque pixel in some frame of the clip: lets the clip be shown
+        # cropped and enlarged (e.g. stand on the profile screen) without the single canvas's padding
         bboxes = [b for b in (frame.getbbox() for frame in row) if b]
         if bboxes:
             x0, y0 = min(b[0] for b in bboxes), min(b[1] for b in bboxes)
@@ -247,7 +247,7 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     meta = {
         "src": f"sprites/{name}/{name}_sheet.png",
         "frame_w": frame_w, "frame_h": frame_h, "cols": cols, "rows": len(rows),
-        "anchor_x": anchor_x, "anchor_y": anchor_y,           # pés do personagem dentro do frame
+        "anchor_x": anchor_x, "anchor_y": anchor_y,           # character's feet inside the frame
         "clips": clips,
     }
     (out / f"{name}.json").write_text(json.dumps(meta, indent=2))

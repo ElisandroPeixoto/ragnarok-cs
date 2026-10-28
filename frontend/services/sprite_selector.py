@@ -2,7 +2,7 @@ JOBS_SHEETS = {
     "Novice": "novice",
 }
 
-# GIFs das classes que ainda não têm sprite sheet
+# GIFs for the jobs that don't have a sprite sheet yet
 JOBS_SPRITES = {
 }
 

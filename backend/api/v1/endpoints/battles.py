@@ -50,7 +50,7 @@ async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{character.job}' not found")
 
     result = await db.execute(select(MapMonsterModel).where(MapMonsterModel.map_id == battle.map_id))
-    spawns = [spawn for spawn in result.scalars().all() if spawn.monster.sheet]  # só monstros com dados de batalha
+    spawns = [spawn for spawn in result.scalars().all() if spawn.monster.sheet]  # only monsters with battle data
     if not spawns:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No monsters to hunt on this map")
 

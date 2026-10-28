@@ -83,7 +83,7 @@ async def seed() -> None:
             await db.flush()
             skill_ids[name] = skill.id
 
-        # 2) jobs (a lista de skills é sempre regravada)
+        # 2) jobs (the skill list is always rewritten)
         for name, data in JOBS.items():
             data = dict(data)
             skills = data.pop("skills")
@@ -117,7 +117,7 @@ async def seed() -> None:
         # 4) maps, npcs, monster spawns
         for map_id, data in MAPS.items():
             existing = await db.get(MapModel, map_id)
-            if existing:  # mapa já existe: só atualiza os dados básicos (NPCs/monstros não são duplicados)
+            if existing:  # map already exists: only update its basic data (NPCs/monsters are not duplicated)
                 existing.name, existing.level_range = data["name"], data["level_range"]
                 existing.image, existing.about = data["image"], data["about"]
                 continue

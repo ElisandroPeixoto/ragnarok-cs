@@ -17,7 +17,7 @@ from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 BANNER_HEIGHT = 494
 GAP = 15
 
-# Lugares visitáveis dentro de cada mapa (This Area). TODO: INSERT ON BACKEND; o destino dos botões é futuro
+# Places to visit inside each map (This Area). TODO: INSERT ON BACKEND; the buttons' destinations come later
 MAP_PLACES = {
     "novice_academy": [{"name": "Academy", "image": "places/academy.png"}],
 }
@@ -79,7 +79,7 @@ def label(text: str):
 
 
 def map_banner(map_data: dict):
-    """Imagem do mapa com o título e o nível sobrepostos no canto superior esquerdo."""
+    """Map image with the title and level overlaid in the top-left corner."""
     title_box = ft.Container(
         left=0, top=5,
         bgcolor=t.MAP_TITLE_OVERLAY,
@@ -91,7 +91,7 @@ def map_banner(map_data: dict):
                     color=t.MAP_LIGHT_TEXT, font_family="Cinzel"),
         ]),
     )
-    top_shadow = ft.Container(  # sombra interna no topo da imagem (inset 0 120px 80px rgba(0,0,0,.3))
+    top_shadow = ft.Container(  # inner shadow at the top of the image (inset 0 120px 80px rgba(0,0,0,.3))
         left=0, top=0, right=0, height=200,
         gradient=ft.LinearGradient(begin=ft.Alignment.TOP_CENTER, end=ft.Alignment.BOTTOM_CENTER,
                                    colors=[ft.Colors.with_opacity(0.3, ft.Colors.BLACK), ft.Colors.TRANSPARENT]),
@@ -146,7 +146,7 @@ def map_screen(map_data: dict, character: dict):
     panels = ft.Row(
         spacing=GAP,
         vertical_alignment=ft.CrossAxisAlignment.START,
-        controls=[  # proporção das larguras do Figma: 348 / 348 / 483
+        controls=[  # width ratio from Figma: 348 / 348 / 483
             section_panel("People in the area", people, expand=348),
             section_panel("Monsters", monsters_content(map_data["id"], map_data.get("monsters", []), character), expand=348),
             section_panel("Go To", go_to_content(map_data), expand=483),
@@ -161,7 +161,7 @@ def map_screen(map_data: dict, character: dict):
             scroll=ft.ScrollMode.AUTO,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                ft.Container(  # width é o teto: em janelas mais estreitas o conteúdo encolhe junto
+                ft.Container(  # width is a cap: in narrower windows the content shrinks with it
                     width=BATTLE_CONTENT_WIDTH,
                     content=ft.Column(spacing=6, controls=[top_bar, map_banner(map_data), ft.Container(height=7), panels]),
                 ),

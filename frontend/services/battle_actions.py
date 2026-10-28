@@ -70,7 +70,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
 
 
 def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[tuple[int, int]]:
-    """Tiles que a skill alcança a partir da posição atual (para destacar na UI)."""
+    """Tiles the skill reaches from the current position (to highlight in the UI)."""
     unit = state.units[unit_id]
     skill_range = state.skills[skill_name]["range"]
     tiles = []

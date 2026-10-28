@@ -8,6 +8,6 @@ class JobSkillModel(DBBaseModel):
 
     job_name: str = Column(String, ForeignKey("jobs.name"), primary_key=True)
     skill_id: int = Column(Integer, ForeignKey("skills.id"), primary_key=True)
-    slot: int = Column(Integer, nullable=False, default=0)  # ordem na barra de skills
+    slot: int = Column(Integer, nullable=False, default=0)  # order in the skills bar
 
     skill = relationship("SkillModel", lazy="selectin")

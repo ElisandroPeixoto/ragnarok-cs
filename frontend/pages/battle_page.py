@@ -24,15 +24,15 @@ BOTTOM_HEIGHT = 200
 GAP = 16
 CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH
 
-ENEMY_ACTION_DELAY = 0.7      # segundos entre as ações do monstro (para dar para acompanhar)
-TICK_INTERVAL = 0.25          # o loop acorda 4x por segundo; o relógio do turno conta 1x por segundo
-ANIM_INTERVAL = 1 / 12      # ~12 re-renders por segundo; baixe para 1/8 se pesar
+ENEMY_ACTION_DELAY = 0.7      # seconds between the monster's actions (so the player can follow them)
+TICK_INTERVAL = 0.25          # the loop wakes up 4x per second; the turn clock ticks once per second
+ANIM_INTERVAL = 1 / 12      # ~12 re-renders per second; lower to 1/8 if it gets heavy
 
 
 @ft.component
 def battle_page():
     setup = get_battle_setup()
-    if setup is None:  # rota aberta sem passar pelo botão Hunt
+    if setup is None:  # route opened without going through the Hunt button
         return ft.Container(
             expand=True, bgcolor=t.PAGE_BACKGROUND_COLOR, alignment=ft.Alignment.CENTER,
             content=ft.Text("No battle in progress", color=t.NORMAL_TEXT, font_family="Cinzel"),
@@ -42,20 +42,20 @@ def battle_page():
 
 @ft.component
 def battle_screen(setup: dict):
-    # lambda: cria (e sorteia as posições) só no primeiro render, não a cada re-render
+    # lambda: create it (and roll the positions) only on the first render, not on every re-render
     state, _ = ft.use_state(lambda: BattleState(setup["units"], setup["skills"], board_config))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)
 
     def refresh(clear_skill: bool = False):
-        """Chamado depois de QUALQUER mudança no estado: re-renderiza a página."""
+        """Call after ANY state change: re-renders the page."""
         if clear_skill:
             set_selected_skill(None)
         state.version += 1
         set_tick(state.version)
 
-    # ---------- PASSO 11: loop de turnos (timer + turno do monstro) ----------
+    # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():
         async def turn_loop():
             elapsed = 0.0
@@ -78,13 +78,13 @@ def battle_screen(setup: dict):
                     elapsed += TICK_INTERVAL
                     if elapsed >= 1.0 and not state.closed:
                         elapsed = 0.0
-                        if state.tick():                  # o tempo acabou: turno passou sozinho
+                        if state.tick():                  # time ran out: the turn passed on its own
                             refresh(clear_skill=True)
                         else:
                             refresh()
 
         async def anim_loop():
-            while not state.closed:  # não para no winner, para o "dead" terminar de tocar
+            while not state.closed:  # keeps going after a winner so the "dead" clip can finish
                 await asyncio.sleep(ANIM_INTERVAL)
                 refresh()
 
@@ -93,7 +93,7 @@ def battle_screen(setup: dict):
 
 
     def on_unmount():
-        state.closed = True       # para o loop quando a tela sair
+        state.closed = True       # stops the loops when the screen is left
 
     ft.use_effect(on_mount, [], cleanup=on_unmount)
 
