@@ -172,11 +172,12 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | POST | `/api/v1/characters/` | `post_character` | 201 | 422 |
 | GET | `/api/v1/characters/` | `get_characters` | 200 | n/a |
 | GET | `/api/v1/characters/{character_id}` | `get_character_by_id` | 200 | 404 |
+| DELETE | `/api/v1/characters/{character_id}` | `delete_character` | 204 | 404 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-Não existem rotas de atualização ou exclusão (PUT/PATCH/DELETE) para nenhum recurso.
+A única rota de exclusão é `DELETE /api/v1/characters/{character_id}` (sem corpo na resposta). Não existem rotas de atualização (PUT/PATCH) nem exclusão para os demais recursos.
 
 ## Como adicionar um endpoint
 

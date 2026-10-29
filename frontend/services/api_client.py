@@ -23,6 +23,8 @@ class ApiClient:
         """Centralized error handling so callers don't repeat status checks"""
         if response.is_error:
             raise ApiError(response.status_code, response.text)
+        if response.status_code == 204 or not response.content:
+            return None
         return response.json()
 
     async def get(self, path: str, params: dict | None = None) -> dict:
@@ -32,5 +34,10 @@ class ApiClient:
     async def post(self, path: str, json: dict | None = None) -> dict:
         response = await self._client.post(path, json=json)
         return await self._handle(response)
+
+    async def delete(self, path: str) -> None:
+        response = await self._client.delete(path)
+        await self._handle(response)
+
 
 api = ApiClient()

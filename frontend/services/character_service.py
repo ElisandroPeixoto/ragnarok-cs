@@ -14,3 +14,7 @@ class CharacterService:
     @staticmethod
     async def create_character(name: str) -> dict:
         return await api.post(f"{API_PREFIX}/", json={"name": name})
+
+    @staticmethod
+    async def delete_character(character_id: int) -> None:
+        await api.delete(f"{API_PREFIX}/{character_id}")

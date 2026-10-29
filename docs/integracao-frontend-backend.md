@@ -26,6 +26,7 @@ pages/*.py  ──►  services/<domínio>_service.py  ──►  services/api_c
 |---|---|---|---|
 | `CharacterService` | `services/character_service.py` | `get_characters()` | `GET /api/v1/characters/` |
 | | | `create_character(name)` | `POST /api/v1/characters/` |
+| | | `delete_character(character_id)` | `DELETE /api/v1/characters/{character_id}` |
 | `MapService` | `services/map_service.py` | `get_map(map_id)` | `GET /api/v1/maps/{map_id}` |
 | | | `get_map_ids_sync()` | `GET /api/v1/maps/` (síncrono, ver abaixo) |
 | `BattleService` | `services/battle_service.py` | `start_battle(character_id, map_id)` | `POST /api/v1/battles/` |

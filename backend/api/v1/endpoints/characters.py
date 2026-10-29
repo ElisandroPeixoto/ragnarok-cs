@@ -52,3 +52,22 @@ async def get_character_by_id(character_id: int, db: AsyncSession = Depends(get_
             )
 
         return character
+
+
+# DELETE Character
+"""Delete a character by ID"""
+@router.delete("/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_character(character_id: int, db: AsyncSession = Depends(get_session)):
+    async with db as session:
+        query = select(CharacterModel).where(CharacterModel.id == character_id)  # noqa
+        result = await session.execute(query)
+        character: CharacterModel | None = result.scalars().unique().one_or_none()
+
+        if character is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Character not found"
+            )
+
+        await session.delete(character)
+        await session.commit()

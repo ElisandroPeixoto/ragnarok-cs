@@ -106,6 +106,54 @@ def character_selection():
         return lambda e: set_selected(index)
 
 
+    def handle_delete(e):
+        character = slots[selected]
+        if character is None:
+            return
+
+        def close_dialog(e):
+            ft.context.page.pop_dialog()
+
+        def confirm_delete(e):
+            ft.context.page.pop_dialog()
+            ft.context.page.run_task(delete)
+
+        async def delete():
+            try:
+                await CharacterService.delete_character(character["id"])
+            except ApiError as err:
+                print(f"Failed to delete character: {err.detail}")
+                return
+            remaining = [c for c in characters if c["id"] != character["id"]]
+            set_characters(remaining)
+            set_selected(max(0, min(selected, len(remaining) - 1)))
+
+        ft.context.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                bgcolor=t.PANEL_BG,
+                title=ft.Text("Delete character", font_family="Cinzel", color=t.TITLE_TEXT),
+                content=ft.Text(
+                    f"Are you sure you want to delete {character['name']}? This cannot be undone.",
+                    font_family="Cinzel",
+                    color=t.NORMAL_TEXT,
+                ),
+                actions=[
+                    ft.Button(
+                        content=ft.Text("CANCEL", font_family="Cinzel", color=t.NORMAL_TEXT),
+                        bgcolor=t.BUTTON_SECONDARY,
+                        on_click=close_dialog,
+                    ),
+                    ft.Button(
+                        content=ft.Text("DELETE", font_family="Cinzel", color=t.NORMAL_TEXT),
+                        bgcolor=t.BUTTON_ALERT,
+                        on_click=confirm_delete,
+                    ),
+                ],
+                actions_alignment=ft.MainAxisAlignment.CENTER,
+            )
+        )
+
     grid = ft.Column(
         controls=[ft.Row(controls=[character_slot(slots[row * 3 + col], make_click(row * 3 + col), is_selected=(selected == row * 3 + col)) for col in range(3)],
                          spacing=15)
@@ -127,6 +175,7 @@ def character_selection():
                         content=ft.Text("DELETE CHARACTER", font_family="Cinzel", size=13, color=t.NORMAL_TEXT, text_align=ft.TextAlign.CENTER),
                         bgcolor=t.BUTTON_ALERT,
                         width=145,
+                        on_click=handle_delete,
                     ),
                 ],
                 spacing=10,

@@ -28,7 +28,7 @@ def turn_panel(state, on_end_turn, on_leave, width: int, height: int):
                     ft.Text(status, size=20, color=t.NORMAL_TEXT, font_family="Cinzel"),
                 ]),
                 ft.Row(spacing=8, controls=[
-                    ft.Button(content=ft.Text("Turn End", font_family="Cinzel", size=16),
+                    ft.Button(content=ft.Text("Turn End", font_family="Cinzel", size=16, no_wrap=True),
                               bgcolor=t.BUTTON_SECONDARY, color=t.NORMAL_TEXT,
                               disabled=not can_end_turn, expand=True, height=46,
                               on_click=on_end_turn),
