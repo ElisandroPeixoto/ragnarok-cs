@@ -1,5 +1,5 @@
 # BattleBoard Main Class
-from services.battle_animation import get_sheet
+from services.battle_animation import get_sheet, board_position
 
 
 class BoardConfig:
@@ -58,12 +58,14 @@ def is_inside_board(col: int, row: int, board: BoardConfig) -> bool:
     return 0 <= col < board.column_count and 0 <= row < board.row_count
 
 
-def get_depth(unit: dict) -> int:
+def get_depth(unit: dict) -> float:
     """
     Bigger value = closer to the viewer = drawn on top.
     In isometric view the screen Y grows with (col + row), so that sum is the depth.
+    Uses the drawn position, so a walking unit is sorted where it is on screen.
     """
-    return unit["col"] + unit["row"]
+    col, row = board_position(unit)
+    return col + row
 
 
 def sort_units_by_depth(units: dict, farthest_first: bool = True) -> list[tuple[str, dict]]:

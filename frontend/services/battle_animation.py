@@ -10,6 +10,7 @@ from config import ASSETS_DIR
 
 DEFAULT_ANIM = "idle"
 DEFAULT_FACING = "se"
+WALK_SECONDS_PER_TILE = 0.35    # velocidade da caminhada no tabuleiro
 
 
 @dataclass(frozen=True)
@@ -62,24 +63,81 @@ def play(unit: dict, anim: str) -> None:
     unit["anim_started"] = time.monotonic()
 
 
-def face_towards(unit: dict, to_col: int, to_row: int) -> None:
-    """Vira a unidade para o tile de destino. +col=SE, -col=NW, +row=SW, -row=NE."""
-    delta_col, delta_row = to_col - unit["col"], to_row - unit["row"]
+def facing_for(delta_col: int, delta_row: int) -> str | None:
+    """Direção do sprite para um deslocamento. +col=SE, -col=NW, +row=SW, -row=NE."""
     if delta_col == 0 and delta_row == 0:
-        return
+        return None
     if abs(delta_col) >= abs(delta_row):
-        unit["facing"] = "se" if delta_col > 0 else "nw"
-    else:
-        unit["facing"] = "sw" if delta_row > 0 else "ne"
+        return "se" if delta_col > 0 else "nw"
+    return "sw" if delta_row > 0 else "ne"
+
+
+def face_towards(unit: dict, to_col: int, to_row: int) -> None:
+    """Vira a unidade para o tile de destino."""
+    facing = facing_for(to_col - unit["col"], to_row - unit["row"])
+    if facing:
+        unit["facing"] = facing
+
+
+# CAMINHADA
+# A lógica (col/row, ocupação, PA) já vai para o destino na hora; só o desenho
+# percorre "walk_path" tile a tile enquanto o clip "walk" estiver tocando.
+
+def start_walk(unit: dict, path: list[tuple[int, int]]) -> None:
+    """path = tiles a percorrer, sem o de partida (ver battle_actions.find_path)."""
+    unit["walk_path"] = [(unit["col"], unit["row"]), *path]
+    (prev_col, prev_row), (col, row) = unit["walk_path"][-2:]
+    unit["col"], unit["row"] = col, row
+    unit["facing"] = facing_for(col - prev_col, row - prev_row)   # direção ao chegar
+    play(unit, "walk")
+
+
+def _walk_duration(unit: dict) -> float:
+    return (len(unit.get("walk_path") or [None]) - 1) * WALK_SECONDS_PER_TILE
+
+
+def walk_pose(unit: dict, now: float | None = None) -> tuple[float, float, str] | None:
+    """(col, row, facing) fracionários no meio da caminhada; None se não está andando."""
+    path = unit.get("walk_path")
+    if unit.get("anim") != "walk" or not path:
+        return None
+    now = time.monotonic() if now is None else now
+    progress = max(0.0, now - unit["anim_started"]) / WALK_SECONDS_PER_TILE
+    step = int(progress)
+    if step >= len(path) - 1:
+        return None
+    (from_col, from_row), (to_col, to_row) = path[step], path[step + 1]
+    fraction = progress - step
+    return (from_col + (to_col - from_col) * fraction,
+            from_row + (to_row - from_row) * fraction,
+            facing_for(to_col - from_col, to_row - from_row))
+
+
+def walk_remaining(unit: dict, now: float | None = None) -> float:
+    """Segundos até a unidade chegar ao destino (0 se não está andando)."""
+    if unit.get("anim") != "walk":
+        return 0.0
+    now = time.monotonic() if now is None else now
+    return max(0.0, unit["anim_started"] + _walk_duration(unit) - now)
+
+
+def board_position(unit: dict, now: float | None = None) -> tuple[float, float]:
+    """Posição desenhada (col, row): interpolada durante a caminhada, senão o tile da unidade."""
+    pose = walk_pose(unit, now)
+    return (pose[0], pose[1]) if pose else (unit["col"], unit["row"])
 
 
 def current_frame(unit: dict, now: float | None = None) -> tuple[int, int]:
     """(linha, coluna) do frame atual na sheet. Não altera a unidade."""
     sheet = get_sheet(unit["sheet"])
     now = time.monotonic() if now is None else now
-    facing = unit.get("facing", DEFAULT_FACING)
-    clip = _find_clip(sheet, unit.get("anim", DEFAULT_ANIM), facing)
-    elapsed = max(0.0, now - unit.get("anim_started", 0.0))
+    anim, started = unit.get("anim", DEFAULT_ANIM), unit.get("anim_started", 0.0)
+    pose = walk_pose(unit, now)
+    facing = pose[2] if pose else unit.get("facing", DEFAULT_FACING)
+    if anim == "walk" and pose is None:     # chegou: fica em idle a partir da chegada
+        anim, started = DEFAULT_ANIM, started + _walk_duration(unit)
+    clip = _find_clip(sheet, anim, facing)
+    elapsed = max(0.0, now - started)
     index = int(elapsed * clip.fps)
 
     if clip.loop:

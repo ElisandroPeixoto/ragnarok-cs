@@ -5,7 +5,7 @@ INITIAL_UNITS = {
         "sheet": "novice", "facing": "se",
         "avatar": "characters_badges/0_novice_badge.png",
 
-        "col": 0, "row": 4, "is_draggable": True,
+        "col": 0, "row": 4,
         "offset_x": 0, "offset_y": 0,
 
         "hp": 50, "max_hp": 50,
@@ -20,7 +20,7 @@ INITIAL_UNITS = {
         "avatar": "monsters/poring.gif",
         "ai": "approach_and_attack",
 
-        "col": 9, "row": 4, "is_draggable": False,
+        "col": 9, "row": 4,
         "offset_x": 0, "offset_y": 0,
 
         "hp": 50, "max_hp": 50,
