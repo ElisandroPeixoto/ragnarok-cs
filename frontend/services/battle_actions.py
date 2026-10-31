@@ -5,18 +5,7 @@ from services.battle_log import LogEntry
 from services.battle_animation import play, face_towards, start_walk
 
 
-SKILLS = {  # TODO: INSERT ON BACKEND
-    "Basic Attack": {
-        "ap_cost": 1,
-        "damage": 10,
-        "range": 1,
-        "icon": "skills/Basic Attack.png"
-    }
-}
-
-
-
-NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))   # anda só pelas linhas/colunas (sem diagonal)
+NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))   # walk only along rows/columns (no diagonals)
 
 
 def manhattan(col1: int, row1: int, col2: int, row2: int) -> int:
@@ -41,7 +30,7 @@ def can_attack(state: BattleState, attacker_id: str, target_id: str, skill_name:
 
     attacker = state.units[attacker_id]
     target = state.units.get(target_id)
-    skill = SKILLS.get(skill_name)
+    skill = state.skills.get(skill_name)
 
     if skill is None or skill_name not in attacker.get("skills", []):
         return False, "unit does not know this skill"
@@ -63,7 +52,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
 
     attacker = state.units[attacker_id]
     target = state.units[target_id]
-    skill = SKILLS[skill_name]
+    skill = state.skills[skill_name]
 
     attacker["ap"] -= skill["ap_cost"]
     target["hp"] = max(0, target["hp"] - skill["damage"])
@@ -85,9 +74,9 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
 
 
 def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[tuple[int, int]]:
-    """Tiles que a skill alcança a partir da posição atual (para destacar na UI)."""
+    """Tiles the skill reaches from the current position (to highlight in the UI)."""
     unit = state.units[unit_id]
-    skill_range = SKILLS[skill_name]["range"]
+    skill_range = state.skills[skill_name]["range"]
     tiles = []
     for distance in range(1, skill_range + 1):
         for delta_col, delta_row in NEIGHBOURS:
@@ -100,8 +89,8 @@ def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[
 # MOVEMENT
 
 def find_path(state: BattleState, unit_id: str, col: int, row: int) -> list[tuple[int, int]] | None:
-    """Caminho mais curto (BFS) até o tile, desviando de obstáculos e de unidades vivas.
-    Lista de tiles sem o de partida (len = custo em PA); None se não há caminho."""
+    """Shortest path (BFS) to the tile, avoiding obstacles and living units.
+    List of tiles without the starting one (len = AP cost); None if there is no path."""
     unit = state.units[unit_id]
     start, goal = (unit["col"], unit["row"]), (col, row)
     blocked = set(state.board.blocked_tiles)
@@ -158,7 +147,7 @@ def can_move(state: BattleState, unit_id: str, col: int, row: int) -> tuple[bool
 
 
 def perform_move(state: BattleState, unit_id: str, col: int, row: int) -> dict:
-    """Valida e começa a caminhada: col/row já vão para o destino, a animação anda tile a tile."""
+    """Validates and starts the walk: col/row jump to the destination, the animation walks tile by tile."""
     ok, reason, cost = can_move(state, unit_id, col, row)
     if not ok:
         return {"ok": False, "reason": reason, "tiles": 0}

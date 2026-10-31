@@ -1,11 +1,11 @@
-"""Lê .spr/.act do Ragnarok Online e salva os frames crus como PNG.
+"""Reads Ragnarok Online .spr/.act and saves the raw frames as PNG.
 
-Todos os frames do .spr:
+All frames of the .spr:
 
     python tools/spr_to_frames.py art_source/novice.spr art_source/novice/raw
 
-Só os frames de uma ação do .act (índice = tipo * 8 + direção). --stand é o atalho para a
-pose "Idle" do jogador: parado, de frente (ação 0 = tipo 0, direção 0/sul):
+Only the frames of one .act action (index = type * 8 + direction). --stand is the shortcut for the
+player's "Idle" pose: standing, facing front (action 0 = type 0, direction 0/south):
 
     python tools/spr_to_frames.py art_source/novice.spr art_source/novice/stand --stand
 """
@@ -14,7 +14,7 @@ import struct
 from pathlib import Path
 from PIL import Image
 
-# Ação do jogador parado de frente (pose "Idle" fora de combate): tipo 0 (stand), direção 0 (sul)
+# Action of the player standing and facing front (out-of-combat "Idle" pose): type 0 (stand), direction 0 (south)
 STAND_FRONT_ACTION = 0
 
 
@@ -23,20 +23,20 @@ def read_spr(path: str) -> list[Image.Image]:
     if data[:2] != b"SP":
         raise ValueError("não é um arquivo SPR")
 
-    minor, major = data[2], data[3]            # versão nos offsets 2-3 (2.1 => major=2, minor=1)
+    minor, major = data[2], data[3]            # version at offsets 2-3 (2.1 => major=2, minor=1)
     version = major * 256 + minor
     pos = 4
 
     indexed_count = struct.unpack_from("<H", data, pos)[0]; pos += 2
     rgba_count = 0
-    if version >= 0x0102:                      # >= v1.2 tem contagem de frames RGBA
+    if version >= 0x0102:                      # >= v1.2 has an RGBA frame count
         rgba_count = struct.unpack_from("<H", data, pos)[0]; pos += 2
     print(f"versão {major}.{minor} | indexados: {indexed_count} | rgba: {rgba_count}")
 
     indexed = []
     for _ in range(indexed_count):
         w, h = struct.unpack_from("<HH", data, pos); pos += 4
-        if version >= 0x0201:                  # v2.1: RLE de zeros
+        if version >= 0x0201:                  # v2.1: RLE of zeros
             size = struct.unpack_from("<H", data, pos)[0]; pos += 2
             raw, out, i = data[pos:pos + size], bytearray(), 0
             while i < len(raw):
@@ -57,7 +57,7 @@ def read_spr(path: str) -> list[Image.Image]:
         img = Image.frombytes("RGBA", (w, h), px, "raw", "ABGR")
         rgba.append(img.transpose(Image.FLIP_TOP_BOTTOM))
 
-    palette = data[-1024:]                     # RGBA; índice 0 = transparente
+    palette = data[-1024:]                     # RGBA; index 0 = transparent
     frames = []
     for w, h, idx in indexed:
         img = Image.new("RGBA", (w, h))
@@ -67,7 +67,7 @@ def read_spr(path: str) -> list[Image.Image]:
 
 
 def read_act(path: str) -> list[dict]:
-    """Ações -> motions -> layers (x, y, sprite, espelhado, xs, ys) + anchors [(x, y)]."""
+    """Actions -> motions -> layers (x, y, sprite, mirrored, xs, ys) + anchors [(x, y)]."""
     d = Path(path).read_bytes()
     if d[:2] != b"AC":
         raise ValueError(f"{path}: não é um arquivo ACT")
@@ -94,13 +94,13 @@ def read_act(path: str) -> list[dict]:
                     if ver >= 0x0204:
                         ys = struct.unpack_from("<f", d, pos)[0];
                         pos += 4
-                    pos += 8  # rotação + tipo de sprite
+                    pos += 8  # rotation + sprite type
                     if ver >= 0x0205:
                         pos += 8
                 layers.append((x, y, spr, bool(flags & 1), xs, ys, color))
             anchors = []
             if ver >= 0x0200:
-                pos += 4                                      # id de evento
+                pos += 4                                      # event id
             if ver >= 0x0203:
                 n_anchors = struct.unpack_from("<i", d, pos)[0]; pos += 4
                 for _ in range(n_anchors):
@@ -117,7 +117,7 @@ def read_act(path: str) -> list[dict]:
 
 
 def frames_of_action(actions: list[dict], action: int) -> list[int]:
-    """Índices dos frames do .spr usados por uma ação, na ordem em que aparecem (sem repetir)."""
+    """Indices of the .spr frames used by an action, in order of appearance (no repeats)."""
     used = []
     for motion in actions[action]["motions"]:
         for layer in motion["layers"]:

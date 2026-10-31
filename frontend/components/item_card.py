@@ -4,8 +4,8 @@ import themes as t
 
 def item_card(leading: ft.Control, label: str, subtitle: str | None = None, on_click=None,
               width: int = 155, height: int = 100, tooltip: str | None = None):
-    """Card horizontal dos painéis de mapa: imagem/ícone à esquerda, nome (e subtítulo) à direita.
-    Usado para NPCs, monstros, lugares (This Area) e mapas vizinhos (Nearby)."""
+    """Horizontal card for the map panels: image/icon on the left, name (and subtitle) on the right.
+    Used for NPCs, monsters, places (This Area) and neighboring maps (Nearby)."""
     texts = [ft.Text(label, size=14, weight=ft.FontWeight.BOLD, color=t.MAP_LIGHT_TEXT, font_family="Cinzel",
                      text_align=ft.TextAlign.CENTER)]
     if subtitle:

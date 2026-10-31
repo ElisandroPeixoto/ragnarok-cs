@@ -9,7 +9,7 @@ Ragnarok Chaos Saga: a Ragnarok Online–themed desktop RPG. Two Python processe
 - `backend/` — FastAPI + async SQLAlchemy (SQLite via aiosqlite), serves `/api/v1/characters` and `/api/v1/maps` on port **8001**.
 - `frontend/` — Flet 0.86 desktop app (declarative `@ft.component` / `ft.use_state` style with `ft.Router`), talks to the backend over httpx.
 
-There is no test suite, linter config, or build step. Comments/docstrings are a mix of English and Portuguese.
+There is no test suite, linter config, or build step. Comments and docstrings are written in English. Detailed, human-oriented docs (in Portuguese) live in `docs/`; keep them in sync when changing behavior they describe.
 
 ## Commands
 
@@ -58,10 +58,10 @@ Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, an
 - `services/api_client.py` exposes a shared `api` (`ApiClient`, raises `ApiError`); per-domain wrappers are `CharacterService`, `MapService`.
 - `themes.py` holds all colors; `config.ASSETS_DIR` points at the repo-root `assets/`. Asset paths in data/DB are relative to that folder.
 
-### Battle system (currently mocked)
-Battle runs entirely client-side; units come from `frontend/mockup.py` (`INITIAL_UNITS`) and skills from `SKILLS` in `services/battle_actions.py` (marked TODO to move to the backend).
+### Battle system
+Battle runs client-side, but its data comes from the backend. The map's Hunt button calls `POST /api/v1/battles/` (`endpoints/battles.py`) with `character_id` + `map_id`. The backend picks one monster from the map's spawns, weighted by `spawn_rate` and skipping monsters with no `sheet`, and returns `{"units": {"hero", "monster_1"}, "skills": {...}}`. Player battle data (sheet, avatar, AP, offsets, skills) lives on `JobModel`, enemy data on `MonsterModel`; skills are `SkillModel` rows linked through `job_skills`/`monster_skills` (`slot` 0 = the AI's main skill). The setup is stored in `session_state` and read by `battle_page`.
 
-- `services/battle_state.py` — `BattleState`: plain-dict units, turn order, AP, turn timer, winner, `BattleLog`. Mutated in place; `state.version` is bumped to force re-renders.
+- `services/battle_state.py` — `BattleState(units, skills, board)`: plain-dict units, `state.skills`, turn order, AP, turn timer, winner, `BattleLog`. `spawn_units` picks starting tiles when the battle starts (player column 0, enemies columns 7–9, random row). Mutated in place; `state.version` is bumped to force re-renders.
 - `services/battle_geometry.py` — `BoardConfig` (fixed 1100×700 stage, 10×10 isometric grid, 96×48 tiles) and tile↔pixel conversions.
 - `services/battle_actions.py` — validation (`can_attack`, `can_move`) + execution (`perform_*`). Attacks require the target on the same row/column within range. Movement costs 1 AP per tile of the shortest 4-direction path (`find_path`, BFS around blocked tiles and living units); the player clicks a tile (hover previews the path).
 - `services/battle_ai.py` — `iter_ai_turn` is a generator yielding after each enemy action so the page can re-render and pause between steps.

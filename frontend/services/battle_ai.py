@@ -1,6 +1,6 @@
 from services.battle_state import BattleState
 from services.battle_actions import (
-    SKILLS, manhattan, in_range, can_attack, can_move, perform_attack, perform_move,
+    manhattan, in_range, can_attack, can_move, perform_attack, perform_move,
 )
 
 
@@ -20,7 +20,7 @@ def _nearest_enemy_id(state: BattleState, unit_id: str) -> str | None:
 
 def _best_approach_tile(state: BattleState, unit_id: str, target_id: str, skill_name: str):
     unit, target = state.units[unit_id], state.units[target_id]
-    skill = SKILLS[skill_name]
+    skill = state.skills[skill_name]
     current_distance = manhattan(unit["col"], unit["row"], target["col"], target["row"])
 
     best_key, best_tile = None, None
@@ -42,7 +42,7 @@ def _best_approach_tile(state: BattleState, unit_id: str, target_id: str, skill_
         return None
     reached_attack_tile = best_key[0] == 0
     if not reached_attack_tile and best_key[1] >= current_distance:
-        return None     # não melhora nada, melhor ficar parado
+        return None     # no improvement, better to stay put
     return best_tile
 
 

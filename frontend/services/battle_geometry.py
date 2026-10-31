@@ -78,7 +78,7 @@ def sort_units_by_depth(units: dict, farthest_first: bool = True) -> list[tuple[
 
 
 def get_sprite_bounds(unit: dict, tile_center_x: float, tile_center_y: float):
-    """(left, top, right, bottom) da caixa do sprite; os pés ficam no centro do tile."""
+    """(left, top, right, bottom) of the sprite box; the feet sit at the tile center."""
     if unit.get("sheet"):
         sheet = get_sheet(unit["sheet"])
         left = tile_center_x - sheet.anchor_x + unit.get("offset_x", 0)

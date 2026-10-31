@@ -42,7 +42,7 @@ def unit_card(unit: dict, is_active: bool):
 
 
 def units_panel(state, width: int, height: int):
-    """Lista de unidades na ordem dos turnos; a que está jogando fica com borda dourada."""
+    """Units in turn order; the one currently playing gets a golden border."""
     cards = [unit_card(state.units[unit_id], unit_id == state.current_unit_id and state.winner is None)
              for unit_id in state.turn_order]
     return ft.Container(

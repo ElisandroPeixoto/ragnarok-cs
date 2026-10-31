@@ -1,7 +1,6 @@
 import asyncio
 import flet as ft
 import themes as t
-from mockup import INITIAL_UNITS
 from services.battle_state import BattleState
 from services.battle_ai import iter_ai_turn
 from services.battle_animation import walk_remaining
@@ -11,8 +10,8 @@ from components.skills_panel import skills_panel
 from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
-from services.battle_actions import SKILLS
 from services.map_router_manager import navigate_back_from_battle
+from services.session_state import get_battle_setup
 from components.sidebar import sidebar
 
 
@@ -26,26 +25,38 @@ BOTTOM_HEIGHT = 200
 GAP = 16
 CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH
 
-ENEMY_ACTION_DELAY = 0.7      # segundos entre as ações do monstro (para dar para acompanhar)
-TICK_INTERVAL = 0.25          # o loop acorda 4x por segundo; o relógio do turno conta 1x por segundo
-ANIM_INTERVAL = 1 / 12      # ~12 re-renders por segundo; baixe para 1/8 se pesar
+ENEMY_ACTION_DELAY = 0.7      # seconds between the monster's actions (so the player can follow them)
+TICK_INTERVAL = 0.25          # the loop wakes up 4x per second; the turn clock ticks once per second
+ANIM_INTERVAL = 1 / 12      # ~12 re-renders per second; lower to 1/8 if it gets heavy
 
 
 @ft.component
 def battle_page():
-    state, _ = ft.use_state(BattleState(INITIAL_UNITS, board_config))
+    setup = get_battle_setup()
+    if setup is None:  # route opened without going through the Hunt button
+        return ft.Container(
+            expand=True, bgcolor=t.PAGE_BACKGROUND_COLOR, alignment=ft.Alignment.CENTER,
+            content=ft.Text("No battle in progress", color=t.NORMAL_TEXT, font_family="Cinzel"),
+        )
+    return battle_screen(setup)
+
+
+@ft.component
+def battle_screen(setup: dict):
+    # lambda: create it (and roll the positions) only on the first render, not on every re-render
+    state, _ = ft.use_state(lambda: BattleState(setup["units"], setup["skills"], board_config))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)
 
     def refresh(clear_skill: bool = False):
-        """Chamado depois de QUALQUER mudança no estado: re-renderiza a página."""
+        """Call after ANY state change: re-renders the page."""
         if clear_skill:
             set_selected_skill(None)
         state.version += 1
         set_tick(state.version)
 
-    # ---------- PASSO 11: loop de turnos (timer + turno do monstro) ----------
+    # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():
         async def turn_loop():
             elapsed = 0.0
@@ -57,7 +68,7 @@ def battle_page():
                     unit = state.current_unit()
                     for _ in iter_ai_turn(state, state.current_unit_id):
                         refresh()
-                        # se andou, só age de novo depois de chegar ao destino
+                        # if it walked, only act again after reaching the destination
                         await asyncio.sleep(walk_remaining(unit) + ENEMY_ACTION_DELAY)
                     if state.closed:
                         break
@@ -70,13 +81,13 @@ def battle_page():
                     elapsed += TICK_INTERVAL
                     if elapsed >= 1.0 and not state.closed:
                         elapsed = 0.0
-                        if state.tick():                  # o tempo acabou: turno passou sozinho
+                        if state.tick():                  # time ran out: the turn passed on its own
                             refresh(clear_skill=True)
                         else:
                             refresh()
 
         async def anim_loop():
-            while not state.closed:  # não para no winner, para o "dead" terminar de tocar
+            while not state.closed:  # keeps going after a winner so the "dead" clip can finish
                 await asyncio.sleep(ANIM_INTERVAL)
                 refresh()
 
@@ -85,7 +96,7 @@ def battle_page():
 
 
     def on_unmount():
-        state.closed = True       # para o loop quando a tela sair
+        state.closed = True       # stops the loops when the screen is left
 
     ft.use_effect(on_mount, [], cleanup=on_unmount)
 
@@ -98,7 +109,7 @@ def battle_page():
     def handle_select_skill(name: str):
         if not player_can_act():
             return
-        if state.current_unit()["ap"] < SKILLS[name]["ap_cost"]:
+        if state.current_unit()["ap"] < state.skills[name]["ap_cost"]:
             return
         set_selected_skill(None if selected_skill == name else name)
 

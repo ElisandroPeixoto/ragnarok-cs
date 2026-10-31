@@ -4,3 +4,7 @@ from models.npcs_model import NpcModel
 from models.monsters_model import MonsterModel
 from models.map_monster_model import MapMonsterModel
 from models.map_connection_model import MapConnectionModel
+from models.skills_model import SkillModel
+from models.jobs_model import JobModel
+from models.job_skill_model import JobSkillModel
+from models.monster_skill_model import MonsterSkillModel

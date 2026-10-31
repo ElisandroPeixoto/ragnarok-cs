@@ -6,8 +6,8 @@ HEADER_HEIGHT = 40
 
 
 def section_panel(title: str, content: ft.Control, expand: int = 1):
-    """Painel dos mapas: cabeçalho dourado com o título e o conteúdo logo abaixo.
-    Usado em People in the area / Monsters / Go To."""
+    """Map screen panel: golden header with the title and the content right below it.
+    Used for People in the area / Monsters / Go To."""
     header = ft.Container(
         height=HEADER_HEIGHT,
         bgcolor=t.MAP_PANEL_HEADER,

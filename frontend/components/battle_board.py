@@ -28,9 +28,9 @@ def get_pointer_position(event) -> tuple[float, float]:
 
 # ============================================================
 # COMPONENT
-# state e selected_skill vêm da página; on_change(clear_skill=False) avisa a página
-# que o estado mudou (para atualizar cards, log e timer).
-# `version` só existe para a página poder forçar o re-render deste componente.
+# state and selected_skill come from the page; on_change(clear_skill=False) tells the page
+# the state changed (so it refreshes the cards, log and timer).
+# `version` only exists so the page can force this component to re-render.
 # ============================================================
 @ft.component
 def battle_board(state: BattleState, version: int, selected_skill: str | None, on_change):
@@ -45,7 +45,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
     def player_can_act() -> bool:
         return (state.winner is None and not state.input_locked
                 and state.current_unit()["team"] == "player"
-                and walk_remaining(state.current_unit()) == 0)   # espera terminar de andar
+                and walk_remaining(state.current_unit()) == 0)   # wait until the walk is over
 
     # ---------- gesture handlers ----------
     def handle_hover(event):
@@ -62,7 +62,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
             force_rerender()
 
     def handle_move_click(pointer_x: float, pointer_y: float):
-        """Clicar num tile anda até ele pelo caminho mais curto (se houver PA)."""
+        """Clicking a tile walks there along the shortest path (if there is enough AP)."""
         target_col, target_row = pixel_to_tile(pointer_x, pointer_y, board)
         result = perform_move(state, state.current_unit_id, target_col, target_row)
         if result["ok"]:
@@ -71,7 +71,7 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
             print(f"[move] {result['reason']}")
 
     def handle_tap(event):
-        """Com uma skill selecionada, clicar no inimigo ataca; sem skill, clicar no tile anda."""
+        """With a skill selected, clicking an enemy attacks it; without one, clicking a tile walks there."""
         if not player_can_act():
             return
         pointer_x, pointer_y = get_pointer_position(event)
@@ -102,16 +102,16 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
         background = ft.Container(width=board.width, height=board.height,
                                   bgcolor=t.PLACEHOLDER_BACKGROUND_COLOR)
 
-    # ---------- layer 2: grid + destaques ----------
+    # ---------- layer 2: grid + highlights ----------
     grid_shapes = list(STATIC_GRID_SHAPES)
     hover_tile = _hover_state["tile"]
 
     if selected_skill and player_can_act():
-        # modo ataque: destaca os tiles que a skill alcança
+        # attack mode: highlight the tiles the skill reaches
         for col, row in get_attack_tiles(state, state.current_unit_id, selected_skill):
             grid_shapes.append(create_tile_diamond(col, row, create_fill_paint(t.ATTACK_TILE_COLOR), board))
     elif hover_tile is not None and player_can_act():
-        # modo movimento: caminho até o tile em verde, ou o tile em vermelho se não dá para ir
+        # move mode: path to the tile in green, or the tile in red if it can't be reached
         unit_id = state.current_unit_id
         current = state.current_unit()
         if hover_tile != (current["col"], current["row"]):
@@ -124,13 +124,13 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
 
     grid_layer = cv.Canvas(shapes=grid_shapes, width=board.width, height=board.height)
 
-    # ---------- layer 3: sprites (só unidades vivas) ----------
+    # ---------- layer 3: sprites (living units only) ----------
     sprite_controls = []
     for unit_id, unit in sort_units_by_depth(units):
         has_sheet = bool(unit.get("sheet"))
         if unit["hp"] <= 0 and not has_sheet:
-            continue  # sem sheet não há animação de morte: some na hora
-        center_x, center_y = tile_to_pixel(*board_position(unit), board)   # interpolado enquanto anda
+            continue  # no sheet means no death animation: it disappears right away
+        center_x, center_y = tile_to_pixel(*board_position(unit), board)   # interpolated while walking
 
         left, top, _, _ = get_sprite_bounds(unit, center_x, center_y)
 

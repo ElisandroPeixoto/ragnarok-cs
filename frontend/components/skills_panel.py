@@ -1,6 +1,5 @@
 import flet as ft
 import themes as t
-from services.battle_actions import SKILLS
 
 
 def skill_button(name: str, skill: dict, is_selected: bool, enabled: bool, on_click):
@@ -28,8 +27,8 @@ def skills_panel(state, selected_skill: str | None, on_select, width: int, heigh
     unit = state.current_unit() if player_turn else None
 
     buttons = []
-    for name in state.units["hero"]["skills"]:       # skills do personagem do jogador
-        skill = SKILLS[name]
+    for name in state.units["hero"]["skills"]:       # the player character's skills
+        skill = state.skills[name]
         enabled = bool(unit) and unit["ap"] >= skill["ap_cost"]
         buttons.append(skill_button(name, skill, selected_skill == name, enabled,
                                     lambda e, n=name: on_select(n)))
