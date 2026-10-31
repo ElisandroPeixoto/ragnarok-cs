@@ -3,6 +3,7 @@ import flet as ft
 import themes as t
 from services.battle_state import BattleState
 from services.battle_ai import iter_ai_turn
+from services.battle_animation import walk_remaining
 from components.battle_board import battle_board
 from components.unit_card import units_panel
 from components.skills_panel import skills_panel
@@ -64,9 +65,11 @@ def battle_screen(setup: dict):
                     state.input_locked = True
                     refresh(clear_skill=True)
                     await asyncio.sleep(ENEMY_ACTION_DELAY)
+                    unit = state.current_unit()
                     for _ in iter_ai_turn(state, state.current_unit_id):
                         refresh()
-                        await asyncio.sleep(ENEMY_ACTION_DELAY)
+                        # if it walked, only act again after reaching the destination
+                        await asyncio.sleep(walk_remaining(unit) + ENEMY_ACTION_DELAY)
                     if state.closed:
                         break
                     state.end_turn()
@@ -100,7 +103,8 @@ def battle_screen(setup: dict):
     # ---------- handlers ----------
     def player_can_act() -> bool:
         return (state.winner is None and not state.input_locked
-                and state.current_unit()["team"] == "player")
+                and state.current_unit()["team"] == "player"
+                and walk_remaining(state.current_unit()) == 0)
 
     def handle_select_skill(name: str):
         if not player_can_act():

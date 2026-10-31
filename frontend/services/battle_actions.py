@@ -1,7 +1,11 @@
+from collections import deque
 from services.battle_geometry import is_inside_board
 from services.battle_state import BattleState
 from services.battle_log import LogEntry
-from services.battle_animation import play, face_towards
+from services.battle_animation import play, face_towards, start_walk
+
+
+NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))   # walk only along rows/columns (no diagonals)
 
 
 def manhattan(col1: int, row1: int, col2: int, row2: int) -> int:
@@ -75,7 +79,7 @@ def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[
     skill_range = state.skills[skill_name]["range"]
     tiles = []
     for distance in range(1, skill_range + 1):
-        for delta_col, delta_row in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        for delta_col, delta_row in NEIGHBOURS:
             col, row = unit["col"] + delta_col * distance, unit["row"] + delta_row * distance
             if is_inside_board(col, row, state.board):
                 tiles.append((col, row))
@@ -84,8 +88,38 @@ def get_attack_tiles(state: BattleState, unit_id: str, skill_name: str) -> list[
 
 # MOVEMENT
 
+def find_path(state: BattleState, unit_id: str, col: int, row: int) -> list[tuple[int, int]] | None:
+    """Shortest path (BFS) to the tile, avoiding obstacles and living units.
+    List of tiles without the starting one (len = AP cost); None if there is no path."""
+    unit = state.units[unit_id]
+    start, goal = (unit["col"], unit["row"]), (col, row)
+    blocked = set(state.board.blocked_tiles)
+    blocked.update((other["col"], other["row"]) for other_id, other in state.units.items()
+                   if other_id != unit_id and other["hp"] > 0)
+
+    came_from = {start: None}
+    queue = deque([start])
+    while queue and goal not in came_from:
+        current = queue.popleft()
+        for delta_col, delta_row in NEIGHBOURS:
+            neighbour = (current[0] + delta_col, current[1] + delta_row)
+            if (neighbour in came_from or neighbour in blocked
+                    or not is_inside_board(*neighbour, state.board)):
+                continue
+            came_from[neighbour] = current
+            queue.append(neighbour)
+
+    if goal not in came_from:
+        return None
+    path = []
+    while goal != start:
+        path.append(goal)
+        goal = came_from[goal]
+    return path[::-1]
+
+
 def can_move(state: BattleState, unit_id: str, col: int, row: int) -> tuple[bool, str, int]:
-    """Returns (ok, reason, AP cost). Cost = 1 AP by tile"""
+    """Returns (ok, reason, AP cost). Cost = 1 AP by tile of the shortest path"""
     if state.winner:
         return False, "battle is over", 0
     if state.current_unit_id != unit_id:
@@ -103,20 +137,23 @@ def can_move(state: BattleState, unit_id: str, col: int, row: int) -> tuple[bool
     if occupant is not None and occupant != unit_id:
         return False, "tile is occupied", 0
 
-    cost = manhattan(unit["col"], unit["row"], col, row)
+    path = find_path(state, unit_id, col, row)
+    if path is None:
+        return False, "no path to this tile", 0
+    cost = len(path)
     if cost > unit["ap"]:
         return False, "not enough AP", cost
     return True, "", cost
 
 
 def perform_move(state: BattleState, unit_id: str, col: int, row: int) -> dict:
+    """Validates and starts the walk: col/row jump to the destination, the animation walks tile by tile."""
     ok, reason, cost = can_move(state, unit_id, col, row)
     if not ok:
         return {"ok": False, "reason": reason, "tiles": 0}
 
     unit = state.units[unit_id]
-    face_towards(unit, col, row)
-    unit["col"], unit["row"] = col, row
+    start_walk(unit, find_path(state, unit_id, col, row))
     unit["ap"] -= cost
 
     state.log.add(LogEntry(round=state.round, kind="move", actor=unit["name"],

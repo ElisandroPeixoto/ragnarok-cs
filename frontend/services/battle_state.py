@@ -20,7 +20,6 @@ def spawn_units(units: dict, board: BoardConfig) -> None:
         unit["col"], unit["row"] = random.choice(free_tiles)
         taken.add((unit["col"], unit["row"]))
         unit["facing"] = SPAWN_FACING[team]
-        unit["is_draggable"] = team == "player"
 
 
 class BattleState:

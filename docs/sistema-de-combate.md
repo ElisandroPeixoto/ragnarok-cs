@@ -34,8 +34,8 @@ Cada unidade é um **dict simples**, mutado diretamente. Campos:
 | `ai` | backend | comportamento do inimigo (`None` no herói) |
 | `col`, `row` | `spawn_units` | posição no tabuleiro |
 | `facing` (`se`/`sw`/`nw`/`ne`) | `spawn_units`, ações | direção do sprite |
-| `is_draggable` | `spawn_units` | só o jogador pode ser arrastado |
 | `anim`, `anim_started` | `battle_animation.play` | clip atual e quando começou |
+| `walk_path` | `battle_animation.start_walk` | tiles da última caminhada (partida → destino), usados para desenhar a unidade andando |
 
 As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`. `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
 
@@ -50,7 +50,7 @@ As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`. `com
 | `player` | 0 | aleatória (0–9) | `se` (olhando para os inimigos) |
 | `enemy` | 7, 8 ou 9 | aleatória (0–9) | `nw` |
 
-O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_tiles` e os tiles já ocupados, então duas unidades nunca nascem no mesmo lugar. `is_draggable` passa a ser `True` só para o time `player`.
+O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_tiles` e os tiles já ocupados, então duas unidades nunca nascem no mesmo lugar.
 
 ### `BattleState`
 
@@ -89,11 +89,12 @@ Todas as ações seguem o par **validar → executar** e devolvem um dict `{"ok"
 `can_move(state, unit_id, col, row) -> (ok, reason, custo)` recusa se:
 - a batalha acabou ou não é a vez da unidade;
 - o destino é o tile atual, está fora do tabuleiro, bloqueado ou ocupado;
+- não existe caminho até o destino;
 - o custo for maior que o AP disponível.
 
-O **custo é a distância de Manhattan** (`manhattan`): 1 AP por tile. Não há busca de caminho: o custo é a distância em linha "reta" de grade, e unidades no meio do caminho não bloqueiam a passagem, só o destino.
+O **custo é o tamanho do caminho mais curto** (`find_path`): 1 AP por tile. `find_path` faz uma busca em largura (BFS) em 4 direções (só linhas e colunas, sem diagonal), desviando de `board.blocked_tiles` e de unidades vivas. Devolve a lista de tiles sem o de partida, ou `None` se não há caminho.
 
-`perform_move` vira a unidade para o destino (`face_towards`), atualiza `col`/`row`, desconta o AP e registra um `LogEntry(kind="move")`.
+`perform_move` chama `start_walk` (`services/battle_animation.py`), desconta o AP e registra um `LogEntry(kind="move")`. `start_walk` já coloca `col`/`row` no destino (ocupação e alcance passam a valer na hora), guarda o caminho em `walk_path`, vira a unidade para a direção do último passo e toca o clip `walk`. Enquanto o clip toca, `walk_pose`/`board_position` interpolam a posição desenhada tile a tile (`WALK_SECONDS_PER_TILE = 0.35`), virando o sprite a cada trecho. Ao chegar, `current_frame` volta para `idle`. O jogador só age de novo, e a IA só faz a próxima ação, quando `walk_remaining` chega a 0.
 
 ### Ataque
 
@@ -150,13 +151,13 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
 
 | Ação | Onde | Como |
 |---|---|---|
-| Mover | `components/battle_board.py` | arrastar o próprio sprite (`on_pan_*`). Durante o arraste, o tile de destino fica verde (`VALID_TILE_COLOR`) se `can_move` aceitar, vermelho se não. Ao soltar, `perform_move`. |
+| Mover | `components/battle_board.py` | sem skill selecionada, clicar num tile (`handle_tap` → `perform_move`): a unidade anda até lá pelo caminho mais curto. Com o mouse sobre um tile (`on_hover`), o caminho fica verde (`VALID_TILE_COLOR`) se `can_move` aceitar; senão, o tile fica vermelho. |
 | Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone; clicar de novo desmarca. Só funciona na vez do jogador e com AP suficiente. |
 | Atacar | `battle_board.handle_tap` | com uma skill selecionada, os tiles de alcance ficam destacados (`ATTACK_TILE_COLOR`); clicar no sprite de um inimigo chama `perform_attack`. |
 | Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** |
 | Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()` |
 
-O estado do arraste fica num dict global do módulo, `_drag_state`, em `battle_board.py`.
+O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_board.py`.
 
 ### Layout
 
@@ -179,7 +180,7 @@ Três camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 1. **Fundo**: `board.background_image` (`battle_boards/forest_battlefield.jpg`) ou uma cor de reserva.
 2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (contornos montados uma vez na importação, em `components/battle_grid.py`) mais os destaques do momento.
-3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A unidade arrastada é desenhada por cima de todas.
+3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A posição e a profundidade usam `board_position`, então quem está andando aparece entre os tiles.
 
 > Existe um ramo para unidades **sem** sprite sheet que usa os campos `sprite`, `width`, `height` e `placeholder_color`. O backend não envia esses campos; o ramo sobrou da época do mockup e só não quebra porque toda unidade enviada hoje tem `sheet`.
 
