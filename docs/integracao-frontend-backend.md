@@ -112,7 +112,7 @@ sequenceDiagram
 O formato de cada resposta está em [Endpoints do backend](endpoints-backend.md). Dois pontos sensíveis:
 
 - **`GET /maps/{id}`**: `to_response()` em `backend/api/v1/endpoints/maps.py` "achata" as relações do ORM (NPCs, spawns, conexões) no formato que `map_screen.py` lê. Se os modelos mudarem, mantenha esse formato estável.
-- **`POST /battles/`**: as unidades **não vêm com posição**. O frontend adiciona `col`, `row`, `facing` e `is_draggable` em `spawn_units` (`services/battle_state.py`). Os campos estão descritos em [Sistema de combate](sistema-de-combate.md).
+- **`POST /battles/`**: as unidades **não vêm com posição**. O frontend adiciona `col`, `row` e `facing` em `spawn_units` (`services/battle_state.py`). Os campos estão descritos em [Sistema de combate](sistema-de-combate.md).
 
 ## Pontos de atenção
 

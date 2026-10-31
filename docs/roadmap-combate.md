@@ -12,10 +12,10 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
 | Turnos | ✅ ordem fixa (herói, depois monstro), 30 s por turno, AP recarregado a cada turno |
-| Movimento | ✅ arrastar e soltar, 1 AP por tile (distância de Manhattan) |
+| Movimento | ✅ clique no tile; anda pelo caminho mais curto (BFS, desvia de unidades e obstáculos) com a animação `walk`, 1 AP por tile |
 | Ataque | ✅ skill selecionada + clique no inimigo; alvo em linha reta dentro do alcance; dano fixo |
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
-| Animação | ✅ sprite sheets com clips por direção (idle, attack, hurt, dead) |
+| Animação | ✅ sprite sheets com clips por direção (idle, walk, attack, hurt, dead) |
 | Vitória/derrota | ✅ detectadas e exibidas; ⚠️ sem consequência alguma |
 | Log | ⚠️ registra movimento, derrota e fim, mas não os ataques |
 | Persistência | ❌ nada volta para o backend |
@@ -29,14 +29,13 @@ Pontos encontrados no código, em ordem aproximada de impacto:
 3. **Só um monstro por batalha.** O endpoint devolve sempre `monster_1`. O frontend já aceita vários (turnos, spawn e IA iteram sobre todas as unidades).
 4. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
 5. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
-6. **Movimento sem caminho.** O custo é a distância de Manhattan e só o destino é verificado; uma unidade "atravessa" outras.
-7. **Ordem de turno fixa.** `turn_order = list(units.keys())`: o herói sempre começa, sem iniciativa ou velocidade.
-8. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
-9. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
-10. **Monstros sem dados de batalha.** Lunatic e Wilow aparecem nos mapas, mas não podem ser caçados (não têm `sheet`).
-11. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
-12. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
-13. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
+6. **Ordem de turno fixa.** `turn_order = list(units.keys())`: o herói sempre começa, sem iniciativa ou velocidade.
+7. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
+8. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
+9. **Monstros sem dados de batalha.** Lunatic e Wilow aparecem nos mapas, mas não podem ser caçados (não têm `sheet`).
+10. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
+11. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
+12. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
 
 ## Proposta de fases
 
@@ -49,7 +48,7 @@ Objetivo: lutar passar a ter consequência.
 - Recompensas simples por monstro (colunas `base_exp`, `zeny` em `MonsterModel`) e atualização de `CharacterModel` (`exp`, `zeny`, `hp`).
 - Atualizar o personagem em `session_state` com a resposta, para o perfil mostrar os novos valores.
 - Registrar os ataques no log (lacuna 2).
-- Mostrar o erro quando o Hunt falhar (lacuna 11).
+- Mostrar o erro quando o Hunt falhar (lacuna 10).
 
 ### Fase 2: conteúdo e variedade
 
@@ -67,7 +66,6 @@ Objetivo: lutar passar a ter consequência.
 
 ### Fase 4: regras táticas
 
-- Caminho real (BFS/A*) no movimento, respeitando unidades e obstáculos, com custo pelo caminho percorrido.
 - Skills de área, à distância e de suporte (cura, buffs), com efeitos de status (ex.: veneno, atordoamento) e duração em turnos.
 - Novos comportamentos de IA em `battle_ai.BEHAVIORS` (fugir com pouco HP, manter distância, priorizar alvos fracos).
 - Drops de itens, o que depende do inventário (item já presente na sidebar, ainda sem tela).
