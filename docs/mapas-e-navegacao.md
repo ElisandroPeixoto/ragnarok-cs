@@ -63,7 +63,7 @@ Helpers em `services/map_router_manager.py`:
 ### Painel Monsters e o botão Hunt
 
 `monsters_content(map_id, monsters, character)`:
-- **Com monstros**: grade de cards com rolagem e, abaixo, o botão **Hunt** centralizado (`hunt_button`, cor `BUTTON_PRIMARY`).
+- **Com monstros**: `ft.GridView` que ocupa todo o painel; os cards se esticam até a largura da coluna (`MONSTER_CARD_MAX_WIDTH`, proporção `MONSTER_CARD_RATIO`) e a grade rola se não couberem. Abaixo, o botão **Hunt** centralizado (`hunt_button`, cor `BUTTON_PRIMARY`).
 - **Sem monstros**: mostra "Safe Zone" com um escudo.
 
 `hunt_button(map_id, character)` → `handle_hunt` → `start()`:

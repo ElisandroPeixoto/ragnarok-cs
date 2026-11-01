@@ -17,6 +17,8 @@ from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 BANNER_HEIGHT = 494
 GAP = 15
+MONSTER_CARD_MAX_WIDTH = 220   # Monsters panel grid: widest a card gets before another column is added
+MONSTER_CARD_RATIO = 2.1       # card width / height
 
 # Places to visit inside each map (This Area). TODO: INSERT ON BACKEND; the buttons' destinations come later
 MAP_PLACES = {
@@ -51,7 +53,7 @@ def npc_item(item: dict):
 def monster_item(item: dict):
     spawn_rate = item.get("spawn_rate")
     subtitle = f"{spawn_rate}%" if spawn_rate is not None else None
-    return item_card(monster_sprite(item["sheet"], width=51, height=88), item["name"], subtitle=subtitle)
+    return item_card(monster_sprite(item["sheet"], width=51, height=70), item["name"], subtitle=subtitle)
 
 
 def place_item(item: dict):
@@ -112,7 +114,9 @@ def map_banner(map_data: dict):
 def monsters_content(map_id: str, monsters: list, character: dict):
     if monsters:
         return ft.Column(spacing=8, controls=[
-            ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, controls=[card_grid([monster_item(m) for m in monsters])]),
+            # grid fills the whole panel: cards stretch to the column width (more columns on wider windows)
+            ft.GridView(expand=True, max_extent=MONSTER_CARD_MAX_WIDTH, child_aspect_ratio=MONSTER_CARD_RATIO,
+                        spacing=10, run_spacing=10, controls=[monster_item(m) for m in monsters]),
             ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[hunt_button(map_id, character)]),
         ])
     return ft.Container(

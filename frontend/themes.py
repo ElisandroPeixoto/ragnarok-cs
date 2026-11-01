@@ -45,6 +45,9 @@ MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.53, "#1A160A")
 
 # BATTLE BOARD
 GRID_LINE_COLOR = "#C4C4C4"
+# Checkerboard tiles: lighter/darker shades of the battlefield's ground (~#837654), kept translucent and subtle
+LIGHT_TILE_COLOR = ft.Colors.with_opacity(0.15, "#C2B288")
+DARK_TILE_COLOR = ft.Colors.with_opacity(0.15, "#4A3F26")
 PAGE_BACKGROUND_COLOR = "#05070F"
 PLACEHOLDER_BACKGROUND_COLOR = "#1A1712"
 BOARD_BORDER_COLOR = "#2A2410"

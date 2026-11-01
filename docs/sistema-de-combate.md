@@ -179,7 +179,7 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 Três camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 1. **Fundo**: `board.background_image` (`battle_boards/forest_battlefield.jpg`) ou uma cor de reserva.
-2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (contornos montados uma vez na importação, em `components/battle_grid.py`) mais os destaques do momento.
+2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (montados uma vez na importação, em `components/battle_grid.py`: tiles alternados claro/escuro como num tabuleiro de xadrez, em tons do terreno do fundo (`LIGHT_TILE_COLOR`/`DARK_TILE_COLOR`, translúcidos), e os contornos por cima) mais os destaques do momento.
 3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A posição e a profundidade usam `board_position`, então quem está andando aparece entre os tiles.
 
 > Existe um ramo para unidades **sem** sprite sheet que usa os campos `sprite`, `width`, `height` e `placeholder_color`. O backend não envia esses campos; o ramo sobrou da época do mockup e só não quebra porque toda unidade enviada hoje tem `sheet`.
