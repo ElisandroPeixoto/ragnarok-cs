@@ -31,16 +31,23 @@ JOBS = {
     },
 }
 
-# Monsters without "sheet" only show up on maps; they can't be hunted until they get battle data
+# "sheet" is the folder in assets/sprites: used in battle and as the monster's picture on maps
 MONSTERS = {
     "Poring": {
-        "image": "monsters/poring.gif",
         "sheet": "poring", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
-    "Lunatic": {"image": "monsters/lunatic.gif"},
-    "Wilow": {"image": "monsters/wilow.gif"},
+    "Lunatic": {
+        "sheet": "lunatic", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "offset_x": 0, "offset_y": 0,
+        "skills": ["Basic Attack"],
+    },
+    "Wilow": {
+        "sheet": "wilow", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "offset_x": 0, "offset_y": 0,
+        "skills": ["Basic Attack"],
+    },
 }
 
 MAPS = {
@@ -70,6 +77,10 @@ async def seed() -> None:
     import models.__all_models
     async with engine.begin() as conn:
         await conn.run_sync(DBBaseModel.metadata.create_all)
+        # monsters used to store a GIF in "image"; drop it from older databases (keeps characters)
+        columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(monsters)")).fetchall()]
+        if "image" in columns:
+            await conn.exec_driver_sql("ALTER TABLE monsters DROP COLUMN image")
 
     async with Session() as db:
         # 1) skills

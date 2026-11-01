@@ -46,7 +46,7 @@ flowchart LR
 
 - O **frontend não acessa o banco**. Tudo passa pela API.
 - O **backend não conhece telas**: só devolve dados no formato que o frontend consome.
-- Os **caminhos de imagem** guardados no banco (ex.: `monsters/poring.gif`) são relativos à pasta `assets/`. O Flet serve essa pasta porque `frontend/main.py` passa `assets_dir=ASSETS_DIR` para `ft.run`.
+- Os **caminhos de imagem** guardados no banco (ex.: `maps/training_field_1.jpg`) são relativos à pasta `assets/`. O Flet serve essa pasta porque `frontend/main.py` passa `assets_dir=ASSETS_DIR` para `ft.run`.
 
 ## Como rodar
 

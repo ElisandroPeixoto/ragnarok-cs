@@ -1,5 +1,6 @@
 import flet as ft
 import themes as t
+from components.sheet_sprite import monster_sprite
 
 
 def unit_card(unit: dict, is_active: bool):
@@ -11,7 +12,9 @@ def unit_card(unit: dict, is_active: bool):
         bgcolor="#1A1712",
         border=ft.Border.all(1, t.CARD_BORDER),
         border_radius=2,
-        image=ft.DecorationImage(src=avatar_src, fit=ft.BoxFit.COVER)
+        # players have a badge image; monsters show their sheet's idle animation
+        image=ft.DecorationImage(src=avatar_src, fit=ft.BoxFit.COVER) if avatar_src else None,
+        content=None if avatar_src else monster_sprite(unit["sheet"], width=62, height=62),
     )
 
     identity = [ft.Text(unit["name"], size=20, color=t.NORMAL_TEXT, font_family="Cinzel")]

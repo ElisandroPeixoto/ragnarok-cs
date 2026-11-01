@@ -22,7 +22,7 @@ def to_response(map_model: MapModel) -> dict:
         "about": map_model.about,
         "npcs": [{"name": npc.name, "image": npc.image} for npc in map_model.npcs],
         "monsters": [{"name": monster_spawn.monster.name,
-                      "image": monster_spawn.monster.image,
+                      "sheet": monster_spawn.monster.sheet,
                      "spawn_rate": monster_spawn.spawn_rate} for monster_spawn in map_model.monster_spawns],
         "navigation":[{"name": connection.to_map.name,
                        "image": connection.to_map.image,

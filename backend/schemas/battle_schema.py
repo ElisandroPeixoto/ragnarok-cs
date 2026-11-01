@@ -20,7 +20,7 @@ class UnitSchema(BaseModel):
     job: str | None = None
     team: str
     sheet: str
-    avatar: str
+    avatar: str | None = None   # badge image; monsters use their sheet instead
     ai: str | None = None
     offset_x: int
     offset_y: int

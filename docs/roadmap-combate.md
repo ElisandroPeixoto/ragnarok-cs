@@ -32,10 +32,9 @@ Pontos encontrados no código, em ordem aproximada de impacto:
 6. **Ordem de turno fixa.** `turn_order = list(units.keys())`: o herói sempre começa, sem iniciativa ou velocidade.
 7. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
 8. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
-9. **Monstros sem dados de batalha.** Lunatic e Wilow aparecem nos mapas, mas não podem ser caçados (não têm `sheet`).
-10. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
-11. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
-12. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
+9. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
+10. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
+11. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
 
 ## Proposta de fases
 
@@ -48,11 +47,11 @@ Objetivo: lutar passar a ter consequência.
 - Recompensas simples por monstro (colunas `base_exp`, `zeny` em `MonsterModel`) e atualização de `CharacterModel` (`exp`, `zeny`, `hp`).
 - Atualizar o personagem em `session_state` com a resposta, para o perfil mostrar os novos valores.
 - Registrar os ataques no log (lacuna 2).
-- Mostrar o erro quando o Hunt falhar (lacuna 10).
+- Mostrar o erro quando o Hunt falhar (lacuna 9).
 
 ### Fase 2: conteúdo e variedade
 
-- Gerar as sheets de Lunatic e Wilow e preencher os dados de batalha no seed.
+- Dar a Lunatic e Wilow atributos próprios (hoje copiam os do Poring).
 - Mais skills, com alcances e custos diferentes, e skills por job.
 - Vários monstros por encontro (`monster_1`, `monster_2`… vindos do backend; a quantidade pode depender do mapa).
 - Usar `blocked_tiles` e fundos diferentes por mapa (ex.: um campo `battle_board` em `MapModel`).

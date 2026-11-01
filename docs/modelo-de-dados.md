@@ -75,8 +75,7 @@ Ambas têm `skill = relationship("SkillModel", lazy="selectin")`.
 |---|---|---|---|
 | `id` | Integer PK | | |
 | `name` | String(255), único | | |
-| `image` | String | | ícone (usado no mapa e como avatar na batalha) |
-| `sheet` | String, **nullable** | `NULL` | **sem sheet = não pode ser caçado** |
+| `sheet` | String, obrigatório | | pasta em `assets/sprites/`: sprite da batalha e figura do monstro no mapa e no card da batalha (clip `idle_sw`) |
 | `max_hp` | Integer | 50 | |
 | `max_ap` | Integer | 2 | |
 | `ai` | String(50) | `"passive"` | nome de um comportamento em `battle_ai.BEHAVIORS` |
@@ -120,7 +119,7 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 |---|---|
 | `SKILLS` | `Basic Attack` (1 AP, 10 de dano, alcance 1) |
 | `JOBS` | `Novice` (sheet `novice`, 5 AP, skill `Basic Attack`) |
-| `MONSTERS` | `Poring` (com dados de batalha, IA `approach_and_attack`); `Lunatic` e `Wilow` (só imagem) |
+| `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (50 HP, 2 AP, `Basic Attack`, IA `approach_and_attack`) |
 | `MAPS` | `novice_academy` (2 NPCs, sem monstros) e `training_field_1` (1 NPC, 3 monstros); um conectado ao outro |
 
 Ordem de execução de `seed()`:

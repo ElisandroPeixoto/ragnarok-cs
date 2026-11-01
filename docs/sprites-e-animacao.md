@@ -31,8 +31,12 @@ python tools/ro_to_sheet.py art_source/novice novice --head art_source/novice_he
 ```
 
 ```bash
-python tools/ro_to_sheet.py art_source/poring/poring poring --kind monster
+python tools/ro_to_sheet.py art_source/poring poring --kind monster
 ```
+
+Passe sempre `--kind monster` para monstros: no `auto`, Poring e Lunatic saem com layout errado.
+
+O Wilow foi gerado com `--min-alpha 0.95`. Na morte dele, o `.act` amplia folhas translúcidas até ~8×; com o padrão 0,5 o frame passa de 550×400 e a sheet fica com ~97 milhões de pixels, pesada demais para o Flet.
 
 Constantes que controlam o resultado:
 
@@ -79,7 +83,7 @@ Clips gerados:
 - **Combate** (jogadores e monstros): `idle`, `walk`, `attack`, `hurt`, `dead` × `se`, `sw`, `nw`, `ne`.
 - **Fora de combate** (só jogadores): `stand_s`, parado de frente com a cabeça virando, como no GIF da seleção de personagem do RO.
 
-Sheets existentes: `novice` (21 clips, inclui `stand_s`) e `poring` (20 clips).
+Sheets existentes: `novice` (21 clips, inclui `stand_s`), `poring`, `lunatic` e `wilow` (20 clips cada).
 
 ## Como o jogo usa as sheets
 
@@ -106,14 +110,16 @@ Como o cálculo depende só do relógio, basta re-renderizar periodicamente, que
 - `sheet_frame(sheet, row, col, box=None, scale=1.0)`: mostra um frame recortando a imagem inteira dentro de um `Container` com `clip_behavior=HARD_EDGE`. A imagem é deslocada para que só o frame (ou o `box`) fique visível. `filter_quality=NONE` mantém o pixel art nítido ao ampliar.
 - `unit_sprite(unit, left, top)`: junta `get_sheet` e `current_frame` para desenhar a unidade no tabuleiro.
 
-### Fora da batalha: `components/job_sprite.py`
+### Fora da batalha: `components/sheet_sprite.py` e `components/job_sprite.py`
 
-`job_sprite(job, height)` mostra o clip `stand_s` recortado pelo `box` e ampliado até a altura pedida. Tem um loop próprio que avança o frame no ritmo do clip. Usado na seleção, criação e perfil. Se o job não tiver sheet (`sprite_selector.sheet_selector`), cai num GIF (`JOBS_SPRITES`) ou num espaço vazio.
+`sheet_sprite(sheet, clip, height, width=None)` repete um clip recortado pelo `box`, ampliado até a altura pedida (ou encaixado em `width` × `height`). Tem um loop próprio que avança o frame no ritmo do clip. `monster_sprite(sheet, width, height)` usa o clip `idle_sw` e é a figura dos monstros nos cards do mapa e no card da batalha; os monstros não têm mais GIF.
+
+`job_sprite(job, height)` usa `sheet_sprite` com o clip `stand_s`, na seleção, criação e perfil. Se o job não tiver sheet (`sprite_selector.sheet_selector`), cai num GIF (`JOBS_SPRITES`) ou num espaço vazio.
 
 ## Adicionando um personagem ou monstro novo
 
 1. Coloque os `.spr`/`.act` em `art_source/`.
 2. Rode `tools/ro_to_sheet.py` (com `--preview` para conferir a grade).
 3. Confira o resultado em `assets/sprites/<nome>/`.
-4. Monstro: preencha `sheet` (e os dados de batalha) em `MONSTERS` no `backend/seed_data.py`. Job: preencha `JOBS` e também `JOBS_SHEETS`/`JOBS_BADGES` em `frontend/services/sprite_selector.py`.
+4. Monstro: preencha `sheet` e os dados de batalha em `MONSTERS` no `backend/seed_data.py`. Job: preencha `JOBS` e também `JOBS_SHEETS`/`JOBS_BADGES` em `frontend/services/sprite_selector.py`.
 5. Se o sprite parecer deslocado no tile, ajuste `offset_x`/`offset_y` no seed.

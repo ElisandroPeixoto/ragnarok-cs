@@ -5,6 +5,7 @@ from components.zeny_badge import zeny_badge
 from components.character_badge import character_badge
 from components.section_panel import section_panel
 from components.item_card import item_card, card_image
+from components.sheet_sprite import monster_sprite
 from services.session_state import get_current_character
 from services.map_service import MapService
 from services.api_client import ApiError
@@ -50,7 +51,7 @@ def npc_item(item: dict):
 def monster_item(item: dict):
     spawn_rate = item.get("spawn_rate")
     subtitle = f"{spawn_rate}%" if spawn_rate is not None else None
-    return item_card(card_image(item["image"]), item["name"], subtitle=subtitle)
+    return item_card(monster_sprite(item["sheet"], width=51, height=88), item["name"], subtitle=subtitle)
 
 
 def place_item(item: dict):

@@ -86,9 +86,9 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
   "about": "...",
   "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif" } ],
   "monsters": [
-    { "name": "Poring",  "image": "monsters/poring.gif",  "spawn_rate": 40 },
-    { "name": "Lunatic", "image": "monsters/lunatic.gif", "spawn_rate": 40 },
-    { "name": "Wilow",   "image": "monsters/wilow.gif",   "spawn_rate": 20 }
+    { "name": "Poring",  "sheet": "poring",  "spawn_rate": 40 },
+    { "name": "Lunatic", "sheet": "lunatic", "spawn_rate": 40 },
+    { "name": "Wilow",   "sheet": "wilow",   "spawn_rate": 20 }
   ],
   "navigation": [
     { "name": "Novice Academy", "image": "maps/novice_academy.jpg",
@@ -134,7 +134,7 @@ Resposta (`BattleSchemaResponse`):
     },
     "monster_1": {
       "name": "Poring", "job": null, "team": "enemy",
-      "sheet": "poring", "avatar": "monsters/poring.gif", "ai": "approach_and_attack",
+      "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
       "offset_x": 0, "offset_y": 0,
       "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
       "skills": ["Basic Attack"]
@@ -153,7 +153,7 @@ Origem de cada campo:
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
-| `avatar` | `JobModel.avatar` | `MonsterModel.image` |
+| `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
 | `ap` / `max_ap` | `JobModel.max_ap` (nos dois) | `MonsterModel.max_ap` (nos dois) |
 | `skills` | `JobModel.skill_links`, em ordem de `slot` | `MonsterModel.skill_links`, em ordem de `slot` |

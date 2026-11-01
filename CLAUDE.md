@@ -41,7 +41,7 @@ Sprite pipeline (RO `.spr`/`.act` sources live in the git-ignored `art_source/`)
 python tools/ro_to_sheet.py art_source/novice novice --head art_source/novice_head --weapon art_source/weapon --preview preview.png
 ```
 
-Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, anchor = feet position, and `clips` keyed `<anim>_<facing>` (combat clips on se/sw/nw/ne; players also get `stand_s`, the front-facing out-of-combat pose with head turns), each with a `box` of its drawn area. The battle uses `idle_*` etc.; character selection/creation/profile use `stand_s` via `components/job_sprite.py`, falling back to a GIF in `services/sprite_selector.py` for jobs without a sheet. `tools/spr_to_frames.py` holds the `.spr`/`.act` readers and can dump raw frames (`--stand` dumps only the stand pose's).
+Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, anchor = feet position, and `clips` keyed `<anim>_<facing>` (combat clips on se/sw/nw/ne; players also get `stand_s`, the front-facing out-of-combat pose with head turns), each with a `box` of its drawn area. The battle uses `idle_*` etc.; character selection/creation/profile use `stand_s` via `components/job_sprite.py`, falling back to a GIF in `services/sprite_selector.py` for jobs without a sheet. Monsters have no GIF: `components/sheet_sprite.py` `monster_sprite` loops their `idle_sw` clip on map cards and battle unit cards. Always pass `--kind monster` for monsters. `tools/spr_to_frames.py` holds the `.spr`/`.act` readers and can dump raw frames (`--stand` dumps only the stand pose's).
 
 ## Architecture
 
@@ -59,7 +59,7 @@ Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, an
 - `themes.py` holds all colors; `config.ASSETS_DIR` points at the repo-root `assets/`. Asset paths in data/DB are relative to that folder.
 
 ### Battle system
-Battle runs client-side, but its data comes from the backend. The map's Hunt button calls `POST /api/v1/battles/` (`endpoints/battles.py`) with `character_id` + `map_id`. The backend picks one monster from the map's spawns, weighted by `spawn_rate` and skipping monsters with no `sheet`, and returns `{"units": {"hero", "monster_1"}, "skills": {...}}`. Player battle data (sheet, avatar, AP, offsets, skills) lives on `JobModel`, enemy data on `MonsterModel`; skills are `SkillModel` rows linked through `job_skills`/`monster_skills` (`slot` 0 = the AI's main skill). The setup is stored in `session_state` and read by `battle_page`.
+Battle runs client-side, but its data comes from the backend. The map's Hunt button calls `POST /api/v1/battles/` (`endpoints/battles.py`) with `character_id` + `map_id`. The backend picks one monster from the map's spawns, weighted by `spawn_rate`, and returns `{"units": {"hero", "monster_1"}, "skills": {...}}`. Player battle data (sheet, avatar, AP, offsets, skills) lives on `JobModel`, enemy data on `MonsterModel`; skills are `SkillModel` rows linked through `job_skills`/`monster_skills` (`slot` 0 = the AI's main skill). The setup is stored in `session_state` and read by `battle_page`.
 
 - `services/battle_state.py` — `BattleState(units, skills, board)`: plain-dict units, `state.skills`, turn order, AP, turn timer, winner, `BattleLog`. `spawn_units` picks starting tiles when the battle starts (player column 0, enemies columns 7–9, random row). Mutated in place; `state.version` is bumped to force re-renders.
 - `services/battle_geometry.py` — `BoardConfig` (fixed 1100×700 stage, 10×10 isometric grid, 96×48 tiles) and tile↔pixel conversions.

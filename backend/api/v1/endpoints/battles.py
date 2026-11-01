@@ -30,7 +30,7 @@ def hero_unit(character: CharacterModel, job: JobModel) -> dict:
 def monster_unit(monster: MonsterModel) -> dict:
     return {
         "name": monster.name, "team": "enemy",
-        "sheet": monster.sheet, "avatar": monster.image, "ai": monster.ai,
+        "sheet": monster.sheet, "ai": monster.ai,
         "offset_x": monster.offset_x, "offset_y": monster.offset_y,
         "hp": monster.max_hp, "max_hp": monster.max_hp,
         "ap": monster.max_ap, "max_ap": monster.max_ap,
@@ -50,7 +50,7 @@ async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{character.job}' not found")
 
     result = await db.execute(select(MapMonsterModel).where(MapMonsterModel.map_id == battle.map_id))
-    spawns = [spawn for spawn in result.scalars().all() if spawn.monster.sheet]  # only monsters with battle data
+    spawns = result.scalars().all()
     if not spawns:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No monsters to hunt on this map")
 
