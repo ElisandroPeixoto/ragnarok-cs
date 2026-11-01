@@ -37,7 +37,7 @@ Cada unidade é um **dict simples**, mutado diretamente. Campos:
 | `anim`, `anim_started` | `battle_animation.play` | clip atual e quando começou |
 | `walk_path` | `battle_animation.start_walk` | tiles da última caminhada (partida → destino), usados para desenhar a unidade andando |
 
-As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`. `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
+As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro do mapa). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
 
 ## Estado da batalha: `services/battle_state.py`
 
@@ -63,7 +63,7 @@ BattleState(units: dict, skills: dict, board: BoardConfig, turn_duration: int = 
 | `units` | cópia profunda (`copy.deepcopy`) das unidades recebidas |
 | `skills` | definição das skills (`{nome: {ap_cost, damage, range, icon}}`) |
 | `board` | `BoardConfig` |
-| `turn_order` | `list(units.keys())`, hoje `["hero", "monster_1"]`: **o herói sempre começa** |
+| `turn_order` | time `player` primeiro, depois os inimigos na ordem do backend, ex.: `["hero", "monster_1", "monster_2", "monster_3"]`: **o herói sempre começa** |
 | `turn_index`, `round` | de quem é a vez e a rodada atual (começa em 1) |
 | `turn_duration`, `time_left` | limite de 30 s por turno (`TURN_DURATION`) |
 | `winner` | `None`, `"victory"` ou `"defeat"` |

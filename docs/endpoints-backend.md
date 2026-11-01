@@ -97,7 +97,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
 }
 ```
 
-`monsters` lista **todos** os monstros do mapa, inclusive os que ainda não podem ser caçados (sem dados de batalha). `MonsterSchema` expõe só `name`, `image` e `spawn_rate`.
+`monsters` lista **todos** os monstros do mapa. `MonsterSchema` expõe só `name`, `sheet` e `spawn_rate`.
 
 ---
 
@@ -116,9 +116,9 @@ O que acontece:
 
 1. Busca o personagem (`CharacterModel`); se não existir, **404** `Character not found`.
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
-3. Lista os spawns do mapa (`MapMonsterModel`) e mantém só os monstros com `sheet` preenchido, ou seja, com dados de batalha. Se não sobrar nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy, que não tem monstros.
-4. Sorteia **um** monstro com `random.choices`, usando `spawn_rate` como peso. Se todos os pesos forem 0, o sorteio é uniforme.
-5. Monta as unidades com `hero_unit(character, job)` e `monster_unit(monster)`, e o dicionário de skills usadas por elas com `skill_to_dict`.
+3. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`). Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
+4. Monta as unidades: `hero` com `hero_unit(character, job)` e **um `monster_N` para cada monstro do mapa** (`monster_1`, `monster_2`…) com `monster_unit(monster)`. O `spawn_rate` não entra aqui; hoje ele só aparece no card do mapa.
+5. Junta as skills usadas por todas as unidades com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
 
@@ -148,7 +148,7 @@ Resposta (`BattleSchemaResponse`):
 
 Origem de cada campo:
 
-| Campo | Herói (`hero`) | Monstro (`monster_1`) |
+| Campo | Herói (`hero`) | Monstro (`monster_N`) |
 |---|---|---|
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |

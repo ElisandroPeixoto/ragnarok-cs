@@ -11,7 +11,7 @@ SPAWN_FACING = {"player": "se", "enemy": "nw"}
 
 
 def spawn_units(units: dict, board: BoardConfig) -> None:
-    """Picks each unit's starting tile at random (no shared tiles) and sets facing/drag by team."""
+    """Picks each unit's starting tile at random (no shared tiles) and sets facing by team."""
     taken = set(board.blocked_tiles)
     for unit in units.values():
         team = unit["team"]
@@ -29,7 +29,8 @@ class BattleState:
         self.skills = skills
         self.board = board
         spawn_units(self.units, board)
-        self.turn_order: list[str] = list(self.units.keys())
+        # players act first, then the enemies in the order the backend sent them
+        self.turn_order: list[str] = sorted(self.units, key=lambda unit_id: self.units[unit_id]["team"] != "player")
         self.turn_index : int = 0
         self.round : int = 1
         self.turn_duration: int = turn_duration

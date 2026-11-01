@@ -71,7 +71,7 @@ Helpers em `services/map_router_manager.py`:
 2. Em caso de `ApiError`, imprime no console e fica na tela. Isso acontece, por exemplo, se o mapa não tiver monstros.
 3. Com sucesso, chama `navigate_to_battle(map_route(map_id), setup)`.
 
-> O painel lista todos os monstros do mapa, mas o Hunt só sorteia entre os que têm dados de batalha. No Training Field 1 hoje sempre sai o Poring.
+> O Hunt coloca na batalha **todos** os monstros do mapa: no Training Field 1, Poring, Lunatic e Wilow juntos.
 
 ### "Go To"
 

@@ -8,10 +8,10 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 
 | Área | Situação |
 |---|---|
-| Montagem do encontro | ✅ `POST /api/v1/battles/` sorteia 1 monstro do mapa pelo `spawn_rate` |
+| Montagem do encontro | ✅ `POST /api/v1/battles/` traz todos os monstros do mapa (`monster_1`, `monster_2`…) |
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
-| Turnos | ✅ ordem fixa (herói, depois monstro), 30 s por turno, AP recarregado a cada turno |
+| Turnos | ✅ ordem fixa (herói, depois os monstros), 30 s por turno, AP recarregado a cada turno |
 | Movimento | ✅ clique no tile; anda pelo caminho mais curto (BFS, desvia de unidades e obstáculos) com a animação `walk`, 1 AP por tile |
 | Ataque | ✅ skill selecionada + clique no inimigo; alvo em linha reta dentro do alcance; dano fixo |
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
@@ -26,15 +26,14 @@ Pontos encontrados no código, em ordem aproximada de impacto:
 
 1. **O resultado não é salvo.** Vencer não dá EXP, zeny nem drops; perder não custa nada; o HP do personagem não muda. Não existe endpoint para isso.
 2. **Ataques não aparecem no Battle Log.** `perform_attack` (`services/battle_actions.py`) só registra `defeat`. `LogEntry` já sabe formatar `kind="attack"`; falta adicionar a entrada.
-3. **Só um monstro por batalha.** O endpoint devolve sempre `monster_1`. O frontend já aceita vários (turnos, spawn e IA iteram sobre todas as unidades).
-4. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
-5. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
-6. **Ordem de turno fixa.** `turn_order = list(units.keys())`: o herói sempre começa, sem iniciativa ou velocidade.
-7. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
-8. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
-9. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
-10. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
-11. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
+3. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
+4. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
+5. **Ordem de turno fixa.** `turn_order`: o time do jogador sempre começa, depois os monstros na ordem do backend, sem iniciativa ou velocidade.
+6. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
+7. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
+8. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
+9. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
+10. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
 
 ## Proposta de fases
 
@@ -47,13 +46,13 @@ Objetivo: lutar passar a ter consequência.
 - Recompensas simples por monstro (colunas `base_exp`, `zeny` em `MonsterModel`) e atualização de `CharacterModel` (`exp`, `zeny`, `hp`).
 - Atualizar o personagem em `session_state` com a resposta, para o perfil mostrar os novos valores.
 - Registrar os ataques no log (lacuna 2).
-- Mostrar o erro quando o Hunt falhar (lacuna 9).
+- Mostrar o erro quando o Hunt falhar (lacuna 8).
 
 ### Fase 2: conteúdo e variedade
 
 - Dar a Lunatic e Wilow atributos próprios (hoje copiam os do Poring).
 - Mais skills, com alcances e custos diferentes, e skills por job.
-- Vários monstros por encontro (`monster_1`, `monster_2`… vindos do backend; a quantidade pode depender do mapa).
+- Encontros variados: hoje vêm sempre todos os monstros do mapa; o `spawn_rate` poderia sortear quais e quantos aparecem.
 - Usar `blocked_tiles` e fundos diferentes por mapa (ex.: um campo `battle_board` em `MapModel`).
 
 ### Fase 3: atributos e fórmulas

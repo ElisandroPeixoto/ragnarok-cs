@@ -101,7 +101,7 @@ Relações (todas `lazy="selectin"`): `npcs`, `monster_spawns`, `connections`.
 
 ### `map_monsters`: `MapMonsterModel` (`models/map_monster_model.py`)
 
-Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, o peso do sorteio do monstro em `POST /battles/`. Relação `monster` → `MonsterModel`.
+Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, mostrado no card do monstro no mapa (a batalha hoje traz todos os monstros do mapa, sem sorteio). Relação `monster` → `MonsterModel`.
 
 ### `map_connections`: `MapConnectionModel` (`models/map_connection_model.py`)
 
