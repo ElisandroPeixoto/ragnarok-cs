@@ -10,7 +10,7 @@ from services.session_state import get_current_character
 from services.map_service import MapService
 from services.api_client import ApiError
 from typing import cast
-from services.map_router_manager import map_route, navigate_to_battle
+from services.map_router_manager import map_route, navigate_to_battle, change_place
 from services.battle_service import BattleService
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
@@ -61,12 +61,12 @@ def place_item(item: dict):
                      width=170, height=84, tooltip="Coming soon", on_click=lambda e: None)
 
 
-def navigation_item(item: dict):
+def navigation_item(item: dict, character: dict):
     level_range = item.get("level_range")
     return item_card(ft.Icon(ft.Icons.ARROW_UPWARD, size=28, color=t.MAP_LIGHT_TEXT), item["name"],
                      subtitle=f"(Lv {level_range.replace(' ', '')})" if level_range else None,
                      width=184, height=84,
-                     on_click=lambda e: ft.context.page.navigate(map_route(item["map_id"])))
+                     on_click=lambda e: change_place(character, item["map_id"]))
 
 
 def card_grid(cards: list):
@@ -82,7 +82,7 @@ def label(text: str):
 
 
 def map_banner(map_data: dict):
-    """Map image with the title and level overlaid in the top-left corner."""
+    """Centered map image with the title and level at the left of the banner area."""
     title_box = ft.Container(
         left=0, top=5,
         bgcolor=t.MAP_TITLE_OVERLAY,
@@ -94,19 +94,18 @@ def map_banner(map_data: dict):
                     color=t.MAP_LIGHT_TEXT, font_family="Cinzel"),
         ]),
     )
-    top_shadow = ft.Container(  # inner shadow at the top of the image (inset 0 120px 80px rgba(0,0,0,.3))
-        left=0, top=0, right=0, height=200,
-        gradient=ft.LinearGradient(begin=ft.Alignment.TOP_CENTER, end=ft.Alignment.BOTTOM_CENTER,
-                                   colors=[ft.Colors.with_opacity(0.3, ft.Colors.BLACK), ft.Colors.TRANSPARENT]),
-    )
     return ft.Container(
         height=BANNER_HEIGHT,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
         content=ft.Stack(expand=True, controls=[
-            ft.Container(left=0, top=0, right=0, bottom=0,
-                         image=ft.DecorationImage(src=map_data.get("image", ""), fit=ft.BoxFit.COVER)),
-            top_shadow,
-            title_box,
+            # The image keeps its aspect ratio at the banner height (shrinking if the window is narrower), so
+            # the bordered container hugs the picture; the area around it has no fill (page background shows)
+            ft.Container(left=0, top=0, right=0, bottom=0, alignment=ft.Alignment.CENTER,
+                         content=ft.Container(
+                             border=ft.Border.all(1, t.MAP_PANEL_BORDER),
+                             content=ft.Image(src=map_data.get("image", ""), height=BANNER_HEIGHT,
+                                              fit=ft.BoxFit.CONTAIN))),
+            title_box,   # pinned to the left edge of the banner area, to the left of the centered image
         ]),
     )
 
@@ -129,14 +128,14 @@ def monsters_content(map_id: str, monsters: list, character: dict):
     )
 
 
-def go_to_content(map_data: dict):
+def go_to_content(map_data: dict, character: dict):
     places = MAP_PLACES.get(map_data["id"], [])
     navigation = map_data.get("navigation", [])
     return ft.Column(scroll=ft.ScrollMode.AUTO, spacing=4, controls=[
         label("This Area"),
         card_grid([place_item(p) for p in places]) if places else empty_text("Nothing to visit here"),
         label("Nearby"),
-        card_grid([navigation_item(n) for n in navigation]) if navigation else empty_text("No routes available"),
+        card_grid([navigation_item(n, character) for n in navigation]) if navigation else empty_text("No routes available"),
     ])
 
 
@@ -154,7 +153,7 @@ def map_screen(map_data: dict, character: dict):
         controls=[  # width ratio from Figma: 348 / 348 / 483
             section_panel("People in the area", people, expand=348),
             section_panel("Monsters", monsters_content(map_data["id"], map_data.get("monsters", []), character), expand=348),
-            section_panel("Go To", go_to_content(map_data), expand=483),
+            section_panel("Go To", go_to_content(map_data, character), expand=483),
         ],
     )
 
@@ -217,14 +216,27 @@ def build_map_page(map_id: str):
         else:
             content = map_screen(map_data, character)
 
+        # TODO: placeholder - replace this battle board picture with a proper map screen background image
+        background_layer = ft.Container(
+            expand=True,
+            opacity=0.15,
+            image=ft.DecorationImage(src="battle_boards/forest_battlefield.jpg", fit=ft.BoxFit.COVER),
+        )
+
         return ft.Container(
             expand=True,
             bgcolor=t.BACKGROUND_OPACITY,
-            content=ft.Row(
+            content=ft.Stack(
                 expand=True,
-                spacing=0,
-                vertical_alignment=ft.CrossAxisAlignment.START,
-                controls=[sidebar(collapsed, toggle_sidebar), content],
+                controls=[
+                    background_layer,
+                    ft.Row(
+                        expand=True,
+                        spacing=0,
+                        vertical_alignment=ft.CrossAxisAlignment.START,
+                        controls=[sidebar(collapsed, toggle_sidebar), content],
+                    ),
+                ],
             ),
         )
 

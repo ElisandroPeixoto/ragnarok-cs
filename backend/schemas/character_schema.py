@@ -9,6 +9,10 @@ class CharacterSchemaBase(BaseModel):
 class CharacterSchemaCreate(CharacterSchemaBase):
     pass
 
+class CharacterSchemaPlaceUpdate(BaseModel):
+    map_id: str
+
+
 class CharacterSchemaResponse(CharacterSchemaBase):
     id: int
     job: str

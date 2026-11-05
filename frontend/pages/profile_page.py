@@ -41,7 +41,7 @@ def current_place_card(character: dict, thumbnail: str | None):
                                                               height=60,
                                                               border_radius=4,
                                                               bgcolor="#1A1712",
-                                                              image=ft.DecorationImage(src=thumbnail, fit=ft.BoxFit.COVER) if thumbnail else None,
+                                                              image=ft.DecorationImage(src=thumbnail, fit=ft.BoxFit.CONTAIN) if thumbnail else None,
                                                               ),
                                                  ft.Column(spacing=2,
                                                            controls=[ft.Text("Current Place:", size=13, color=t.MUTED_TEXT, font_family="Cinzel"),

@@ -40,14 +40,14 @@ MAP_PANEL_HEADER = "#52451C"
 MAP_ITEM_BORDER = "#52451C"
 MAP_TITLE_TEXT = "#C8A532"
 MAP_LIGHT_TEXT = "#E0E0E0"
-MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.53, "#1A160A")
+# Wood-brown fill behind the map title, very translucent to stay subtle
+MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.25, "#8B5A2B")
 
 
 # BATTLE BOARD
 GRID_LINE_COLOR = "#C4C4C4"
-# Checkerboard tiles: lighter/darker shades of the battlefield's ground (~#837654), kept translucent and subtle
-LIGHT_TILE_COLOR = ft.Colors.with_opacity(0.15, "#C2B288")
-DARK_TILE_COLOR = ft.Colors.with_opacity(0.15, "#4A3F26")
+# Single tile color: the battlefield's ground tone (~#837654), kept translucent and subtle
+TILE_COLOR = ft.Colors.with_opacity(0.15, "#837654")
 PAGE_BACKGROUND_COLOR = "#05070F"
 PLACEHOLDER_BACKGROUND_COLOR = "#1A1712"
 BOARD_BORDER_COLOR = "#2A2410"

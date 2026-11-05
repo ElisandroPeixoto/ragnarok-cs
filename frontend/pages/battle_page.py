@@ -44,7 +44,8 @@ def battle_page():
 @ft.component
 def battle_screen(setup: dict):
     # lambda: create it (and roll the positions) only on the first render, not on every re-render
-    state, _ = ft.use_state(lambda: BattleState(setup["units"], setup["skills"], board_config))
+    state, _ = ft.use_state(lambda: BattleState(
+        setup["units"], setup["skills"], board_config, setup["spawn_pool"], setup["spawn_rate"]))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)

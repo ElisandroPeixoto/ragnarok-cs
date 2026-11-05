@@ -8,7 +8,7 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 
 | Área | Situação |
 |---|---|
-| Montagem do encontro | ✅ `POST /api/v1/battles/` traz todos os monstros do mapa (`monster_1`, `monster_2`…) |
+| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o frontend sorteia ondas infinitas (a cada 3 rodadas, `spawn_rate` do mapa, peso por monstro) |
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
 | Turnos | ✅ ordem fixa (herói, depois os monstros), 30 s por turno, AP recarregado a cada turno |
@@ -16,7 +16,7 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 | Ataque | ✅ skill selecionada + clique no inimigo; alvo em linha reta dentro do alcance; dano fixo |
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
 | Animação | ✅ sprite sheets com clips por direção (idle, walk, attack, hurt, dead) |
-| Vitória/derrota | ✅ detectadas e exibidas; ⚠️ sem consequência alguma |
+| Derrota | ✅ detectada e exibida; ⚠️ sem consequência alguma (a caçada é infinita, não há vitória) |
 | Log | ⚠️ registra movimento, derrota e fim, mas não os ataques |
 | Persistência | ❌ nada volta para o backend |
 
@@ -28,7 +28,7 @@ Pontos encontrados no código, em ordem aproximada de impacto:
 2. **Ataques não aparecem no Battle Log.** `perform_attack` (`services/battle_actions.py`) só registra `defeat`. `LogEntry` já sabe formatar `kind="attack"`; falta adicionar a entrada.
 3. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
 4. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
-5. **Ordem de turno fixa.** `turn_order`: o time do jogador sempre começa, depois os monstros na ordem do backend, sem iniciativa ou velocidade.
+5. **Ordem de turno fixa.** `turn_order`: o herói sempre começa, depois os monstros na ordem em que nasceram, sem iniciativa ou velocidade.
 6. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
 7. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
 8. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
@@ -52,7 +52,6 @@ Objetivo: lutar passar a ter consequência.
 
 - Dar a Lunatic e Wilow atributos próprios (hoje copiam os do Poring).
 - Mais skills, com alcances e custos diferentes, e skills por job.
-- Encontros variados: hoje vêm sempre todos os monstros do mapa; o `spawn_rate` poderia sortear quais e quantos aparecem.
 - Usar `blocked_tiles` e fundos diferentes por mapa (ex.: um campo `battle_board` em `MapModel`).
 
 ### Fase 3: atributos e fórmulas

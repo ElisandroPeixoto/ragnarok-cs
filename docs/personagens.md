@@ -59,7 +59,7 @@ Componente `character_selection()`.
 - `info_panel(character)` mostra o HP do personagem selecionado.
 - Botões:
   - **CREATE CHARACTER** → `/char_creation`.
-  - **DELETE CHARACTER**: **sem ação** (não há handler nem endpoint de exclusão).
+  - **DELETE CHARACTER**: abre um pop-up de confirmação (modal, centralizado). Ao confirmar, chama `CharacterService.delete_character` → `DELETE /api/v1/characters/{id}`, remove o personagem da lista e ajusta o slot selecionado. Em slot vazio, não faz nada.
   - **START GAME** → `handle_start_game(e, slots[selected])`.
 
 **`handle_start_game`**: se o slot estiver vazio, não faz nada. Caso contrário, chama `set_current_character(character)` (`services/session_state.py`) e navega para `/profile_page`.
@@ -101,7 +101,6 @@ Três funções de `services/sprite_selector.py` decidem a imagem por job **no f
 
 ## O que ainda não existe
 
-- Excluir personagem (botão sem ação; sem `DELETE /characters/{id}`).
 - Escolher job na criação (sempre Novice) e trocar de job.
 - Validação de nome no backend (vazio, tamanho, duplicado).
 - Atributos (STR, AGI…), SP em uso, progressão de nível e EXP.

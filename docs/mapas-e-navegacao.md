@@ -58,7 +58,7 @@ Helpers em `services/map_router_manager.py`:
   - `npc_item`: NPCs (sem ação).
   - `monster_item`: monstros, com `spawn_rate` como subtítulo (`"40%"`).
   - `place_item`: lugares de "This Area" (tooltip "Coming soon", sem ação).
-  - `navigation_item`: mapas vizinhos de "Nearby"; o clique navega para `map_route(item["map_id"])`.
+  - `navigation_item`: mapas vizinhos de "Nearby"; o clique chama `change_place(character, item["map_id"])` (`services/map_router_manager.py`), que registra o novo local no banco e só então navega para `map_route(item["map_id"])`.
 
 ### Painel Monsters e o botão Hunt
 
@@ -86,4 +86,4 @@ Helpers em `services/map_router_manager.py`:
 | `novice_academy` | Novice Academy | 1 - 10 | Hostess, Sailor | nenhum (Safe Zone) | `training_field_1` |
 | `training_field_1` | Training Field 1 | 1 - 10 | Trainer | Poring (40), Lunatic (40), Wilow (20) | `novice_academy` |
 
-Todo personagem novo começa em `novice_academy`. Como nenhuma rota altera `current_map_id`, o botão **Enter** do perfil sempre leva ao mapa inicial, mesmo que o jogador tenha andado por outros.
+Todo personagem novo começa em `novice_academy`. Sempre que o personagem muda de mapa pelo "Nearby", `PATCH /api/v1/characters/{id}/place` grava o novo `current_map` e `current_map_id`, e o personagem da sessão é atualizado com a resposta. Assim o botão **Enter** do perfil leva ao último mapa visitado. Se a chamada falhar, a navegação não acontece.

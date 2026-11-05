@@ -61,6 +61,7 @@ MAPS = {
     "training_field_1": {
         "name": "Training Field 1", "level_range": "1 - 10",
         "image": "maps/training_field_1.jpg", "about": "...",
+        "spawn_rate": 1,   # monsters per spawn wave (default 1)
         "npcs": [("Trainer", "npcs/trainer.gif")],
         "monsters": [("Poring", 40), ("Lunatic", 40), ("Wilow", 20)],
         "navigation": ["novice_academy"],
@@ -81,6 +82,10 @@ async def seed() -> None:
         columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(monsters)")).fetchall()]
         if "image" in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters DROP COLUMN image")
+        # maps gained "spawn_rate" (monsters per wave); add it to older databases
+        map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
+        if "spawn_rate" not in map_columns:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN spawn_rate INTEGER NOT NULL DEFAULT 1")
 
     async with Session() as db:
         # 1) skills
@@ -131,9 +136,10 @@ async def seed() -> None:
             if existing:  # map already exists: only update its basic data (NPCs/monsters are not duplicated)
                 existing.name, existing.level_range = data["name"], data["level_range"]
                 existing.image, existing.about = data["image"], data["about"]
+                existing.spawn_rate = data.get("spawn_rate", 1)
                 continue
             db.add(MapModel(id=map_id, name=data["name"], level_range=data["level_range"],
-                            image=data["image"], about=data["about"]))
+                            image=data["image"], about=data["about"], spawn_rate=data.get("spawn_rate", 1)))
             for name, image in data["npcs"]:
                 db.add(NpcModel(map_id=map_id, name=name, image=image))
             for name, rate in data["monsters"]:

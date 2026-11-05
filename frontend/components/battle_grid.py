@@ -30,13 +30,13 @@ def create_tile_diamond(col: int, row: int, paint: ft.Paint, board: BoardConfig)
 
 
 def build_static_grid_shapes(board: BoardConfig) -> list:
-    """Shapes that never change: checkerboard fills, tile outlines and blocked tiles."""
+    """Shapes that never change: uniform tile fills, tile outlines and blocked tiles."""
     shapes = []
     if board.show_grid:
-        tile_paints = (create_fill_paint(t.LIGHT_TILE_COLOR), create_fill_paint(t.DARK_TILE_COLOR))
+        tile_paint = create_fill_paint(t.TILE_COLOR)
         for row in range(board.row_count):
             for col in range(board.column_count):
-                shapes.append(create_tile_diamond(col, row, tile_paints[(col + row) % 2], board))
+                shapes.append(create_tile_diamond(col, row, tile_paint, board))
         outline_paint = create_outline_paint()
         for row in range(board.row_count):
             for col in range(board.column_count):

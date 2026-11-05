@@ -37,13 +37,13 @@ Cada unidade é um **dict simples**, mutado diretamente. Campos:
 | `anim`, `anim_started` | `battle_animation.play` | clip atual e quando começou |
 | `walk_path` | `battle_animation.start_walk` | tiles da última caminhada (partida → destino), usados para desenhar a unidade andando |
 
-As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro do mapa). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
+As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro sorteado nas ondas; os ids nunca se repetem). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
 
 ## Estado da batalha: `services/battle_state.py`
 
 ### Posições iniciais
 
-`spawn_units(units, board)` roda dentro de `BattleState.__init__`:
+`place_unit(unit, taken, board)` escolhe o tile do herói em `BattleState.__init__` e o de cada monstro em `spawn_wave`:
 
 | Time | Colunas possíveis (`SPAWN_COLUMNS`) | Linha | Direção inicial (`SPAWN_FACING`) |
 |---|---|---|---|
@@ -55,18 +55,28 @@ O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_ti
 ### `BattleState`
 
 ```python
-BattleState(units: dict, skills: dict, board: BoardConfig, turn_duration: int = 30)
+BattleState(units: dict, skills: dict, board: BoardConfig, spawn_pool: list | None = None,
+            spawn_rate: int = 1, turn_duration: int = 30)
 ```
+
+### Ondas de monstros
+
+A caçada é **infinita**: só termina quando o herói morre (derrota) ou o jogador clica em **Leave**.
+
+- `spawn_wave()` sorteia `spawn_rate` monstros do `spawn_pool` com `random.choices`, usando o `weight` de cada um (a chance do monstro no mapa). O mesmo monstro pode aparecer repetido. Se as colunas dos inimigos estiverem cheias, a onda para.
+- A primeira onda vem no `__init__` (rodada 1). Depois, `begin_round()` chama `spawn_wave()` a cada `WAVE_INTERVAL = 3` rodadas (rodadas 4, 7, 10…).
+- `begin_round()` também remove da batalha os monstros mortos a cada nova rodada, para o tabuleiro e a lista de unidades não encherem.
+- Se não houver monstros vivos, o jogador continua jogando (e passando o turno) até a próxima onda.
 
 | Atributo | Significado |
 |---|---|
 | `units` | cópia profunda (`copy.deepcopy`) das unidades recebidas |
 | `skills` | definição das skills (`{nome: {ap_cost, damage, range, icon}}`) |
 | `board` | `BoardConfig` |
-| `turn_order` | time `player` primeiro, depois os inimigos na ordem do backend, ex.: `["hero", "monster_1", "monster_2", "monster_3"]`: **o herói sempre começa** |
+| `turn_order` | o herói primeiro, depois os monstros na ordem em que nasceram, ex.: `["hero", "monster_1", "monster_2"]`: **o herói sempre começa** |
 | `turn_index`, `round` | de quem é a vez e a rodada atual (começa em 1) |
 | `turn_duration`, `time_left` | limite de 30 s por turno (`TURN_DURATION`) |
-| `winner` | `None`, `"victory"` ou `"defeat"` |
+| `winner` | `None` ou `"defeat"` (não existe vitória: a caçada é infinita) |
 | `log` | `BattleLog` |
 | `input_locked` | `True` durante o turno do inimigo |
 | `closed` | `True` quando a tela sai; para os loops |
@@ -76,9 +86,9 @@ Métodos:
 - `current_unit_id` / `current_unit()`: de quem é a vez.
 - `is_alive(unit_id)`, `unit_at(col, row)` (só unidades vivas).
 - `refill_ap(unit_id)`: AP volta ao máximo.
-- `end_turn()`: avança para a próxima unidade **viva**; ao dar a volta na lista, incrementa `round`; reinicia o relógio e recarrega o AP de quem vai jogar.
+- `end_turn()`: avança para a próxima unidade **viva**; ao dar a volta na lista, incrementa `round` e chama `begin_round()`; reinicia o relógio e recarrega o AP de quem vai jogar.
 - `tick()`: chamado a cada segundo; desconta `time_left` e, se zerar, chama `end_turn()` e devolve `True`.
-- `check_battle_end()`: sem inimigos vivos → `victory`; sem jogador vivo → `defeat`. Registra uma entrada `end` no log.
+- `check_battle_end()`: sem jogador vivo → `defeat`. Registra uma entrada `end` no log.
 
 ## Ações: `services/battle_actions.py`
 
@@ -179,7 +189,7 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 Três camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 1. **Fundo**: `board.background_image` (`battle_boards/forest_battlefield.jpg`) ou uma cor de reserva.
-2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (montados uma vez na importação, em `components/battle_grid.py`: tiles alternados claro/escuro como num tabuleiro de xadrez, em tons do terreno do fundo (`LIGHT_TILE_COLOR`/`DARK_TILE_COLOR`, translúcidos), e os contornos por cima) mais os destaques do momento.
+2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (montados uma vez na importação, em `components/battle_grid.py`: todos os tiles com a mesma cor, no tom do terreno do fundo (`TILE_COLOR`, translúcida), e os contornos por cima) mais os destaques do momento.
 3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A posição e a profundidade usam `board_position`, então quem está andando aparece entre os tiles.
 
 > Existe um ramo para unidades **sem** sprite sheet que usa os campos `sprite`, `width`, `height` e `placeholder_color`. O backend não envia esses campos; o ramo sobrou da época do mockup e só não quebra porque toda unidade enviada hoje tem `sheet`.
@@ -205,6 +215,6 @@ Direções no tabuleiro: +col = SE, -col = NW, +row = SW, -row = NE (`battle_ani
 
 ## Fim da batalha
 
-- **Vitória**: todos os inimigos com HP 0. **Derrota**: o herói com HP 0.
+- **Não há vitória**: a caçada é infinita. **Derrota**: o herói com HP 0. Também dá para encerrar a qualquer momento com **Leave**.
 - O painel de turno mostra o resultado; não é possível agir, só sair com **Leave**.
 - **Nada é persistido**: o HP do personagem não muda, não há EXP, zeny nem drops, e sair no meio da luta não tem penalidade.

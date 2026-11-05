@@ -31,6 +31,14 @@ class UnitSchema(BaseModel):
     skills: List[str]
 
 
+class SpawnEntrySchema(BaseModel):
+    """A monster that can appear in the hunt; weight = its chance relative to the others"""
+    weight: int
+    unit: UnitSchema
+
+
 class BattleSchemaResponse(BaseModel):
-    units: Dict[str, UnitSchema]
+    units: Dict[str, UnitSchema]        # only the hero: monsters come from spawn_pool, wave by wave
     skills: Dict[str, SkillSchema]
+    spawn_rate: int                     # monsters per spawn wave
+    spawn_pool: List[SpawnEntrySchema]

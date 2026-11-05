@@ -2,7 +2,8 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.character_model import CharacterModel
-from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse
+from models.maps_model import MapModel
+from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate
 from core.deps import get_session
 from typing import List
 
@@ -52,3 +53,36 @@ async def get_character_by_id(character_id: int, db: AsyncSession = Depends(get_
             )
 
         return character
+
+
+# DELETE Character
+"""Delete a character by ID"""
+@router.delete("/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_character(character_id: int, db: AsyncSession = Depends(get_session)):
+    character = await db.get(CharacterModel, character_id)
+    if character is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
+
+    await db.delete(character)
+    await db.commit()
+
+
+# PATCH Character place
+"""Register that the character moved to another map (updates current_map / current_map_id)"""
+@router.patch("/{character_id}/place", status_code=status.HTTP_200_OK, response_model=CharacterSchemaResponse)
+async def patch_character_place(character_id: int, place: CharacterSchemaPlaceUpdate,
+                                db: AsyncSession = Depends(get_session)):
+    character = await db.get(CharacterModel, character_id)
+    if character is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
+
+    game_map = await db.get(MapModel, place.map_id)
+    if game_map is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Map not found")
+
+    character.current_map = game_map.name
+    character.current_map_id = game_map.id
+    await db.commit()
+    await db.refresh(character)
+
+    return character

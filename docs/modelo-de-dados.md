@@ -92,6 +92,7 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
 | `image` | String | capa do mapa |
 | `about` | Text | descrição, ainda não exibida |
+| `spawn_rate` | Integer | quantos monstros nascem por onda na caçada (padrão 1); não confundir com o `spawn_rate` por monstro de `map_monsters` |
 
 Relações (todas `lazy="selectin"`): `npcs`, `monster_spawns`, `connections`.
 
@@ -101,7 +102,7 @@ Relações (todas `lazy="selectin"`): `npcs`, `monster_spawns`, `connections`.
 
 ### `map_monsters`: `MapMonsterModel` (`models/map_monster_model.py`)
 
-Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, mostrado no card do monstro no mapa (a batalha hoje traz todos os monstros do mapa, sem sorteio). Relação `monster` → `MonsterModel`.
+Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, a chance do monstro (peso do sorteio) em cada onda da caçada; também é mostrado no card do monstro no mapa. Relação `monster` → `MonsterModel`.
 
 ### `map_connections`: `MapConnectionModel` (`models/map_connection_model.py`)
 

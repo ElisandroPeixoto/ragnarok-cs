@@ -56,6 +56,12 @@ Função: `get_character_by_id`. Status: **200**, ou **404** `{"detail": "Charac
 
 O frontend ainda não usa esta rota.
 
+### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
+
+Função: `patch_character_place`. Status: **200**, ou **404** (`Character not found` / `Map not found`).
+
+Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e `current_map_id` do personagem e devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao trocar de mapa pelo "Nearby".
+
 ---
 
 ## Mapas: `api/v1/endpoints/maps.py`
@@ -116,9 +122,10 @@ O que acontece:
 
 1. Busca o personagem (`CharacterModel`); se não existir, **404** `Character not found`.
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
-3. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`). Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
-4. Monta as unidades: `hero` com `hero_unit(character, job)` e **um `monster_N` para cada monstro do mapa** (`monster_1`, `monster_2`…) com `monster_unit(monster)`. O `spawn_rate` não entra aqui; hoje ele só aparece no card do mapa.
-5. Junta as skills usadas por todas as unidades com `skill_to_dict`.
+3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
+4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
+5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), o `spawn_pool` (cada monstro do mapa com `weight` = `MapMonsterModel.spawn_rate` e `unit` = `monster_unit(monster)`) e o `spawn_rate` do mapa (`MapModel.spawn_rate`, monstros por onda). **Os monstros não são criados aqui**: o frontend sorteia cada onda a partir do pool (a caçada é infinita).
+6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
 
@@ -131,24 +138,32 @@ Resposta (`BattleSchemaResponse`):
       "offset_x": 0, "offset_y": 0,
       "hp": 50, "max_hp": 50, "ap": 5, "max_ap": 5,
       "skills": ["Basic Attack"]
-    },
-    "monster_1": {
-      "name": "Poring", "job": null, "team": "enemy",
-      "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
-      "offset_x": 0, "offset_y": 0,
-      "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
-      "skills": ["Basic Attack"]
     }
   },
   "skills": {
     "Basic Attack": { "ap_cost": 1, "damage": 10, "range": 1, "icon": "skills/Basic Attack.png" }
-  }
+  },
+  "spawn_rate": 1,
+  "spawn_pool": [
+    {
+      "weight": 40,
+      "unit": {
+        "name": "Poring", "job": null, "team": "enemy",
+        "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
+        "offset_x": 0, "offset_y": 0,
+        "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
+        "skills": ["Basic Attack"]
+      }
+    }
+  ]
 }
 ```
 
+(`spawn_pool` traz uma entrada por monstro do mapa; o exemplo mostra só o Poring.)
+
 Origem de cada campo:
 
-| Campo | Herói (`hero`) | Monstro (`monster_N`) |
+| Campo | Herói (`hero`) | Monstro (`spawn_pool[].unit`) |
 |---|---|---|
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |
@@ -172,11 +187,13 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | POST | `/api/v1/characters/` | `post_character` | 201 | 422 |
 | GET | `/api/v1/characters/` | `get_characters` | 200 | n/a |
 | GET | `/api/v1/characters/{character_id}` | `get_character_by_id` | 200 | 404 |
+| DELETE | `/api/v1/characters/{character_id}` | `delete_character` | 204 | 404 |
+| PATCH | `/api/v1/characters/{character_id}/place` | `patch_character_place` | 200 | 404, 422 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-Não existem rotas de atualização ou exclusão (PUT/PATCH/DELETE) para nenhum recurso.
+A única rota de atualização é `PATCH /api/v1/characters/{character_id}/place`; a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo). Não existem outras rotas de atualização ou exclusão.
 
 ## Como adicionar um endpoint
 
