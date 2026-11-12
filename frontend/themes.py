@@ -17,7 +17,10 @@ BUTTON_ALERT = "#5A1B22"
 NORMAL_TEXT = "#FFFFFF"
 TITLE_TEXT = "#D4C48A"
 MUTED_TEXT = "#7A7568"
-DAMAGE_TEXT = "#FF1A1A"
+DAMAGE_TEXT = "#FF1A1A"                 # damage in the battle log
+DAMAGE_POPUP_BY_PLAYER = "#FFFFFF"      # floating number when the hero hits a monster
+DAMAGE_POPUP_BY_ENEMY = "#FF1A1A"       # floating number when a monster hits the hero
+DAMAGE_POPUP_OUTLINE = "#000000"        # shadow that keeps the number readable over the board
 
 
 # BORDERS

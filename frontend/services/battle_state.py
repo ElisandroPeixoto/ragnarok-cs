@@ -50,6 +50,7 @@ class BattleState:
         self.time_left = turn_duration
         self.winner: str | None = None
         self.log = BattleLog()
+        self.damage_popups: list[dict] = []   # floating damage numbers (see battle_animation.damage_popup)
 
         # UI Flags
         self.input_locked = False  # True when enemy is playing

@@ -118,9 +118,16 @@ O **custo é o tamanho do caminho mais curto** (`find_path`): 1 AP por tile. `fi
 `perform_attack`:
 1. Desconta `ap_cost` e aplica `damage` (fixo, sem defesa ou variação; o HP não fica negativo).
 2. Vira o atacante para o alvo e toca `attack`. O alvo toca `hurt`, ou `dead` se o HP zerar.
-3. Se o alvo morreu, registra `LogEntry(kind="defeat")` e chama `state.check_battle_end()`.
+3. Cria o número de dano flutuante (`damage_popup`, em `state.damage_popups`) e registra `LogEntry(kind="attack")`, que aparece no Battle Log como "X uses Skill in Y: **-N damage**", com o dano em vermelho (`DAMAGE_TEXT`). Vale para o herói e para os monstros.
+4. Se o alvo morreu, registra `LogEntry(kind="defeat")` e chama `state.check_battle_end()`.
 
-> O ataque em si **não é registrado no log**. `LogEntry` já sabe formatar `kind="attack"` (com o dano em vermelho), mas `perform_attack` não adiciona essa entrada.
+### Números de dano (`services/battle_animation.py`)
+
+Cada golpe gera um número que **salta** da cabeça do alvo: sobe até `POPUP_JUMP_HEIGHT` (34 px) em 40% do tempo, desce um pouco, desliza `POPUP_DRIFT_X` para o lado e some no fim de `POPUP_DURATION` (1,1 s). Ele aparece `POPUP_DELAY` (0,25 s) depois do início do ataque, mais ou menos quando o golpe acerta.
+
+- `damage_popup(target, amount, from_player)` guarda o tile e a altura da cabeça do alvo (`head_height`, pelo `box` do clip `idle`), porque monstros mortos saem da batalha na rodada seguinte.
+- `popup_pose(popup)` é uma função pura do tempo: devolve `(dx, dy, opacidade)` ou `None` fora da janela. `perform_attack` descarta os números expirados (`popup_alive`).
+- Cor: **branco** (`DAMAGE_POPUP_BY_PLAYER`) quando o herói causa o dano, **vermelho** (`DAMAGE_POPUP_BY_ENEMY`) quando um monstro acerta o herói. Fonte Cinzel, com sombra preta (`DAMAGE_POPUP_OUTLINE`) para ler sobre o tabuleiro.
 
 `get_attack_tiles(state, unit_id, skill_name)` devolve os tiles que a skill alcança nas 4 direções, usados para destacá-los no tabuleiro.
 
@@ -186,11 +193,12 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 
 ### Desenho do tabuleiro (`components/battle_board.py`)
 
-Três camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
+Quatro camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 1. **Fundo**: `board.background_image` (`battle_boards/forest_battlefield.jpg`) ou uma cor de reserva.
 2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (montados uma vez na importação, em `components/battle_grid.py`: todos os tiles com a mesma cor, no tom do terreno do fundo (`TILE_COLOR`, translúcida), e os contornos por cima) mais os destaques do momento.
 3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A posição e a profundidade usam `board_position`, então quem está andando aparece entre os tiles.
+4. **Números de dano**: `damage_popup_control` para cada item de `state.damage_popups`, por cima de todos os sprites. Como a página só re-renderiza ~12 vezes por segundo, cada número usa `animate_position`/`animate_opacity` (`POPUP_FRAME_MS`) com uma `key` própria, e o Flutter suaviza o movimento entre um quadro e outro.
 
 > Existe um ramo para unidades **sem** sprite sheet que usa os campos `sprite`, `width`, `height` e `placeholder_color`. O backend não envia esses campos; o ramo sobrou da época do mockup e só não quebra porque toda unidade enviada hoje tem `sheet`.
 

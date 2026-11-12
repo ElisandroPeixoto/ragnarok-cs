@@ -17,7 +17,7 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
 | Animação | ✅ sprite sheets com clips por direção (idle, walk, attack, hurt, dead) |
 | Derrota | ✅ detectada e exibida; ⚠️ sem consequência alguma (a caçada é infinita, não há vitória) |
-| Log | ⚠️ registra movimento, derrota e fim, mas não os ataques |
+| Log | ✅ registra movimento, ataques (com o dano em vermelho), derrota e fim |
 | Persistência | ❌ nada volta para o backend |
 
 ## Lacunas conhecidas
@@ -25,15 +25,14 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 Pontos encontrados no código, em ordem aproximada de impacto:
 
 1. **O resultado não é salvo.** Vencer não dá EXP, zeny nem drops; perder não custa nada; o HP do personagem não muda. Não existe endpoint para isso.
-2. **Ataques não aparecem no Battle Log.** `perform_attack` (`services/battle_actions.py`) só registra `defeat`. `LogEntry` já sabe formatar `kind="attack"`; falta adicionar a entrada.
-3. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
-4. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
-5. **Ordem de turno fixa.** `turn_order`: o herói sempre começa, depois os monstros na ordem em que nasceram, sem iniciativa ou velocidade.
-6. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
-7. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
-8. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
-9. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
-10. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
+2. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
+3. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
+4. **Ordem de turno fixa.** `turn_order`: o herói sempre começa, depois os monstros na ordem em que nasceram, sem iniciativa ou velocidade.
+5. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
+6. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
+7. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
+8. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
+9. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
 
 ## Proposta de fases
 
@@ -45,8 +44,7 @@ Objetivo: lutar passar a ter consequência.
 - Gravar a batalha em uma tabela (ex.: `battles`: personagem, mapa, monstros, status) quando ela começa. Assim o backend sabe que o encontro existe e pode recusar resultados de batalhas inventadas.
 - Recompensas simples por monstro (colunas `base_exp`, `zeny` em `MonsterModel`) e atualização de `CharacterModel` (`exp`, `zeny`, `hp`).
 - Atualizar o personagem em `session_state` com a resposta, para o perfil mostrar os novos valores.
-- Registrar os ataques no log (lacuna 2).
-- Mostrar o erro quando o Hunt falhar (lacuna 8).
+- Mostrar o erro quando o Hunt falhar (lacuna 7).
 
 ### Fase 2: conteúdo e variedade
 

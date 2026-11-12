@@ -12,6 +12,12 @@ DEFAULT_ANIM = "idle"
 DEFAULT_FACING = "se"
 WALK_SECONDS_PER_TILE = 0.35    # walking speed on the board
 
+# Floating damage numbers: jump up from the hit unit's head, fall back a little and fade out
+POPUP_DELAY = 0.25        # seconds after the attack starts (roughly when the blow lands)
+POPUP_DURATION = 1.1
+POPUP_JUMP_HEIGHT = 34    # pixels at the top of the jump
+POPUP_DRIFT_X = 14        # sideways drift over the whole jump
+
 
 @dataclass(frozen=True)
 class Clip:
@@ -151,3 +157,40 @@ def current_frame(unit: dict, now: float | None = None) -> tuple[int, int]:
     idle = _find_clip(sheet, DEFAULT_ANIM, facing)
     idle_index = int((elapsed - clip.duration) * idle.fps)
     return idle.row, idle_index % idle.frames
+
+# DAMAGE POPUPS
+# The popup stores where the unit stood, since dead monsters are removed from the battle later.
+
+_popup_ids = iter(range(1, 10**9))
+
+
+def head_height(unit: dict) -> float:
+    """Pixels from the unit's feet (tile center) up to the top of its idle sprite."""
+    sheet = get_sheet(unit["sheet"])
+    clip = _find_clip(sheet, DEFAULT_ANIM, unit.get("facing", DEFAULT_FACING))
+    box_top = clip.box[1] if clip.box else 0
+    return sheet.anchor_y - box_top - unit.get("offset_y", 0)
+
+
+def damage_popup(target: dict, amount: int, from_player: bool) -> dict:
+    return {"id": next(_popup_ids), "col": target["col"], "row": target["row"], "head": head_height(target),
+            "amount": amount, "from_player": from_player, "started": time.monotonic() + POPUP_DELAY}
+
+
+def popup_alive(popup: dict, now: float | None = None) -> bool:
+    now = time.monotonic() if now is None else now
+    return now - popup["started"] < POPUP_DURATION
+
+
+def popup_pose(popup: dict, now: float | None = None) -> tuple[float, float, float] | None:
+    """(dx, dy, opacity) relative to the unit's head, or None before it shows up / after it is gone.
+    dy follows a jump: up to POPUP_JUMP_HEIGHT at 40% of the time, then back down part of the way."""
+    now = time.monotonic() if now is None else now
+    progress = (now - popup["started"]) / POPUP_DURATION
+    if progress < 0 or progress >= 1:
+        return None
+    peak = 0.4
+    jump = 1 - ((progress - peak) / peak) ** 2   # 0 at the start, 1 at the peak, negative later
+    dy = -POPUP_JUMP_HEIGHT * max(jump, -0.3)
+    opacity = 1.0 if progress < 0.65 else max(0.0, (1 - progress) / 0.35)
+    return POPUP_DRIFT_X * progress, dy, opacity
