@@ -34,14 +34,21 @@ EXP_BAR_COLOR = "#52451C"
 
 
 # MAP SCREEN
-MAP_PANEL_BG = "#12131D"
-MAP_PANEL_BORDER = "#C8A532"
-MAP_PANEL_HEADER = "#52451C"
-MAP_ITEM_BORDER = "#52451C"
+MAP_PANEL_BORDER = "#C8A532"        # gold frame around the map image
 MAP_TITLE_TEXT = "#C8A532"
 MAP_LIGHT_TEXT = "#E0E0E0"
-# Wood-brown fill behind the map title, very translucent to stay subtle
-MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.25, "#8B5A2B")
+# Dark wood-brown fill behind the map title: translucent, but dark enough to read over bright maps
+MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.72, "#2B2117")
+MAP_SECTION_BG = ft.Colors.with_opacity(0.85, "#0F1018")   # "In the area" / "Routes" / "Monsters nearby"
+MAP_SECTION_BORDER = "#3D3523"       # dim gold outline of sections and their cards
+MAP_DIVIDER = "#34343E"              # line under the header and under each section title
+MAP_MUTED_TEXT = "#9C9AA6"           # greetings, route direction, "Building"
+MAP_MARKER_BG = ft.Colors.with_opacity(0.78, "#0D0E14")    # place labels drawn over the map image
+MAP_MARKER_BORDER = "#5A5A66"        # place chips / markers when not selected
+MAP_SELECTED = "#E2B93B"             # selected place chip, marker and route card
+MAP_LEVEL_TEXT = "#C8A532"           # "Lv 1-10" on route cards
+MAP_ZONE_SAFE = "#2BD45F"            # "Safe Zone"
+MAP_ZONE_HOSTILE = "#E5484D"         # "Hostile Area"
 
 
 # BATTLE BOARD

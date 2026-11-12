@@ -60,7 +60,7 @@ O frontend ainda não usa esta rota.
 
 Função: `patch_character_place`. Status: **200**, ou **404** (`Character not found` / `Map not found`).
 
-Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e `current_map_id` do personagem e devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao trocar de mapa pelo "Nearby".
+Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e `current_map_id` do personagem e devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao trocar de mapa pela seta de uma rota (seção "Routes").
 
 ---
 
@@ -81,7 +81,7 @@ O frontend usa esta rota na inicialização (`MapService.get_map_ids_sync`) para
 
 Função: `get_map_by_id`. Status: **200**, ou **404** `{"detail": "Map not found"}`.
 
-A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de monstros (com o monstro) e as conexões (com o mapa de destino). `to_response()` transforma isso num dict achatado (`MapSchemaResponse`):
+A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com o mapa de destino das saídas), os spawns de monstros (com o monstro) e as conexões (com o mapa de destino). `to_response()` transforma isso num dict achatado (`MapSchemaResponse`):
 
 ```json
 {
@@ -90,7 +90,17 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
   "level_range": "1 - 10",
   "image": "maps/training_field_1.jpg",
   "about": "...",
-  "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif" } ],
+  "zone": "hostile_passive",
+  "places": [
+    { "id": 18, "name": "Training Grounds", "kind": "area", "icon": "training",
+      "x": 0.3, "y": 0.66, "direction": null, "target": null },
+    { "id": 19, "name": "Academy Road", "kind": "exit", "icon": "exit",
+      "x": 0.63, "y": 0.9, "direction": "Southeast",
+      "target": { "map_id": "novice_academy", "name": "Novice Academy",
+                  "level_range": "1 - 10", "zone": "safe" } }
+  ],
+  "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif", "place_id": 18,
+              "greeting": "Ready to train? Monsters roam these woods." } ],
   "monsters": [
     { "name": "Poring",  "sheet": "poring",  "spawn_rate": 40 },
     { "name": "Lunatic", "sheet": "lunatic", "spawn_rate": 40 },
@@ -104,6 +114,8 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
 ```
 
 `monsters` lista **todos** os monstros do mapa. `MonsterSchema` expõe só `name`, `sheet` e `spawn_rate`.
+
+`places` vem de `place_to_dict`: `x`/`y` são o centro do marcador em fração da imagem, e `target` só existe nas saídas (`kind: "exit"`). Os `id` dos lugares mudam a cada seed (eles são regravados); `npcs[].place_id` aponta para eles na mesma resposta.
 
 ---
 

@@ -38,52 +38,65 @@ Helpers em `services/map_router_manager.py`:
 
 ### Layout (`map_screen`)
 
+`map_screen(map_data, character)` é um componente (`@ft.component`) com três estados: `show_places` (marcadores visíveis), `selected_area_id` (área cujos NPCs aparecem) e `selected_route_key` (rota destacada).
+
 ```
-┌ sidebar ┬──────────────────────────────────────────────────────┐
-│         │ [character_badge] [zeny_badge]                       │
-│         │ ┌──────────────── map_banner ──────────────────────┐ │
-│         │ │ Título + "Level: x - y" sobre a imagem do mapa    │ │
-│         │ └───────────────────────────────────────────────────┘ │
-│         │ ┌ People in the area ┐┌ Monsters ┐┌ Go To ──────────┐ │
-│         │ │ npc_item...        ││ cards    ││ This Area       │ │
-│         │ │                    ││ [Hunt]   ││ Nearby          │ │
-│         │ └────────────────────┘└──────────┘└─────────────────┘ │
-└─────────┴──────────────────────────────────────────────────────┘
+┌ sidebar ┬──────────────────────────────────────────────────────────────┐
+│         │ [avatar] Nome / zeny                          [Safe Zone]    │
+│         │ Novice - Lv: 1 / HP: 50/50                                   │
+│         │ ─────────────────────────────────────────────────────────── │
+│         │ ┌──────── map_frame (800 × 462) ────────┐  👁 Hide Places    │
+│         │ │ Título + "Recommended Level"           │                   │
+│         │ │   (Academy) (Main Square) (Port) ...   │                   │
+│         │ └────────────────────────────────────────┘                   │
+│         │ ┌ In the area ─────────────────┐ ┌ Routes ────────────────┐ │
+│         │ │ [Main Square] [Port] [House] │ │ Training Field 1    [↗] │ │
+│         │ │ npc_card (Hostess · Talk)    │ │ Academy (Building)      │ │
+│         │ └──────────────────────────────┘ └─────────────────────────┘ │
+│         │ ┌ Monsters nearby (só em mapas com monstros) ─────── [Hunt] ┐ │
+│         │ └────────────────────────────────────────────────────────────┘ │
+└─────────┴──────────────────────────────────────────────────────────────┘
 ```
 
-- **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado. Em janelas mais estreitas ele encolhe.
-- **`map_banner(map_data)`**: altura fixa `BANNER_HEIGHT = 494`, imagem em `COVER`, sombra no topo e caixa com título e faixa de nível.
-- **Painéis**: `section_panel(title, content, expand)` (`components/section_panel.py`), de altura fixa (`PANEL_HEIGHT = 295`) e cabeçalho dourado. As larguras seguem a proporção do Figma, 348 / 348 / 483.
-- **Cards**: `item_card` e `card_image` (`components/item_card.py`), montados por:
-  - `npc_item`: NPCs (sem ação).
-  - `monster_item`: monstros, com `spawn_rate` como subtítulo (`"40%"`).
-  - `place_item`: lugares de "This Area" (tooltip "Coming soon", sem ação).
-  - `navigation_item`: mapas vizinhos de "Nearby"; o clique chama `change_place(character, item["map_id"])` (`services/map_router_manager.py`), que registra o novo local no banco e só então navega para `map_route(item["map_id"])`.
+- **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado, com rolagem vertical.
+- **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, a zona do mapa (`zone_tag`), e uma linha divisória embaixo.
+- **`map_frame`**: a imagem tem **tamanho fixo em todos os mapas**, `MAP_IMAGE_WIDTH × MAP_IMAGE_HEIGHT` (800 × 462, proporção das artes 1358 × 784), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
+- **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações da imagem). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`).
+- **"View Places" / "Hide Places"** (`view_places_button`): mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
+- **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" dividem a largura em 7 : 5.
 
-### Painel Monsters e o botão Hunt
+### Lugares, áreas e rotas
 
-`monsters_content(map_id, monsters, character)`:
-- **Com monstros**: `ft.GridView` que ocupa todo o painel; os cards se esticam até a largura da coluna (`MONSTER_CARD_MAX_WIDTH`, proporção `MONSTER_CARD_RATIO`) e a grade rola se não couberem. Abaixo, o botão **Hunt** centralizado (`hunt_button`, cor `BUTTON_PRIMARY`).
-- **Sem monstros**: mostra "Safe Zone" com um escudo.
+Os lugares vêm do backend (`map_places`) com um `kind`:
+
+| kind | No mapa | Embaixo | Clique (marcador ou card) |
+|---|---|---|---|
+| `area` | marcador | aba em "In the area" (`area_chip`) | seleciona a área e mostra os NPCs dela (`npc_card`: imagem, nome, `greeting` e botão **Talk**) |
+| `building` | marcador | card em "Routes": "Safe Zone", "Building", sem seta | destaca o card (entrar no prédio vem depois) |
+| `exit` | marcador | card em "Routes" com o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` |
+
+- A área inicial é a primeira com NPCs (`default_area_id`); sem ninguém na área, aparece "No one around".
+- `build_routes` monta "Routes": saídas primeiro, depois prédios, e por último conexões de `navigation` que não têm marcador de saída (sem zona nem direção).
+- O botão **Talk** ainda não faz nada (tooltip "Coming soon").
+- Ícones: `PLACE_ICONS` traduz a chave `icon` do lugar (`square`, `port`, `house`, `building`, `exit`, `training`) para um ícone do Flet. **TODO**: trocar pelos PNG/SVG do projeto.
+- Zonas: `ZONES` traduz `zone` (`safe`, `hostile_passive`, `hostile_aggressive`) para o rótulo, o ícone e a cor (`MAP_ZONE_SAFE` / `MAP_ZONE_HOSTILE`).
+
+### "Monsters nearby" e o botão Hunt
+
+Só aparece em mapas com monstros. `monsters_nearby(map_id, monsters, character)` mostra um card por monstro (`item_card` + `monster_sprite`, com o `spawn_rate` como subtítulo, ex.: `"40%"`) e o botão **Hunt** à direita.
 
 `hunt_button(map_id, character)` → `handle_hunt` → `start()`:
 1. `BattleService.start_battle(character["id"], map_id)` → `POST /api/v1/battles/`.
-2. Em caso de `ApiError`, imprime no console e fica na tela. Isso acontece, por exemplo, se o mapa não tiver monstros.
+2. Em caso de `ApiError`, imprime no console e fica na tela.
 3. Com sucesso, chama `navigate_to_battle(map_route(map_id), setup)`.
 
-> O Hunt coloca na batalha **todos** os monstros do mapa: no Training Field 1, Poring, Lunatic e Wilow juntos.
-
-### "Go To"
-
-`go_to_content(map_data)` tem duas seções:
-- **This Area**: lugares do dicionário `MAP_PLACES`, que fica **no frontend** (TODO: levar para o backend). Hoje só a Novice Academy tem um lugar ("Academy"), e o botão não tem destino.
-- **Nearby**: vem de `map_data["navigation"]`, ou seja, de `map_connections` no banco.
+> O Hunt abre a caçada com os monstros do mapa; as ondas sorteiam os monstros pela chance (`spawn_rate`) de cada um.
 
 ## Mapas existentes (seed)
 
-| id | Nome | Nível | NPCs | Monstros (peso) | Conecta com |
-|---|---|---|---|---|---|
-| `novice_academy` | Novice Academy | 1 - 10 | Hostess, Sailor | nenhum (Safe Zone) | `training_field_1` |
-| `training_field_1` | Training Field 1 | 1 - 10 | Trainer | Poring (40), Lunatic (40), Wilow (20) | `novice_academy` |
+| id | Nome | Nível | Zona | Lugares | NPCs | Monstros (peso) | Conecta com |
+|---|---|---|---|---|---|---|---|
+| `novice_academy` | Novice Academy | 1 - 10 | `safe` | Main Square, Port, 3× House (áreas); Academy (prédio); Training Camp (saída, Northwest) | Hostess (Main Square), Sailor (Port) | nenhum | `training_field_1` |
+| `training_field_1` | Training Field 1 | 1 - 10 | `hostile_passive` | Training Grounds (área); Academy Road (saída, Southeast) | Trainer (Training Grounds) | Poring (40), Lunatic (40), Wilow (20) | `novice_academy` |
 
-Todo personagem novo começa em `novice_academy`. Sempre que o personagem muda de mapa pelo "Nearby", `PATCH /api/v1/characters/{id}/place` grava o novo `current_map` e `current_map_id`, e o personagem da sessão é atualizado com a resposta. Assim o botão **Enter** do perfil leva ao último mapa visitado. Se a chamada falhar, a navegação não acontece.
+Todo personagem novo começa em `novice_academy`. Sempre que o personagem muda de mapa pela seta de uma rota, `PATCH /api/v1/characters/{id}/place` grava o novo `current_map` e `current_map_id`, e o personagem da sessão é atualizado com a resposta. Assim o botão **Enter** do perfil leva ao último mapa visitado. Se a chamada falhar, a navegação não acontece.

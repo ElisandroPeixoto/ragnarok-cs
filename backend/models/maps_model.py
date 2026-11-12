@@ -12,7 +12,10 @@ class MapModel(DBBaseModel):
     image: str = Column(String, nullable=False, default="")
     about: str = Column(Text, nullable=False, default="")
     spawn_rate: int = Column(Integer, nullable=False, default=1)   # monsters per spawn wave in a hunt
+    zone: str = Column(String(30), nullable=False, default="safe")   # "safe", "hostile_passive" or "hostile_aggressive"
 
     npcs = relationship("NpcModel", lazy="selectin")
+    places = relationship("MapPlaceModel", foreign_keys="MapPlaceModel.map_id", order_by="MapPlaceModel.slot",
+                          lazy="selectin")
     monster_spawns = relationship("MapMonsterModel", lazy="selectin")
     connections = relationship("MapConnectionModel", foreign_keys="MapConnectionModel.from_map_id", lazy="selectin")

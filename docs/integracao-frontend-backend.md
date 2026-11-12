@@ -113,7 +113,7 @@ sequenceDiagram
 
 O formato de cada resposta está em [Endpoints do backend](endpoints-backend.md). Dois pontos sensíveis:
 
-- **`GET /maps/{id}`**: `to_response()` em `backend/api/v1/endpoints/maps.py` "achata" as relações do ORM (NPCs, spawns, conexões) no formato que `map_screen.py` lê. Se os modelos mudarem, mantenha esse formato estável.
+- **`GET /maps/{id}`**: `to_response()` em `backend/api/v1/endpoints/maps.py` "achata" as relações do ORM (lugares, NPCs, spawns, conexões) no formato que `map_screen.py` lê. Se os modelos mudarem, mantenha esse formato estável.
 - **`POST /battles/`**: as unidades **não vêm com posição**. O frontend adiciona `col`, `row` e `facing` em `place_unit` (`services/battle_state.py`). A resposta traz só o herói em `units`, mais `spawn_pool` e `spawn_rate`: os monstros são sorteados pelo frontend, em ondas. Os campos estão descritos em [Sistema de combate](sistema-de-combate.md).
 
 ## Pontos de atenção

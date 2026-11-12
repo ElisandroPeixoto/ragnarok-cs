@@ -12,6 +12,8 @@ erDiagram
     monsters ||--o{ monster_skills : ""
     skills ||--o{ monster_skills : ""
     maps ||--o{ npcs : ""
+    maps ||--o{ map_places : ""
+    map_places ||--o{ npcs : "place_id"
     maps ||--o{ map_monsters : ""
     monsters ||--o{ map_monsters : ""
     maps ||--o{ map_connections : "from_map_id"
@@ -93,12 +95,29 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `image` | String | capa do mapa |
 | `about` | Text | descrição, ainda não exibida |
 | `spawn_rate` | Integer | quantos monstros nascem por onda na caçada (padrão 1); não confundir com o `spawn_rate` por monstro de `map_monsters` |
+| `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; aparece no topo da tela do mapa e nas rotas que levam a ele |
 
-Relações (todas `lazy="selectin"`): `npcs`, `monster_spawns`, `connections`.
+Relações (todas `lazy="selectin"`): `npcs`, `places` (ordenados por `slot`), `monster_spawns`, `connections`.
+
+### `map_places`: `MapPlaceModel` (`models/map_place_model.py`)
+
+Pontos de interesse desenhados como marcadores sobre a imagem do mapa.
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | Integer PK | |
+| `map_id` | FK `maps.id` | mapa onde o lugar fica |
+| `name` | String(255) | pode repetir (ex.: três "House") |
+| `kind` | String(20) | `"area"` (tem NPCs), `"building"` (prédio; entrar vem depois) ou `"exit"` (leva a outro mapa) |
+| `icon` | String(50) | chave do ícone; o frontend traduz em `PLACE_ICONS` |
+| `x`, `y` | Float | centro do marcador, em fração (0–1) da largura/altura da imagem |
+| `slot` | Integer | ordem de exibição |
+| `direction` | String(30), nullable | saídas: direção, ex.: `"Northwest"` |
+| `target_map_id` | FK `maps.id`, nullable | saídas: mapa de destino (relação `target_map`) |
 
 ### `npcs`: `NpcModel` (`models/npcs_model.py`)
 
-`id`, `map_id` (FK `maps.id`), `name`, `image`. Cada NPC pertence a um único mapa.
+`id`, `map_id` (FK `maps.id`), `name`, `image`, `place_id` (FK `map_places.id`, a área onde o NPC fica) e `greeting` (fala base mostrada no card do NPC). Cada NPC pertence a um único mapa.
 
 ### `map_monsters`: `MapMonsterModel` (`models/map_monster_model.py`)
 
@@ -129,8 +148,9 @@ Ordem de execução de `seed()`:
 2. **Skills**: cria ou atualiza por nome (upsert).
 3. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
 4. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
-5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem e descrição. NPCs e spawns **não** são reinseridos nem atualizados. Se não existe, cria com NPCs e spawns.
-6. **Conexões**: cria as que ainda não existem.
+5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, descrição, `spawn_rate` e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
+6. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
+7. **Conexões**: cria as que ainda não existem.
 
 O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 
@@ -140,9 +160,10 @@ O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 
 - **Monstro caçável novo**: gere a sprite sheet (ver [Sprites e animação](sprites-e-animacao.md)); adicione a entrada em `MONSTERS` com `image`, `sheet`, `max_hp`, `max_ap`, `ai`, `skills`; inclua `("Nome", peso)` na lista `monsters` do mapa.
 - **Skill nova**: adicione em `SKILLS` e referencie pelo nome em `JOBS[...]["skills"]` ou `MONSTERS[...]["skills"]`.
-- **Mapa novo**: adicione em `MAPS` com `navigation` nos dois sentidos e coloque a imagem em `assets/maps/`. Reinicie o frontend para registrar a rota nova.
+- **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e coloque a imagem em `assets/maps/` (1358 × 784, a proporção da tela). Reinicie o frontend para registrar a rota nova.
+- **Lugar ou NPC novo**: edite `places`/`npcs` do mapa e rode o seed; eles são regravados a cada execução.
 
-> Limitação: como mapas existentes são pulados, **mudar NPCs ou spawns de um mapa que já está no banco não tem efeito** ao rodar o seed de novo. Nesse caso é preciso apagar o banco e recriar.
+> Limitação: **mudar os spawns de um mapa que já está no banco não tem efeito** ao rodar o seed de novo. Nesse caso é preciso apagar o banco e recriar.
 
 ## Mudanças de schema
 

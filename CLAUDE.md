@@ -49,7 +49,7 @@ Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, an
 - `core/config.py` holds `Settings` (pydantic-settings, reads `.env`) **and** `DBBaseModel` (the declarative base). `DEBUG=True` selects `DB_URL_DEV`.
 - `models/__all_models.py` must import every model so `metadata.create_all` sees them; `main.py`/`create_tables.py`/`seed_data.py` import it. Add new models there.
 - `api/v1/api.py` mounts endpoint routers; endpoints use `Depends(get_session)` from `core/deps.py`.
-- Map endpoint (`endpoints/maps.py`) eager-loads NPCs, monster spawns and connections, then flattens them with `to_response()` into the dict shape the frontend consumes — keep that shape stable when changing models.
+- Map endpoint (`endpoints/maps.py`) eager-loads places, NPCs, monster spawns and connections, then flattens them with `to_response()` into the dict shape the frontend consumes — keep that shape stable when changing models. `map_places` are the markers drawn over the map image (`kind` area/building/exit, `x`/`y` as fractions of the image); NPCs stand in an area (`place_id`) and have a `greeting`; maps have a `zone` (safe/hostile). The seed rewrites places and NPCs on every run.
 - No admin UI or migrations: new game data goes into `seed_data.py`; schema changes require deleting `ragnarokcs.db` and reseeding.
 
 ### Frontend
