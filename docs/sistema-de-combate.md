@@ -187,7 +187,7 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 └─────────┴─────────────────────────────────────────────────────────┘
 ```
 
-- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, com avatar, nome, job, HP e AP (rótulo "PA"). A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
+- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, com avatar, nome, job, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
 - `battle_log_panel` (`components/battle_log_panel.py`): mostra `state.log.entries` com rolagem automática.
 - `turn_panel`: rodada, tempo restante, "Enemy turn...", "Victory!" ou "Defeat...", e os botões.
 - `CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH` (1446 px) também limita a largura das telas de mapa.

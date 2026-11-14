@@ -25,9 +25,13 @@ def unit_card(unit: dict, is_active: bool):
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         controls=[
             ft.Text(f"HP:  {unit['hp']}/{unit['max_hp']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
-            ft.Text(f"PA:  {unit['ap']}/{unit['max_ap']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
+            ft.Text(f"AP:  {unit['ap']}/{unit['max_ap']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
         ],
     )
+
+    # red HP bar: shrinks as the unit loses health
+    hp_bar = ft.ProgressBar(value=max(0, unit["hp"]) / unit["max_hp"] if unit["max_hp"] else 0,
+                            bgcolor=t.STAT_BAR_BG, color=t.HP_BAR_COLOR, bar_height=8, border_radius=4)
 
     return ft.Container(
         bgcolor=t.CARD_BG,
@@ -38,6 +42,7 @@ def unit_card(unit: dict, is_active: bool):
             spacing=10,
             controls=[
                 ft.Row(spacing=8, controls=[avatar, ft.Column(spacing=2, controls=identity)]),
+                hp_bar,
                 stats,
             ],
         ),
