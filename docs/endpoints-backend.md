@@ -56,6 +56,12 @@ Função: `get_character_by_id`. Status: **200**, ou **404** `{"detail": "Charac
 
 O frontend ainda não usa esta rota.
 
+### `PATCH /api/v1/characters/{character_id}/exp`: salvar a EXP do personagem
+
+Função: `patch_character_exp`. Status: **200**, **404** (`Character not found`) ou **422** (`exp` negativo).
+
+Corpo: `{ "exp": 45 }`, o **total** de EXP do personagem (não o ganho). Devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao terminar a caçada: ao clicar em Leave (guarda a EXP ganha) ou assim que o herói morre (já com a perda de 20%). Veja [Regra de experiência](regra-de-experiencia.md).
+
 ### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
 
 Função: `patch_character_place`. Status: **200**, ou **404** (`Character not found` / `Map not found`).
@@ -145,7 +151,7 @@ Resposta (`BattleSchemaResponse`):
 {
   "units": {
     "hero": {
-      "name": "Midrway", "job": "Novice", "team": "player",
+      "name": "Midrway", "job": "Novice", "team": "player", "level": 1, "exp": 0,
       "sheet": "novice", "avatar": "characters_badges/0_novice_badge.png", "ai": null,
       "offset_x": 0, "offset_y": 0,
       "hp": 50, "max_hp": 50, "ap": 5, "max_ap": 5,
@@ -160,7 +166,7 @@ Resposta (`BattleSchemaResponse`):
     {
       "weight": 40,
       "unit": {
-        "name": "Poring", "job": null, "team": "enemy",
+        "name": "Poring", "job": null, "team": "enemy", "level": 1, "base_exp": 6,
         "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
@@ -181,6 +187,7 @@ Origem de cada campo:
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
 | `level` | `CharacterModel.level` | `MonsterModel.level` |
+| `exp` | `CharacterModel.exp` | — |
 | `base_exp` | — | `MonsterModel.base_exp` |
 | `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
@@ -202,12 +209,13 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | GET | `/api/v1/characters/` | `get_characters` | 200 | n/a |
 | GET | `/api/v1/characters/{character_id}` | `get_character_by_id` | 200 | 404 |
 | DELETE | `/api/v1/characters/{character_id}` | `delete_character` | 204 | 404 |
+| PATCH | `/api/v1/characters/{character_id}/exp` | `patch_character_exp` | 200 | 404, 422 |
 | PATCH | `/api/v1/characters/{character_id}/place` | `patch_character_place` | 200 | 404, 422 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-A única rota de atualização é `PATCH /api/v1/characters/{character_id}/place`; a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo). Não existem outras rotas de atualização ou exclusão.
+As rotas de atualização são `PATCH /api/v1/characters/{character_id}/place` e `.../exp`; a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo). Não existem outras.
 
 ## Como adicionar um endpoint
 

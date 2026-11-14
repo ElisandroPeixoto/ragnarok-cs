@@ -2,6 +2,7 @@ import copy
 import random
 from services.battle_geometry import BoardConfig
 from services.battle_log import BattleLog, LogEntry
+from services.battle_exp import exp_after_death
 
 TURN_DURATION = 30
 
@@ -52,6 +53,8 @@ class BattleState:
         self.log = BattleLog()
         self.damage_popups: list[dict] = []   # floating damage numbers (see battle_animation.damage_popup)
         self.exp_gained = 0                   # total EXP the hero earned in this hunt (see battle_exp)
+        self.exp_start = self.hero.get("exp", 0)   # hero EXP when the hunt began (to know if it changed)
+        self.exp_saved = False                # True once the final EXP was sent to the backend
 
         # UI Flags
         self.input_locked = False  # True when enemy is playing
@@ -60,6 +63,10 @@ class BattleState:
 
 
     # Getters
+    @property
+    def hero(self) -> dict:
+        return next(unit for unit in self.units.values() if unit["team"] == "player")
+
     @property
     def current_unit_id(self) -> str:
         return self.turn_order[self.turn_index]
@@ -138,5 +145,9 @@ class BattleState:
         player_alive = any(u["team"] == "player" and u["hp"] > 0 for u in self.units.values())
         if self.winner is None and not player_alive:
             self.winner = "defeat"
+            hero = self.hero
+            lost = hero.get("exp", 0) - exp_after_death(hero.get("exp", 0))
+            hero["exp"] = hero.get("exp", 0) - lost
+            self.log.add(LogEntry(round=self.round, kind="exp_loss", actor=hero["name"], exp=lost))
             self.log.add(LogEntry(round=self.round, kind="end", result=self.winner))
         return self.winner

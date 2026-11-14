@@ -11,7 +11,9 @@ from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
 from services.map_router_manager import navigate_back_from_battle
-from services.session_state import get_battle_setup
+from services.session_state import get_battle_setup, get_current_character, set_current_character
+from services.character_service import CharacterService
+from services.api_client import ApiError
 from components.sidebar import sidebar
 
 
@@ -57,6 +59,19 @@ def battle_screen(setup: dict):
         state.version += 1
         set_tick(state.version)
 
+    async def save_exp():
+        """Sends the hero's final EXP to the backend (once per hunt, and only if it changed)."""
+        if state.exp_saved:
+            return
+        state.exp_saved = True
+        character, hero_exp = get_current_character(), state.hero.get("exp", 0)
+        if character is None or hero_exp == state.exp_start:
+            return
+        try:
+            set_current_character(await CharacterService.update_exp(character["id"], hero_exp))
+        except ApiError as error:
+            print(f"Failed to save the EXP: {error.detail}")
+
     # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():
         async def turn_loop():
@@ -90,6 +105,8 @@ def battle_screen(setup: dict):
         async def anim_loop():
             while not state.closed:  # keeps going after a winner so the "dead" clip can finish
                 await asyncio.sleep(ANIM_INTERVAL)
+                if state.winner is not None:
+                    await save_exp()   # the death penalty is saved right away, not only on Leave
                 refresh()
 
         ft.context.page.run_task(turn_loop)
@@ -121,8 +138,11 @@ def battle_screen(setup: dict):
         refresh(clear_skill=True)
 
     def handle_leave(e):
-        state.closed = True
-        navigate_back_from_battle()
+        async def leave():
+            await save_exp()   # leaving keeps the EXP earned in the hunt
+            state.closed = True
+            navigate_back_from_battle()
+        ft.context.page.run_task(leave)
 
     # ---------- layout ----------
     log_width = CONTENT_WIDTH - LEFT_WIDTH - RIGHT_PANEL_WIDTH - 2 * GAP

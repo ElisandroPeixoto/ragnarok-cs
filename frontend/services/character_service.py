@@ -21,5 +21,10 @@ class CharacterService:
         return await api.patch(f"{API_PREFIX}/{character_id}/place", json={"map_id": map_id})
 
     @staticmethod
+    async def update_exp(character_id: int, exp: int) -> dict:
+        """Saves the character's new total EXP; returns the updated character"""
+        return await api.patch(f"{API_PREFIX}/{character_id}/exp", json={"exp": exp})
+
+    @staticmethod
     async def delete_character(character_id: int) -> None:
         await api.delete(f"{API_PREFIX}/{character_id}")

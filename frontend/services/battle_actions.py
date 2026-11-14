@@ -77,6 +77,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
         if attacker["team"] == "player" and target["team"] == "enemy":
             gained = exp_gain(attacker.get("level", 1), target.get("level", 1), target.get("base_exp", 0))
             state.exp_gained += gained
+            attacker["exp"] = attacker.get("exp", 0) + gained
             state.log.add(LogEntry(round=state.round, kind="exp", actor=attacker["name"], exp=gained))
         state.check_battle_end()
 

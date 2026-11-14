@@ -18,7 +18,7 @@ def skill_to_dict(skill) -> dict:
 
 def hero_unit(character: CharacterModel, job: JobModel) -> dict:
     return {
-        "name": character.name, "job": job.name, "team": "player", "level": character.level,
+        "name": character.name, "job": job.name, "team": "player", "level": character.level, "exp": character.exp,
         "sheet": job.sheet, "avatar": job.avatar,
         "offset_x": job.offset_x, "offset_y": job.offset_y,
         "hp": character.hp, "max_hp": character.max_hp,

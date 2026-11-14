@@ -6,6 +6,8 @@ The percentage depends on the level difference (hero level - monster level):
 """
 
 # (largest difference covered, percentage), checked in order; the last row is the open-ended tier
+DEATH_EXP_PENALTY = 20   # percent of the current EXP lost when the hero dies
+
 HERO_HIGHER_TIERS = [(5, 100), (10, 90), (30, 50), (None, 10)]
 HERO_LOWER_TIERS = [(5, 100), (10, 110), (30, 120), (None, 40)]
 
@@ -18,6 +20,11 @@ def exp_percentage(hero_level: int, monster_level: int) -> int:
         if limit is None or abs(difference) <= limit:
             return percentage
     return 100  # unreachable: the last tier has no limit
+
+
+def exp_after_death(current_exp: int) -> int:
+    """The hero's EXP after dying: loses DEATH_EXP_PENALTY% of the current EXP, rounded down."""
+    return current_exp - current_exp * DEATH_EXP_PENALTY // 100
 
 
 def exp_gain(hero_level: int, monster_level: int, base_exp: int) -> int:

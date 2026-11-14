@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class LogEntry:
     round: int
-    kind: str  # "move" | "attack" | "defeat" | "exp" | "end"
+    kind: str  # "move" | "attack" | "defeat" | "exp" | "exp_loss" | "end"
     actor: str = ""  # who played
     target: str = ""  # who was attacked
     skill: str = ""  # skill used
@@ -25,6 +25,8 @@ class LogEntry:
             return f"{self.target} was defeated"
         if self.kind == "exp":
             return f"{self.actor} gains {self.exp} EXP"
+        if self.kind == "exp_loss":
+            return f"{self.actor} loses {self.exp} EXP"
         if self.kind == "end":
             return "Victory!" if self.result == "victory" else "Defeat..."
         return ""

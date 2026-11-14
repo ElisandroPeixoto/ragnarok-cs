@@ -5,7 +5,7 @@ import themes as t
 def status_bar(label: str, value: int, max_value: int, bar_color: str):
     """Labeled status bar. e.g.: HP, EXP, etc."""
 
-    ratio = (value / max_value) if max_value else 0
+    ratio = min(value / max_value, 1) if max_value else 0   # no level-up yet: EXP past the max just fills the bar
 
     return ft.Column(spacing=4, controls=[
         ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[

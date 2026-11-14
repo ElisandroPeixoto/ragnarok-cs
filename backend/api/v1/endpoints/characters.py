@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.character_model import CharacterModel
 from models.maps_model import MapModel
-from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate
+from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaExpUpdate
 from core.deps import get_session
 from typing import List
 
@@ -65,6 +65,22 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
 
     await db.delete(character)
     await db.commit()
+
+
+# PATCH Character exp
+"""Save the character's total EXP after a hunt (the battle runs on the client, which applies the EXP rule)"""
+@router.patch("/{character_id}/exp", status_code=status.HTTP_200_OK, response_model=CharacterSchemaResponse)
+async def patch_character_exp(character_id: int, update: CharacterSchemaExpUpdate,
+                              db: AsyncSession = Depends(get_session)):
+    character = await db.get(CharacterModel, character_id)
+    if character is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
+
+    character.exp = update.exp
+    await db.commit()
+    await db.refresh(character)
+
+    return character
 
 
 # PATCH Character place

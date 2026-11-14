@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from decimal import Decimal
 
 
@@ -11,6 +11,10 @@ class CharacterSchemaCreate(CharacterSchemaBase):
 
 class CharacterSchemaPlaceUpdate(BaseModel):
     map_id: str
+
+
+class CharacterSchemaExpUpdate(BaseModel):
+    exp: int = Field(ge=0)   # the character's new total EXP
 
 
 class CharacterSchemaResponse(CharacterSchemaBase):
