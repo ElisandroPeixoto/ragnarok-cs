@@ -191,20 +191,20 @@ def area_chip(place: dict, selected: bool, on_click):
 
 def talk_button():
     return ft.Container(  # TODO: open the NPC's dialogue
-        padding=ft.Padding.symmetric(horizontal=10, vertical=3), border_radius=4,
-        border=ft.Border.all(1, t.MAP_MARKER_BORDER), tooltip="Coming soon", on_click=lambda e: None,
-        content=cinzel("Talk", 11),
+        padding=ft.Padding.symmetric(horizontal=12, vertical=3.6), border_radius=4.8,
+        border=ft.Border.all(1.2, t.MAP_MARKER_BORDER), tooltip="Coming soon", on_click=lambda e: None,
+        content=cinzel("Talk", 13),
     )
 
 
 def npc_card(npc: dict):
     return ft.Container(
-        width=210, height=106, padding=8, border_radius=6, border=ft.Border.all(1, t.MAP_SECTION_BORDER),
-        content=ft.Row(spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
-            ft.Image(src=npc["image"], width=46, height=88, fit=ft.BoxFit.CONTAIN),
-            ft.Column(expand=True, spacing=4, alignment=ft.MainAxisAlignment.CENTER, controls=[
-                cinzel(npc["name"], 15),
-                cinzel(npc.get("greeting", ""), 9, t.MAP_MUTED_TEXT, max_lines=3,
+        width=252, height=127, padding=9.6, border_radius=7.2, border=ft.Border.all(1.2, t.MAP_SECTION_BORDER),
+        content=ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
+            ft.Image(src=npc["image"], width=55, height=106, fit=ft.BoxFit.CONTAIN),
+            ft.Column(expand=True, spacing=4.8, alignment=ft.MainAxisAlignment.CENTER, controls=[
+                cinzel(npc["name"], 18),
+                cinzel(npc.get("greeting", ""), 10.8, t.MAP_MUTED_TEXT, max_lines=3,
                        overflow=ft.TextOverflow.ELLIPSIS),
                 ft.Row(controls=[talk_button()]),
             ]),
