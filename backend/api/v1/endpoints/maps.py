@@ -37,6 +37,7 @@ def to_response(map_model: MapModel) -> dict:
                  for npc in map_model.npcs],
         "monsters": [{"name": monster_spawn.monster.name,
                       "sheet": monster_spawn.monster.sheet,
+                      "level": monster_spawn.monster.level,
                      "spawn_rate": monster_spawn.spawn_rate} for monster_spawn in map_model.monster_spawns],
         "navigation":[{"name": connection.to_map.name,
                        "image": connection.to_map.image,

@@ -35,17 +35,17 @@ JOBS = {
 # "sheet" is the folder in assets/sprites: used in battle and as the monster's picture on maps
 MONSTERS = {
     "Poring": {
-        "sheet": "poring", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "sheet": "poring", "level": 1, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
     "Lunatic": {
-        "sheet": "lunatic", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "sheet": "lunatic", "level": 1, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
     "Wilow": {
-        "sheet": "wilow", "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "sheet": "wilow", "level": 1, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
@@ -108,6 +108,8 @@ async def seed() -> None:
         columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(monsters)")).fetchall()]
         if "image" in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters DROP COLUMN image")
+        if "level" not in columns:
+            await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN level INTEGER NOT NULL DEFAULT 1")
         # maps gained "spawn_rate" (monsters per wave); add it to older databases
         map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
         if "spawn_rate" not in map_columns:

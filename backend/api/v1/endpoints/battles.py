@@ -30,7 +30,7 @@ def hero_unit(character: CharacterModel, job: JobModel) -> dict:
 def monster_unit(monster: MonsterModel) -> dict:
     return {
         "name": monster.name, "team": "enemy",
-        "sheet": monster.sheet, "ai": monster.ai,
+        "sheet": monster.sheet, "level": monster.level, "ai": monster.ai,
         "offset_x": monster.offset_x, "offset_y": monster.offset_y,
         "hp": monster.max_hp, "max_hp": monster.max_hp,
         "ap": monster.max_ap, "max_ap": monster.max_ap,
