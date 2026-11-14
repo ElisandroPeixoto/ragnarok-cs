@@ -51,7 +51,7 @@ MONSTERS = {
     },
 }
 
-# zone: "safe", "hostile_passive" or "hostile_aggressive" (shown on the map header and on routes to the map)
+# zone: "safe", "hostile_passive" or "hostile_aggressive" (only "safe" shows a label, "Safe Zone", on the map header and on routes to the map)
 # places: markers over the map image, in display order. x/y = marker center as a fraction of the image size.
 #   kind "area" holds NPCs, "building" is a place to enter (link comes later), "exit" leads to the "target"
 #   map in "direction" (keep that map in "navigation" too). "icon" is a key the frontend turns into an icon

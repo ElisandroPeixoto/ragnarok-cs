@@ -51,7 +51,6 @@ MAP_MARKER_BORDER = "#5A5A66"        # place chips / markers when not selected
 MAP_SELECTED = "#E2B93B"             # selected place chip, marker and route card
 MAP_LEVEL_TEXT = "#C8A532"           # "Lv 1-10" on route cards
 MAP_ZONE_SAFE = "#2BD45F"            # "Safe Zone"
-MAP_ZONE_HOSTILE = "#E5484D"         # "Hostile Area"
 
 
 # BATTLE BOARD

@@ -31,11 +31,9 @@ PLACE_ICONS = {
 }
 DEFAULT_PLACE_ICON = ft.Icons.PLACE_OUTLINED
 
-# MapModel.zone -> (label, icon, color)
+# MapModel.zone -> (label, icon, color). Only safe zones are labeled: any other zone shows nothing
 ZONES = {
     "safe": ("Safe Zone", ft.Icons.GPP_GOOD, t.MAP_ZONE_SAFE),
-    "hostile_passive": ("Hostile Area (Passive)", ft.Icons.PRIORITY_HIGH, t.MAP_ZONE_HOSTILE),
-    "hostile_aggressive": ("Hostile Area (Aggressive)", ft.Icons.PRIORITY_HIGH, t.MAP_ZONE_HOSTILE),
 }
 
 
@@ -47,9 +45,11 @@ def place_icon(place: dict):
     return PLACE_ICONS.get(place.get("icon"), DEFAULT_PLACE_ICON)
 
 
-def zone_tag(zone: str, size: float = 11):
-    """Shield + "Safe Zone" in green, or "!" + "Hostile Area (...)" in red."""
-    label, icon, color = ZONES.get(zone, ZONES["safe"])
+def zone_tag(zone: str, size: float = 11) -> ft.Control | None:
+    """Shield + "Safe Zone" in green; None for zones that have no label (everything but safe)."""
+    if zone not in ZONES:
+        return None
+    label, icon, color = ZONES[zone]
     return ft.Row(spacing=2, tight=True, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
         ft.Icon(icon, size=size + 3, color=color), cinzel(label, size, color),
     ])
@@ -96,13 +96,15 @@ def header(character: dict, zone: str):
     ])
     stats = [cinzel(f"{character['job']} - Lv: {character.get('level', 1)}", 11),
              cinzel(f"HP: {character.get('hp', 0)}/{character.get('max_hp', 0)}", 11)]
+    zone_label = zone_tag(zone, 12)
     zone_pill = ft.Container(
         padding=ft.Padding.symmetric(horizontal=12, vertical=6), border_radius=6, bgcolor=t.MAP_MARKER_BG,
-        content=zone_tag(zone, 12),
-    )
+        content=zone_label,
+    ) if zone_label else None
     return ft.Column(spacing=8, controls=[
         ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.END,
-               controls=[ft.Column(spacing=4, controls=[identity, ft.Column(spacing=0, controls=stats)]), zone_pill]),
+               controls=[ft.Column(spacing=4, controls=[identity, ft.Column(spacing=0, controls=stats)]),
+                         *([zone_pill] if zone_pill else [])]),
         ft.Divider(height=1, thickness=1, color=t.MAP_DIVIDER),
     ])
 
@@ -230,8 +232,9 @@ def route_card(route: dict, selected: bool, on_select, on_travel):
     tags = []
     if route.get("level_range"):
         tags.append(cinzel(f"Lv {route['level_range'].replace(' ', '')}", 11, t.MAP_LEVEL_TEXT))
-    if route.get("zone"):
-        tags.append(zone_tag(route["zone"]))
+    zone_label = zone_tag(route["zone"]) if route.get("zone") else None
+    if zone_label:
+        tags.append(zone_label)
     info = ft.Column(expand=True, spacing=4, controls=[
         cinzel(route["name"], 16),
         ft.Row(spacing=14, controls=tags),

@@ -59,7 +59,7 @@ Helpers em `services/map_router_manager.py`:
 ```
 
 - **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado, com rolagem vertical.
-- **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, a zona do mapa (`zone_tag`), e uma linha divisória embaixo.
+- **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, "Safe Zone" quando o mapa é seguro (`zone_tag`; em qualquer outra zona não aparece nada), e uma linha divisória embaixo.
 - **`map_frame`**: a imagem tem **tamanho fixo em todos os mapas**, `MAP_IMAGE_WIDTH × MAP_IMAGE_HEIGHT` (1040 × 600, proporção das artes 1358 × 784), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
 - **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações da imagem). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`).
 - **"View Places" / "Hide Places"** (`view_places_button`): mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
@@ -79,7 +79,7 @@ Os lugares vêm do backend (`map_places`) com um `kind`:
 - `build_routes` monta "Routes": saídas primeiro, depois prédios, e por último conexões de `navigation` que não têm marcador de saída (sem zona nem direção).
 - O botão **Talk** ainda não faz nada (tooltip "Coming soon").
 - Ícones: `PLACE_ICONS` traduz a chave `icon` do lugar (`square`, `port`, `house`, `building`, `exit`, `training`) para um ícone do Flet. **TODO**: trocar pelos PNG/SVG do projeto.
-- Zonas: `ZONES` traduz `zone` (`safe`, `hostile_passive`, `hostile_aggressive`) para o rótulo, o ícone e a cor (`MAP_ZONE_SAFE` / `MAP_ZONE_HOSTILE`).
+- Zonas: `ZONES` só tem `safe` (rótulo "Safe Zone", ícone e cor `MAP_ZONE_SAFE`). `zone_tag` devolve `None` para as outras (`hostile_passive`, `hostile_aggressive`), e então o cabeçalho e os cards de rota simplesmente não mostram a indicação. O valor continua guardado em `maps.zone`.
 
 ### "Monsters nearby" e o botão Hunt
 

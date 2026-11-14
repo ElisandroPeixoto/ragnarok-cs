@@ -97,7 +97,7 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `image` | String | capa do mapa |
 | `about` | Text | descrição, ainda não exibida |
 | `spawn_rate` | Integer | quantos monstros nascem por onda na caçada (padrão 1); não confundir com o `spawn_rate` por monstro de `map_monsters` |
-| `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; aparece no topo da tela do mapa e nas rotas que levam a ele |
+| `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 
 Relações (todas `lazy="selectin"`): `npcs`, `places` (ordenados por `slot`), `monster_spawns`, `connections`.
 

@@ -133,8 +133,11 @@ def battle_screen(setup: dict):
         set_selected_skill(None if selected_skill == name else name)
 
     def handle_key(event: ft.KeyboardEvent):
-        """Q/W/E/R/T select the hero's 1st..5th skill (pressing it again deselects), same as clicking it."""
+        """Q/W/E/R/T select the hero's 1st..5th skill (pressing it again deselects), Space ends the turn."""
         if event.ctrl or event.alt or event.meta or event.shift:
+            return
+        if event.key in (" ", "Space"):     # space = Turn End button
+            handle_end_turn(None)
             return
         key = event.key.upper()
         skills = state.units["hero"]["skills"]
