@@ -2,6 +2,7 @@ import asyncio
 import flet as ft
 import themes as t
 from services.battle_state import BattleState
+from services.battle_log import LogEntry
 from services.battle_ai import iter_ai_turn
 from services.battle_animation import walk_remaining
 from components.battle_board import battle_board
@@ -60,17 +61,24 @@ def battle_screen(setup: dict):
         set_tick(state.version)
 
     async def save_exp():
-        """Sends the hero's final EXP to the backend (once per hunt, and only if it changed)."""
+        """Sends the hunt's result (kills, death) to the backend, once per hunt. The backend applies the
+        EXP rule and returns the updated character; a death penalty shows up in the log afterwards."""
         if state.exp_saved:
             return
         state.exp_saved = True
-        character, hero_exp = get_current_character(), state.hero.get("exp", 0)
-        if character is None or hero_exp == state.exp_start:
+        character, defeated = get_current_character(), state.winner == "defeat"
+        if character is None or not (state.kills or defeated):
             return
         try:
-            set_current_character(await CharacterService.update_exp(character["id"], hero_exp))
+            result = await CharacterService.send_battle_result(character["id"], state.kills, defeated)
         except ApiError as error:
             print(f"Failed to save the EXP: {error.detail}")
+            return
+        set_current_character(result["character"])
+        if result["exp_lost"]:
+            state.log.add(LogEntry(round=state.round, kind="exp_loss", actor=character["name"],
+                                   exp=result["exp_lost"]))
+            refresh()
 
     # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():

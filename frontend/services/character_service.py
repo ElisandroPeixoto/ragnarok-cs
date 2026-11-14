@@ -21,9 +21,11 @@ class CharacterService:
         return await api.patch(f"{API_PREFIX}/{character_id}/place", json={"map_id": map_id})
 
     @staticmethod
-    async def update_exp(character_id: int, exp: int) -> dict:
-        """Saves the character's new total EXP; returns the updated character"""
-        return await api.patch(f"{API_PREFIX}/{character_id}/exp", json={"exp": exp})
+    async def send_battle_result(character_id: int, kills: list[str], defeated: bool) -> dict:
+        """Reports the hunt's kills and whether the hero died. The backend applies the EXP rule and returns
+        {"character", "exp_gained", "exp_lost"}"""
+        return await api.post(f"{API_PREFIX}/{character_id}/battle-result",
+                              json={"kills": kills, "defeated": defeated})
 
     @staticmethod
     async def delete_character(character_id: int) -> None:

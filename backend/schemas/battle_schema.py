@@ -23,8 +23,7 @@ class UnitSchema(BaseModel):
     avatar: str | None = None   # badge image; monsters use their sheet instead
     ai: str | None = None
     level: int = 1
-    exp: int | None = None        # hero only: current total EXP
-    base_exp: int | None = None   # monsters only: EXP for a kill (see docs/regra-de-experiencia.md)
+    exp_reward: int = 0           # monsters only: EXP the hero earns for this kill (docs/regra-de-experiencia.md)
     offset_x: int
     offset_y: int
     hp: int

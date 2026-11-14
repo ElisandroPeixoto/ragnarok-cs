@@ -3,7 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.character_model import CharacterModel
 from models.maps_model import MapModel
-from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaExpUpdate
+from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaBattleResult, BattleResultResponse
+from models.monsters_model import MonsterModel
+from core.exp_rule import exp_gain, exp_after_death
 from core.deps import get_session
 from typing import List
 
@@ -67,20 +69,31 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
     await db.commit()
 
 
-# PATCH Character exp
-"""Save the character's total EXP after a hunt (the battle runs on the client, which applies the EXP rule)"""
-@router.patch("/{character_id}/exp", status_code=status.HTTP_200_OK, response_model=CharacterSchemaResponse)
-async def patch_character_exp(character_id: int, update: CharacterSchemaExpUpdate,
-                              db: AsyncSession = Depends(get_session)):
+# POST Character battle result
+"""Settle a hunt: the client reports the monsters killed and whether the hero died; the backend applies the EXP
+rule (docs/regra-de-experiencia.md): EXP for each kill by level difference, then -20% of the total if the hero died"""
+@router.post("/{character_id}/battle-result", status_code=status.HTTP_200_OK, response_model=BattleResultResponse)
+async def post_battle_result(character_id: int, result: CharacterSchemaBattleResult,
+                             db: AsyncSession = Depends(get_session)):
     character = await db.get(CharacterModel, character_id)
     if character is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
 
-    character.exp = update.exp
+    monsters = {}
+    for name in set(result.kills):
+        monster = (await db.execute(select(MonsterModel).where(MonsterModel.name == name))).scalar_one_or_none()
+        if monster is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Monster '{name}' not found")
+        monsters[name] = monster
+
+    gained = sum(exp_gain(character.level, monsters[name].level, monsters[name].base_exp) for name in result.kills)
+    total = character.exp + gained
+    lost = total - exp_after_death(total) if result.defeated else 0
+    character.exp = total - lost
     await db.commit()
     await db.refresh(character)
 
-    return character
+    return {"character": character, "exp_gained": gained, "exp_lost": lost}
 
 
 # PATCH Character place

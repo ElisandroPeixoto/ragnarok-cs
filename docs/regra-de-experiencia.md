@@ -1,6 +1,6 @@
 # Regra de experiência
 
-Como o personagem ganha EXP ao derrotar um monstro. A regra está em `frontend/services/battle_exp.py` e é aplicada em `perform_attack` (`services/battle_actions.py`) no momento em que o herói abate um monstro.
+Como o personagem ganha EXP ao derrotar um monstro. **A regra vive só no backend** (`backend/core/exp_rule.py`). O combate roda no cliente, mas o cliente não calcula EXP: ele apenas avisa quais monstros o herói abateu e se morreu, e o backend decide o valor e grava.
 
 ## Dados envolvidos
 
@@ -10,7 +10,7 @@ Como o personagem ganha EXP ao derrotar um monstro. A regra está em `frontend/s
 | `level` do monstro | `MonsterModel.level` | |
 | `level` do personagem | `CharacterModel.level` | vai para a batalha em `hero_unit` |
 
-`base_exp` e `level` chegam ao frontend em cada unidade do `spawn_pool` (`monster_unit`) e na lista `monsters` da resposta do mapa.
+O frontend não recebe `base_exp` para calcular: cada monstro do `spawn_pool` traz `exp_reward`, o EXP que **este herói** ganharia por ele (calculado em `monster_unit`), só para mostrar no Battle Log. A lista `monsters` da resposta do mapa também traz `level` e `base_exp`, só informativos.
 
 ## A regra
 
@@ -49,21 +49,26 @@ O último caso (personagem mais de 30 níveis abaixo) cai para 40% de propósito
 
 | Evento | O que acontece com a EXP |
 |---|---|
-| Herói abate um monstro | ganha o EXP da regra acima; aparece no Battle Log ("Charname gains N EXP") |
-| Clica em **Leave** | sai com a EXP ganha na caçada: o total é salvo no personagem |
-| Herói **morre** | perde **20%** da EXP atual (arredondado para baixo), contando o que ganhou na caçada; aparece no log ("Charname loses N EXP") e o total é salvo na hora |
+| Herói abate um monstro | o log mostra "Charname gains N EXP" (o `exp_reward` do monstro); o abate é anotado em `state.kills` |
+| Clica em **Leave** | o cliente envia os abates; o backend soma o EXP de cada um e grava o total no personagem |
+| Herói **morre** | o cliente envia os abates com `defeated: true`; o backend soma o EXP e tira **20%** do total (arredondado para baixo, contando o que ganhou na caçada). O log mostra "Charname loses N EXP" quando a resposta chega |
 
 Exemplo: o herói começa com 50 de EXP, ganha 6 e morre: 56 − 11 = **45**.
 
-O salvamento é `PATCH /api/v1/characters/{id}/exp` (ver [Endpoints](endpoints-backend.md)), feito uma vez por caçada e só se a EXP mudou. Fechar o app no meio da caçada, sem Leave nem morte, **não salva** a EXP ganha.
+O salvamento é `POST /api/v1/characters/{id}/battle-result` (ver [Endpoints](endpoints-backend.md)), feito uma vez por caçada e só se houve abate ou morte. Fechar o app no meio da caçada, sem Leave nem morte, **não salva** a EXP ganha.
+
+### O que o backend valida
+
+O cliente não envia valores de EXP, então não dá para gravar um número arbitrário. Ele ainda pode mentir sobre **quais monstros abateu** (a batalha roda no cliente); o backend só confere que cada nome existe (404 se não) e limita a lista a 1000 abates.
 
 ## No código
 
-- `exp_percentage(hero_level, monster_level)` devolve a porcentagem; `exp_gain(hero_level, monster_level, base_exp)` devolve o EXP.
-- As faixas ficam nas listas `HERO_HIGHER_TIERS` e `HERO_LOWER_TIERS` (limite da diferença, porcentagem); a última faixa não tem limite. Para mudar a regra, edite essas listas.
-- Quando o herói abate um monstro, `perform_attack` soma o ganho em `state.exp_gained` e em `hero["exp"]` e registra `LogEntry(kind="exp")`. Só o herói ganha; abates feitos por monstros não geram EXP.
-- `exp_after_death(exp)` aplica `DEATH_EXP_PENALTY` (20%); é chamada por `BattleState.check_battle_end`, que registra `LogEntry(kind="exp_loss")`.
-- `battle_page.save_exp` envia `hero["exp"]` ao backend (`CharacterService.update_exp`) uma única vez (`state.exp_saved`): no Leave e quando a batalha termina em derrota. Depois atualiza o personagem em `session_state`.
+- `backend/core/exp_rule.py`: `exp_percentage(hero_level, monster_level)` devolve a porcentagem; `exp_gain(hero_level, monster_level, base_exp)` devolve o EXP; `exp_after_death(exp)` aplica `DEATH_EXP_PENALTY` (20%).
+- As faixas ficam nas listas `HERO_HIGHER_TIERS` e `HERO_LOWER_TIERS` (limite da diferença, porcentagem); a última faixa não tem limite. Para mudar a regra, edite só esse arquivo.
+- `endpoints/battles.py`: `monster_unit` preenche `exp_reward` com `exp_gain` para o nível do herói.
+- `endpoints/characters.py`: `post_battle_result` recalcula o EXP de cada abate com o nível atual do personagem, soma, aplica a perda se `defeated` e grava. Devolve `{character, exp_gained, exp_lost}`.
+- Frontend: quando o herói abate um monstro, `perform_attack` soma `exp_reward` em `state.exp_gained`, anota o nome em `state.kills` e registra `LogEntry(kind="exp")`. Só o herói ganha; abates feitos por monstros não geram EXP.
+- `battle_page.save_exp` chama `CharacterService.send_battle_result` uma única vez (`state.exp_saved`): no Leave e quando a batalha termina em derrota. Atualiza o personagem em `session_state` e, se houve perda, registra `LogEntry(kind="exp_loss")`.
 
 ## O que ainda falta
 

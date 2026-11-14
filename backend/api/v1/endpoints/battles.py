@@ -8,6 +8,7 @@ from models.maps_model import MapModel
 from models.monsters_model import MonsterModel
 from schemas.battle_schema import BattleSchemaCreate, BattleSchemaResponse
 from core.deps import get_session
+from core.exp_rule import exp_gain
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ def skill_to_dict(skill) -> dict:
 
 def hero_unit(character: CharacterModel, job: JobModel) -> dict:
     return {
-        "name": character.name, "job": job.name, "team": "player", "level": character.level, "exp": character.exp,
+        "name": character.name, "job": job.name, "team": "player", "level": character.level,
         "sheet": job.sheet, "avatar": job.avatar,
         "offset_x": job.offset_x, "offset_y": job.offset_y,
         "hp": character.hp, "max_hp": character.max_hp,
@@ -27,10 +28,11 @@ def hero_unit(character: CharacterModel, job: JobModel) -> dict:
     }
 
 
-def monster_unit(monster: MonsterModel) -> dict:
+def monster_unit(monster: MonsterModel, hero_level: int) -> dict:
     return {
         "name": monster.name, "team": "enemy",
-        "sheet": monster.sheet, "level": monster.level, "base_exp": monster.base_exp, "ai": monster.ai,
+        "sheet": monster.sheet, "level": monster.level, "ai": monster.ai,
+        "exp_reward": exp_gain(hero_level, monster.level, monster.base_exp),   # shown in the log; the backend settles the real EXP
         "offset_x": monster.offset_x, "offset_y": monster.offset_y,
         "hp": monster.max_hp, "max_hp": monster.max_hp,
         "ap": monster.max_ap, "max_ap": monster.max_ap,
@@ -67,5 +69,5 @@ async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(ge
         "units": {"hero": hero_unit(character, job)},
         "skills": skills,
         "spawn_rate": game_map.spawn_rate,
-        "spawn_pool": [{"weight": spawn.spawn_rate, "unit": monster_unit(spawn.monster)} for spawn in spawns],
+        "spawn_pool": [{"weight": spawn.spawn_rate, "unit": monster_unit(spawn.monster, character.level)} for spawn in spawns],
     }

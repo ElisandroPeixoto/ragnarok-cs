@@ -13,8 +13,10 @@ class CharacterSchemaPlaceUpdate(BaseModel):
     map_id: str
 
 
-class CharacterSchemaExpUpdate(BaseModel):
-    exp: int = Field(ge=0)   # the character's new total EXP
+class CharacterSchemaBattleResult(BaseModel):
+    """What the client reports when a hunt ends; the backend works out the EXP from it"""
+    kills: list[str] = Field(default_factory=list, max_length=1000)   # monster names, one per kill
+    defeated: bool = False                                           # the hero died
 
 
 class CharacterSchemaResponse(CharacterSchemaBase):
@@ -31,3 +33,9 @@ class CharacterSchemaResponse(CharacterSchemaBase):
 
     class Config:
         from_attributes = True
+
+
+class BattleResultResponse(BaseModel):
+    character: CharacterSchemaResponse
+    exp_gained: int
+    exp_lost: int
