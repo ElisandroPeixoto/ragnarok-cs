@@ -45,7 +45,7 @@ Helpers em `services/map_router_manager.py`:
 │         │ [avatar] Nome / zeny                          [Safe Zone]    │
 │         │ Novice - Lv: 1 / HP: 50/50                                   │
 │         │ ─────────────────────────────────────────────────────────── │
-│         │ ┌──────── map_frame (800 × 462) ────────┐  👁 Hide Places    │
+│         │ ┌──────── map_frame (1040 × 600) ────────┐  👁 Hide Places    │
 │         │ │ Título + "Recommended Level"           │                   │
 │         │ │   (Academy) (Main Square) (Port) ...   │                   │
 │         │ └────────────────────────────────────────┘                   │
@@ -60,7 +60,7 @@ Helpers em `services/map_router_manager.py`:
 
 - **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado, com rolagem vertical.
 - **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, a zona do mapa (`zone_tag`), e uma linha divisória embaixo.
-- **`map_frame`**: a imagem tem **tamanho fixo em todos os mapas**, `MAP_IMAGE_WIDTH × MAP_IMAGE_HEIGHT` (800 × 462, proporção das artes 1358 × 784), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
+- **`map_frame`**: a imagem tem **tamanho fixo em todos os mapas**, `MAP_IMAGE_WIDTH × MAP_IMAGE_HEIGHT` (1040 × 600, proporção das artes 1358 × 784), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
 - **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações da imagem). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`).
 - **"View Places" / "Hide Places"** (`view_places_button`): mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
 - **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" dividem a largura em 7 : 5.

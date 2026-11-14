@@ -14,7 +14,7 @@ from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
 # Every map image is drawn at this fixed size (map art is 1358x784)
-MAP_IMAGE_WIDTH = 800
+MAP_IMAGE_WIDTH = 1040
 MAP_IMAGE_HEIGHT = round(MAP_IMAGE_WIDTH * 784 / 1358)
 MARKER_SLOT_WIDTH = 180   # markers are centered on their x/y inside a slot this wide
 MARKER_HEIGHT = 24
