@@ -10,6 +10,7 @@ class MonsterModel(DBBaseModel):
     name: str = Column(String(255), nullable=False, unique=True)
     sheet: str = Column(String, nullable=False)   # sprite sheet: battle sprite and map/card picture
     level: int = Column(Integer, nullable=False, default=1)
+    base_exp: int = Column(Integer, nullable=False, default=0)   # EXP for a kill at a similar level (see docs/regra-de-experiencia.md)
 
     # Battle data
     max_hp: int = Column(Integer, nullable=False, default=50)

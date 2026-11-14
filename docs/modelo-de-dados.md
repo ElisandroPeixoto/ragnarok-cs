@@ -79,6 +79,7 @@ Ambas têm `skill = relationship("SkillModel", lazy="selectin")`.
 | `name` | String(255), único | | |
 | `sheet` | String, obrigatório | | pasta em `assets/sprites/`: sprite da batalha e figura do monstro no mapa e no card da batalha (clip `idle_sw`) |
 | `level` | Integer | 1 | nível do monstro |
+| `base_exp` | Integer | 0 | EXP base por abate (ver [Regra de experiência](regra-de-experiencia.md)) |
 | `max_hp` | Integer | 50 | |
 | `max_ap` | Integer | 2 | |
 | `ai` | String(50) | `"passive"` | nome de um comportamento em `battle_ai.BEHAVIORS` |

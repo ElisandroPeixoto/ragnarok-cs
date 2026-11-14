@@ -113,7 +113,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
 }
 ```
 
-`monsters` lista **todos** os monstros do mapa. `MonsterSchema` expõe só `name`, `sheet`, `level` e `spawn_rate`.
+`monsters` lista **todos** os monstros do mapa. `MonsterSchema` expõe só `name`, `sheet`, `level`, `base_exp` e `spawn_rate`.
 
 `places` vem de `place_to_dict`: `x`/`y` são o centro do marcador em fração da imagem, e `target` só existe nas saídas (`kind: "exit"`). Os `id` dos lugares mudam a cada seed (eles são regravados); `npcs[].place_id` aponta para eles na mesma resposta.
 
@@ -180,7 +180,8 @@ Origem de cada campo:
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
-| `level` | — | `MonsterModel.level` |
+| `level` | `CharacterModel.level` | `MonsterModel.level` |
+| `base_exp` | — | `MonsterModel.base_exp` |
 | `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
 | `ap` / `max_ap` | `JobModel.max_ap` (nos dois) | `MonsterModel.max_ap` (nos dois) |

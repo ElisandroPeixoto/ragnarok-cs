@@ -16,6 +16,7 @@ Ragnarok Chaos Saga é um RPG de desktop com tema de Ragnarok Online. O projeto 
 | [Criação e seleção de personagens](personagens.md) | Criar, listar e escolher personagens; perfil; o que ainda falta |
 | [Mapas e navegação](mapas-e-navegacao.md) | Rotas de mapa, tela de mapa, botão Hunt, navegação entre mapas |
 | [Sistema de combate](sistema-de-combate.md) | Como a batalha funciona hoje: estado, turnos, ações, IA, tabuleiro |
+| [Regra de experiência](regra-de-experiencia.md) | EXP por monstro abatido, conforme a diferença de nível; tabela e exemplos |
 | [Sprites e animação](sprites-e-animacao.md) | Pipeline `.spr`/`.act` → sprite sheet, formato do JSON, como os frames são desenhados |
 | [Roadmap do combate](roadmap-combate.md) | O que existe, o que falta e uma proposta de ordem para evoluir o combate |
 

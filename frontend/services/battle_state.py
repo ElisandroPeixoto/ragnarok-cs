@@ -51,6 +51,7 @@ class BattleState:
         self.winner: str | None = None
         self.log = BattleLog()
         self.damage_popups: list[dict] = []   # floating damage numbers (see battle_animation.damage_popup)
+        self.exp_gained = 0                   # total EXP the hero earned in this hunt (see battle_exp)
 
         # UI Flags
         self.input_locked = False  # True when enemy is playing

@@ -2,6 +2,7 @@ from collections import deque
 from services.battle_geometry import is_inside_board
 from services.battle_state import BattleState
 from services.battle_log import LogEntry
+from services.battle_exp import exp_gain
 from services.battle_animation import play, face_towards, start_walk, damage_popup, popup_alive
 
 
@@ -73,6 +74,10 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
     target_dead = target["hp"] == 0
     if target_dead:
         state.log.add(LogEntry(round=state.round, kind="defeat", target=target["name"]))
+        if attacker["team"] == "player" and target["team"] == "enemy":
+            gained = exp_gain(attacker.get("level", 1), target.get("level", 1), target.get("base_exp", 0))
+            state.exp_gained += gained
+            state.log.add(LogEntry(round=state.round, kind="exp", actor=attacker["name"], exp=gained))
         state.check_battle_end()
 
     return {"ok": True, "reason": "", "damage": skill["damage"], "target_dead": target_dead}
