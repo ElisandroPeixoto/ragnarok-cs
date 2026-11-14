@@ -169,7 +169,8 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
 | Ação | Onde | Como |
 |---|---|---|
 | Mover | `components/battle_board.py` | sem skill selecionada, clicar num tile (`handle_tap` → `perform_move`): a unidade anda até lá pelo caminho mais curto. Com o mouse sobre um tile (`on_hover`), o caminho fica verde (`VALID_TILE_COLOR`) se `can_move` aceitar; senão, o tile fica vermelho. |
-| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone; clicar de novo desmarca. Só funciona na vez do jogador e com AP suficiente. |
+| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone, ou o atalho **Q/W/E/R/T** (1ª a 5ª skill do herói, `SKILL_KEYS` em `skills_panel.py`); repetir desmarca. Só funciona na vez do jogador e com AP suficiente. O atalho aparece no canto do ícone. |
+| Atalhos de teclado | `pages/battle_page.py` → `handle_key` | `page.on_keyboard_event`, religado a cada render (para ver a skill selecionada) e removido ao sair da tela. Ignora combinações com Shift, Ctrl, Alt ou Meta. Hoje só seleciona skills. |
 | Atacar | `battle_board.handle_tap` | com uma skill selecionada, os tiles de alcance ficam destacados (`ATTACK_TILE_COLOR`); clicar no sprite de um inimigo chama `perform_attack`. |
 | Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** |
 | Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()` |

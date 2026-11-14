@@ -6,7 +6,7 @@ from services.battle_ai import iter_ai_turn
 from services.battle_animation import walk_remaining
 from components.battle_board import battle_board
 from components.unit_card import units_panel
-from components.skills_panel import skills_panel
+from components.skills_panel import skills_panel, SKILL_KEYS
 from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
@@ -115,6 +115,7 @@ def battle_screen(setup: dict):
 
     def on_unmount():
         state.closed = True       # stops the loops when the screen is left
+        ft.context.page.on_keyboard_event = None
 
     ft.use_effect(on_mount, [], cleanup=on_unmount)
 
@@ -130,6 +131,17 @@ def battle_screen(setup: dict):
         if state.current_unit()["ap"] < state.skills[name]["ap_cost"]:
             return
         set_selected_skill(None if selected_skill == name else name)
+
+    def handle_key(event: ft.KeyboardEvent):
+        """Q/W/E/R/T select the hero's 1st..5th skill (pressing it again deselects), same as clicking it."""
+        if event.ctrl or event.alt or event.meta or event.shift:
+            return
+        key = event.key.upper()
+        skills = state.units["hero"]["skills"]
+        if key in SKILL_KEYS and SKILL_KEYS.index(key) < len(skills):
+            handle_select_skill(skills[SKILL_KEYS.index(key)])
+
+    ft.context.page.on_keyboard_event = handle_key   # re-bound each render so it sees the current selected_skill
 
     def handle_end_turn(e):
         if not player_can_act():
