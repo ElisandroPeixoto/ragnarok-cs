@@ -230,7 +230,7 @@ Direções no tabuleiro: +col = SE, -col = NW, +row = SW, -row = NE (`battle_ani
 
 ## Log: `services/battle_log.py`
 
-`LogEntry` (dataclass) tem `round`, `kind` (`move`, `attack`, `defeat`, `end`) e os campos opcionais `actor`, `target`, `skill`, `damage`, `tiles`, `dest` e `result`. A propriedade `message` gera o texto, e `damage_text` gera o "-N damage". `BattleLog` é só uma lista com `add()` e `print_all()`.
+`LogEntry` (dataclass) tem `round`, `kind` (`move`, `attack`, `defeat`, `exp`, `exp_loss`, `level_up`, `end`) e os campos opcionais `actor`, `target`, `skill`, `damage`, `tiles`, `dest`, `exp`, `level` e `result`. A propriedade `message` gera o texto, `damage_text` gera o "-N damage" (vermelho) e `level_text` gera o "Level N" da subida de nível (dourado). `BattleLog` é só uma lista com `add()` e `print_all()`.
 
 ## Fim da batalha
 

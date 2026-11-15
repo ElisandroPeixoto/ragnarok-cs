@@ -29,17 +29,21 @@ class LogEntry:
         if self.kind == "exp_loss":
             return f"{self.actor} loses {self.exp} EXP"
         if self.kind == "level_up":
-            return f"{self.actor} reached level {self.level}!"
+            return f"{self.actor} level up to"
         if self.kind == "end":
             return "Victory!" if self.result == "victory" else "Defeat..."
         return ""
+
+    @property
+    def level_text(self) -> str:
+        return f"Level {self.level}" if self.kind == "level_up" else ""
 
     @property
     def damage_text(self) -> str:
         return f"-{self.damage} damage" if self.kind == "attack" else ""
 
     def __str__(self) -> str:
-        return f"[R{self.round:02d}] {self.message} {self.damage_text}".strip()
+        return f"[R{self.round:02d}] {self.message} {self.damage_text}{self.level_text}".strip()
 
 
 class BattleLog:

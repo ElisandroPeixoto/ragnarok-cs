@@ -49,7 +49,7 @@ A barra do perfil mostra a EXP **dentro do nível atual** sobre o que o nível p
 2. recalcula o nível (`level_for_exp`); **pode subir vários níveis de uma vez**;
 3. grava `exp` e `level` no personagem.
 
-O frontend mostra "Charname reached level N!" no Battle Log quando a resposta chega.
+O frontend mostra "Charname level up to **Level N**" no Battle Log quando a resposta chega, com "Level N" em dourado (`LEVEL_UP_TEXT`, `#D4AF37`, o dourado do jogo).
 
 Detalhes:
 - A EXP de cada monstro da caçada usa o **nível que o personagem tinha ao começar** a caçada: subir de nível só vale para a caçada seguinte.
