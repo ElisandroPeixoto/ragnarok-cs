@@ -56,11 +56,11 @@ Função: `get_character_by_id`. Status: **200**, ou **404** `{"detail": "Charac
 
 O frontend ainda não usa esta rota.
 
-### `POST /api/v1/characters/{character_id}/battle-result`: fechar uma caçada
+### `POST /api/v1/characters/{character_id}/battle-result`: liquidar abates e morte da caçada
 
 Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422**.
 
-Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem, recalcula o `level` (`core/level_progression.py`, pode subir vários) e, se `defeated`, tira 20% da EXP acumulada no nível atual (nunca perde nível). Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota ao clicar em Leave ou assim que o herói morre. Veja [Regra de experiência](regra-de-experiencia.md).
+Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem, recalcula o `level` (`core/level_progression.py`, pode subir vários) e, se `defeated`, tira 20% da EXP acumulada no nível atual (nunca perde nível). Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota **logo após cada abate** (`kills` com os monstros ainda não reportados) e quando o herói morre (`defeated: true`), então a EXP é salva e o nível sobe durante a caçada. Veja [Regra de experiência](regra-de-experiencia.md).
 
 ### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
 
@@ -165,7 +165,7 @@ Resposta (`BattleSchemaResponse`):
     {
       "weight": 40,
       "unit": {
-        "name": "Poring", "job": null, "team": "enemy", "level": 1, "exp_reward": 6,
+        "name": "Poring", "job": null, "team": "enemy", "level": 1,
         "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
@@ -186,7 +186,6 @@ Origem de cada campo:
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
 | `level` | `CharacterModel.level` | `MonsterModel.level` |
-| `exp_reward` | — | EXP que o herói ganha por este monstro (`exp_gain` com o nível dele), só para o log |
 | `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
 | `ap` / `max_ap` | `JobModel.max_ap` (nos dois) | `MonsterModel.max_ap` (nos dois) |

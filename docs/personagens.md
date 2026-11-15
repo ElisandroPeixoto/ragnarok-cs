@@ -104,6 +104,6 @@ Três funções de `services/sprite_selector.py` decidem a imagem por job **no f
 - Escolher job na criação (sempre Novice) e trocar de job.
 - Validação de nome no backend (vazio, tamanho, duplicado).
 - Atributos (STR, AGI…) e SP em uso.
-- Persistir mudanças: só o mapa atual (`PATCH .../place`) e a EXP (`POST .../battle-result`, ao fim da caçada) são salvos; HP e zeny nunca mudam.
+- Persistir mudanças: só o mapa atual (`PATCH .../place`) e a EXP e o nível (`POST .../battle-result`, a cada abate e na morte) são salvos; HP e zeny nunca mudam.
 - Atualizar o personagem guardado em `session_state` (é uma cópia tirada na seleção).
 - Mostrar erros da API para o jogador.

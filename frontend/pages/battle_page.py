@@ -60,30 +60,43 @@ def battle_screen(setup: dict):
         state.version += 1
         set_tick(state.version)
 
-    async def save_exp():
-        """Sends the hunt's result (kills, death) to the backend, once per hunt. The backend applies the
-        EXP rule and returns the updated character; a death penalty shows up in the log afterwards."""
-        if state.exp_saved:
+    def has_unsettled() -> bool:
+        return bool(state.pending_kills) or (state.winner == "defeat" and not state.defeat_reported)
+
+    async def settle():
+        """Reports the pending kills (and the hero's death) to the backend, which applies the EXP rule and the
+        level table and returns the updated character. The log then shows the EXP gained, the level up and the
+        death penalty, so a level up shows up right after the kill that caused it."""
+        if state.settling:
             return
-        state.exp_saved = True
-        character, defeated = get_current_character(), state.winner == "defeat"
-        if character is None or not (state.kills or defeated):
-            return
-        level_before = character["level"]
+        state.settling = True
         try:
-            result = await CharacterService.send_battle_result(character["id"], state.kills, defeated)
-        except ApiError as error:
-            print(f"Failed to save the EXP: {error.detail}")
-            return
-        set_current_character(result["character"])
-        if result["character"]["level"] > level_before:
-            state.log.add(LogEntry(round=state.round, kind="level_up", actor=character["name"],
-                                   level=result["character"]["level"]))
-            refresh()
-        if result["exp_lost"]:
-            state.log.add(LogEntry(round=state.round, kind="exp_loss", actor=character["name"],
-                                   exp=result["exp_lost"]))
-            refresh()
+            while has_unsettled():
+                character = get_current_character()
+                kills, defeated = list(state.pending_kills), state.winner == "defeat"
+                state.pending_kills.clear()
+                state.defeat_reported = state.defeat_reported or defeated
+                if character is None:
+                    return
+                level_before = character["level"]
+                try:
+                    result = await CharacterService.send_battle_result(character["id"], kills, defeated)
+                except ApiError as error:
+                    print(f"Failed to save the EXP: {error.detail}")
+                    return
+                set_current_character(result["character"])
+                if result["exp_gained"]:
+                    state.log.add(LogEntry(round=state.round, kind="exp", actor=character["name"],
+                                           exp=result["exp_gained"]))
+                if result["character"]["level"] > level_before:
+                    state.log.add(LogEntry(round=state.round, kind="level_up", actor=character["name"],
+                                           level=result["character"]["level"]))
+                if result["exp_lost"]:
+                    state.log.add(LogEntry(round=state.round, kind="exp_loss", actor=character["name"],
+                                           exp=result["exp_lost"]))
+                refresh()
+        finally:
+            state.settling = False
 
     # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():
@@ -118,8 +131,8 @@ def battle_screen(setup: dict):
         async def anim_loop():
             while not state.closed:  # keeps going after a winner so the "dead" clip can finish
                 await asyncio.sleep(ANIM_INTERVAL)
-                if state.winner is not None:
-                    await save_exp()   # the death penalty is saved right away, not only on Leave
+                if has_unsettled():
+                    await settle()   # right after a kill (or the hero's death), not only when leaving
                 refresh()
 
         ft.context.page.run_task(turn_loop)
@@ -167,7 +180,9 @@ def battle_screen(setup: dict):
 
     def handle_leave(e):
         async def leave():
-            await save_exp()   # leaving keeps the EXP earned in the hunt
+            while state.settling:   # a request is already in flight: let it finish
+                await asyncio.sleep(0.05)
+            await settle()          # whatever is still unreported
             state.closed = True
             navigate_back_from_battle()
         ft.context.page.run_task(leave)

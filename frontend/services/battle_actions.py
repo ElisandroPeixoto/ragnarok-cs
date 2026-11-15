@@ -74,10 +74,7 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
     if target_dead:
         state.log.add(LogEntry(round=state.round, kind="defeat", target=target["name"]))
         if attacker["team"] == "player" and target["team"] == "enemy":
-            gained = target.get("exp_reward", 0)   # worked out by the backend (core/exp_rule.py)
-            state.exp_gained += gained
-            state.kills.append(target["name"])
-            state.log.add(LogEntry(round=state.round, kind="exp", actor=attacker["name"], exp=gained))
+            state.pending_kills.append(target["name"])   # reported to the backend, which decides the EXP
         state.check_battle_end()
 
     return {"ok": True, "reason": "", "damage": skill["damage"], "target_dead": target_dead}

@@ -71,9 +71,10 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
 
 
 # POST Character battle result
-"""Settle a hunt: the client reports the monsters killed and whether the hero died; the backend applies the EXP
-rule (docs/regra-de-experiencia.md): EXP for each kill by level difference, level-ups (docs/progressao-de-level.md),
-then -20% of the EXP accumulated in the current level if the hero died"""
+"""Settle what happened in a hunt: the client reports the monsters killed (it does so right after each kill) and
+whether the hero died; the backend applies the EXP rule (docs/regra-de-experiencia.md): EXP for each kill by level
+difference, level-ups (docs/progressao-de-level.md), then -20% of the EXP accumulated in the current level if the
+hero died"""
 @router.post("/{character_id}/battle-result", status_code=status.HTTP_200_OK, response_model=BattleResultResponse)
 async def post_battle_result(character_id: int, result: CharacterSchemaBattleResult,
                              db: AsyncSession = Depends(get_session)):

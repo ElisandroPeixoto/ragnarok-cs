@@ -59,9 +59,10 @@ class BattleState:
         self.winner: str | None = None
         self.log = BattleLog()
         self.damage_popups: list[dict] = []   # floating damage numbers (see battle_animation.damage_popup)
-        self.exp_gained = 0                   # EXP shown in the log (sum of each kill's exp_reward)
-        self.kills: list[str] = []            # names of the monsters the hero killed; the backend works out the EXP
-        self.exp_saved = False                # True once the hunt result was sent to the backend
+        # EXP is settled by the backend (battle_page.settle): kills wait here until they are reported
+        self.pending_kills: list[str] = []    # names of monsters the hero killed and the backend does not know yet
+        self.defeat_reported = False          # True once the hero's death was reported (the EXP penalty)
+        self.settling = False                 # a battle-result request is in flight
 
         # UI Flags
         self.input_locked = False  # True when enemy is playing
