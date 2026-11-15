@@ -111,13 +111,6 @@ def character_selection():
         if character is None:
             return
 
-        def close_dialog(e):
-            ft.context.page.pop_dialog()
-
-        def confirm_delete(e):
-            ft.context.page.pop_dialog()
-            ft.context.page.run_task(delete)
-
         async def delete():
             try:
                 await CharacterService.delete_character(character["id"])
@@ -127,6 +120,13 @@ def character_selection():
             remaining = [c for c in characters if c["id"] != character["id"]]
             set_characters(remaining)
             set_selected(max(0, min(selected, len(remaining) - 1)))
+
+        def close_dialog(e):
+            ft.context.page.pop_dialog()
+
+        def confirm_delete(e):
+            ft.context.page.pop_dialog()
+            ft.context.page.run_task(delete)
 
         ft.context.page.show_dialog(
             ft.AlertDialog(

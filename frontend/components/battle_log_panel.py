@@ -6,6 +6,8 @@ def log_row(entry):
     spans = [ft.TextSpan(entry.message + " ")]
     if entry.damage_text:
         spans.append(ft.TextSpan(entry.damage_text, style=ft.TextStyle(color=t.DAMAGE_TEXT)))
+    if entry.level_text:
+        spans.append(ft.TextSpan(entry.level_text, style=ft.TextStyle(color=t.LEVEL_UP_TEXT)))
     return ft.Text(spans=spans, size=15, color=t.NORMAL_TEXT, font_family="Cinzel")
 
 

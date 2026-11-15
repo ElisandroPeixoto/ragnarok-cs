@@ -35,6 +35,10 @@ class ApiClient:
         response = await self._client.post(path, json=json)
         return await self._handle(response)
 
+    async def patch(self, path: str, json: dict | None = None) -> dict:
+        response = await self._client.patch(path, json=json)
+        return await self._handle(response)
+
     async def delete(self, path: str) -> None:
         response = await self._client.delete(path)
         await self._handle(response)

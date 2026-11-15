@@ -1,5 +1,6 @@
 import flet as ft
 import themes as t
+from components.sheet_sprite import monster_sprite
 
 
 def unit_card(unit: dict, is_active: bool):
@@ -11,7 +12,9 @@ def unit_card(unit: dict, is_active: bool):
         bgcolor="#1A1712",
         border=ft.Border.all(1, t.CARD_BORDER),
         border_radius=2,
-        image=ft.DecorationImage(src=avatar_src, fit=ft.BoxFit.COVER)
+        # players have a badge image; monsters show their sheet's idle animation
+        image=ft.DecorationImage(src=avatar_src, fit=ft.BoxFit.COVER) if avatar_src else None,
+        content=None if avatar_src else monster_sprite(unit["sheet"], width=62, height=62),
     )
 
     identity = [ft.Text(unit["name"], size=20, color=t.NORMAL_TEXT, font_family="Cinzel")]
@@ -22,9 +25,13 @@ def unit_card(unit: dict, is_active: bool):
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         controls=[
             ft.Text(f"HP:  {unit['hp']}/{unit['max_hp']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
-            ft.Text(f"PA:  {unit['ap']}/{unit['max_ap']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
+            ft.Text(f"AP:  {unit['ap']}/{unit['max_ap']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
         ],
     )
+
+    # red HP bar: shrinks as the unit loses health
+    hp_bar = ft.ProgressBar(value=max(0, unit["hp"]) / unit["max_hp"] if unit["max_hp"] else 0,
+                            bgcolor=t.STAT_BAR_BG, color=t.HP_BAR_COLOR, bar_height=8, border_radius=4)
 
     return ft.Container(
         bgcolor=t.CARD_BG,
@@ -35,6 +42,7 @@ def unit_card(unit: dict, is_active: bool):
             spacing=10,
             controls=[
                 ft.Row(spacing=8, controls=[avatar, ft.Column(spacing=2, controls=identity)]),
+                hp_bar,
                 stats,
             ],
         ),

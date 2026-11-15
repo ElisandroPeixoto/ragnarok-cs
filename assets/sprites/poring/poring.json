@@ -11,125 +11,245 @@
       "row": 0,
       "frames": 4,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        45,
+        19,
+        41,
+        39
+      ]
     },
     "idle_sw": {
       "row": 1,
       "frames": 4,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        44,
+        19,
+        41,
+        39
+      ]
     },
     "idle_nw": {
       "row": 2,
       "frames": 4,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        45,
+        19,
+        41,
+        39
+      ]
     },
     "idle_ne": {
       "row": 3,
       "frames": 4,
       "fps": 10.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        44,
+        19,
+        41,
+        39
+      ]
     },
     "walk_se": {
       "row": 4,
       "frames": 10,
       "fps": 40.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        45,
+        8,
+        41,
+        45
+      ]
     },
     "walk_sw": {
       "row": 5,
       "frames": 10,
       "fps": 40.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        44,
+        8,
+        41,
+        45
+      ]
     },
     "walk_nw": {
       "row": 6,
       "frames": 10,
       "fps": 40.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        44,
+        12,
+        41,
+        41
+      ]
     },
     "walk_ne": {
       "row": 7,
       "frames": 10,
       "fps": 40.0,
-      "loop": true
+      "loop": true,
+      "box": [
+        45,
+        12,
+        41,
+        41
+      ]
     },
     "attack_se": {
       "row": 8,
       "frames": 28,
       "fps": 40.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        45,
+        9,
+        57,
+        44
+      ]
     },
     "attack_sw": {
       "row": 9,
       "frames": 28,
       "fps": 40.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        28,
+        9,
+        57,
+        44
+      ]
     },
     "attack_nw": {
       "row": 10,
       "frames": 28,
       "fps": 40.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        29,
+        2,
+        56,
+        51
+      ]
     },
     "attack_ne": {
       "row": 11,
       "frames": 28,
       "fps": 40.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        45,
+        2,
+        56,
+        51
+      ]
     },
     "hurt_se": {
       "row": 12,
       "frames": 5,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        36,
+        19,
+        48,
+        36
+      ]
     },
     "hurt_sw": {
       "row": 13,
       "frames": 5,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        46,
+        19,
+        48,
+        36
+      ]
     },
     "hurt_nw": {
       "row": 14,
       "frames": 5,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        46,
+        19,
+        45,
+        38
+      ]
     },
     "hurt_ne": {
       "row": 15,
       "frames": 5,
       "fps": 10.0,
-      "loop": false
+      "loop": false,
+      "box": [
+        37,
+        19,
+        47,
+        38
+      ]
     },
     "dead_se": {
       "row": 16,
       "frames": 17,
       "fps": 40.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        27,
+        1,
+        101,
+        62
+      ]
     },
     "dead_sw": {
       "row": 17,
       "frames": 17,
       "fps": 40.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        1,
+        1,
+        100,
+        62
+      ]
     },
     "dead_nw": {
       "row": 18,
       "frames": 17,
       "fps": 40.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        1,
+        1,
+        100,
+        62
+      ]
     },
     "dead_ne": {
       "row": 19,
       "frames": 17,
       "fps": 40.0,
       "loop": false,
-      "hold_last": true
+      "hold_last": true,
+      "box": [
+        27,
+        1,
+        101,
+        62
+      ]
     }
   }
 }

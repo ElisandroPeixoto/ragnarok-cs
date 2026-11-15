@@ -36,7 +36,7 @@ Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `
 Resposta (`CharacterSchemaResponse`):
 ```json
 {
-  "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0,
+  "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0, "exp_progress": 0, "exp_needed": 100,
   "hp": 50, "max_hp": 50, "max_sp": 10, "zeny": "0.00",
   "current_map": "Novice Academy", "current_map_id": "novice_academy"
 }
@@ -55,6 +55,18 @@ Função: `get_characters`. Status: **200**. Devolve uma lista de `CharacterSche
 Função: `get_character_by_id`. Status: **200**, ou **404** `{"detail": "Character not found"}`.
 
 O frontend ainda não usa esta rota.
+
+### `POST /api/v1/characters/{character_id}/battle-result`: liquidar abates e morte da caçada
+
+Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422**.
+
+Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem, recalcula o `level` (`core/level_progression.py`, pode subir vários) e, se `defeated`, tira 20% da EXP acumulada no nível atual (nunca perde nível). Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota **logo após cada abate** (`kills` com os monstros ainda não reportados) e quando o herói morre (`defeated: true`), então a EXP é salva e o nível sobe durante a caçada. Veja [Regra de experiência](regra-de-experiencia.md).
+
+### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
+
+Função: `patch_character_place`. Status: **200**, ou **404** (`Character not found` / `Map not found`).
+
+Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e `current_map_id` do personagem e devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao trocar de mapa pela seta de uma rota (seção "Routes").
 
 ---
 
@@ -75,7 +87,7 @@ O frontend usa esta rota na inicialização (`MapService.get_map_ids_sync`) para
 
 Função: `get_map_by_id`. Status: **200**, ou **404** `{"detail": "Map not found"}`.
 
-A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de monstros (com o monstro) e as conexões (com o mapa de destino). `to_response()` transforma isso num dict achatado (`MapSchemaResponse`):
+A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com o mapa de destino das saídas), os spawns de monstros (com o monstro) e as conexões (com o mapa de destino). `to_response()` transforma isso num dict achatado (`MapSchemaResponse`):
 
 ```json
 {
@@ -84,11 +96,21 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
   "level_range": "1 - 10",
   "image": "maps/training_field_1.jpg",
   "about": "...",
-  "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif" } ],
+  "zone": "hostile_passive",
+  "places": [
+    { "id": 18, "name": "Training Grounds", "kind": "area", "icon": "training",
+      "x": 0.3, "y": 0.66, "direction": null, "target": null },
+    { "id": 19, "name": "Academy Road", "kind": "exit", "icon": "exit",
+      "x": 0.63, "y": 0.9, "direction": "Southeast",
+      "target": { "map_id": "novice_academy", "name": "Novice Academy",
+                  "level_range": "1 - 10", "zone": "safe" } }
+  ],
+  "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif", "place_id": 18,
+              "greeting": "Ready to train? Monsters roam these woods." } ],
   "monsters": [
-    { "name": "Poring",  "image": "monsters/poring.gif",  "spawn_rate": 40 },
-    { "name": "Lunatic", "image": "monsters/lunatic.gif", "spawn_rate": 40 },
-    { "name": "Wilow",   "image": "monsters/wilow.gif",   "spawn_rate": 20 }
+    { "name": "Poring",  "sheet": "poring",  "spawn_rate": 40 },
+    { "name": "Lunatic", "sheet": "lunatic", "spawn_rate": 40 },
+    { "name": "Wilow",   "sheet": "wilow",   "spawn_rate": 20 }
   ],
   "navigation": [
     { "name": "Novice Academy", "image": "maps/novice_academy.jpg",
@@ -97,7 +119,9 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os spawns de mo
 }
 ```
 
-`monsters` lista **todos** os monstros do mapa, inclusive os que ainda não podem ser caçados (sem dados de batalha). `MonsterSchema` expõe só `name`, `image` e `spawn_rate`.
+`monsters` lista **todos** os monstros do mapa. `MonsterSchema` expõe só `name`, `sheet`, `level`, `base_exp` e `spawn_rate`.
+
+`places` vem de `place_to_dict`: `x`/`y` são o centro do marcador em fração da imagem, e `target` só existe nas saídas (`kind: "exit"`). Os `id` dos lugares mudam a cada seed (eles são regravados); `npcs[].place_id` aponta para eles na mesma resposta.
 
 ---
 
@@ -116,9 +140,10 @@ O que acontece:
 
 1. Busca o personagem (`CharacterModel`); se não existir, **404** `Character not found`.
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
-3. Lista os spawns do mapa (`MapMonsterModel`) e mantém só os monstros com `sheet` preenchido, ou seja, com dados de batalha. Se não sobrar nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy, que não tem monstros.
-4. Sorteia **um** monstro com `random.choices`, usando `spawn_rate` como peso. Se todos os pesos forem 0, o sorteio é uniforme.
-5. Monta as unidades com `hero_unit(character, job)` e `monster_unit(monster)`, e o dicionário de skills usadas por elas com `skill_to_dict`.
+3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
+4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
+5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), o `spawn_pool` (cada monstro do mapa com `weight` = `MapMonsterModel.spawn_rate` e `unit` = `monster_unit(monster)`) (sem quantidade por onda: ela depende da rodada, ver [Sistema de combate](sistema-de-combate.md)). **Os monstros não são criados aqui**: o frontend sorteia os monstros de cada rodada par a partir do pool (a caçada é infinita).
+6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
 
@@ -126,34 +151,42 @@ Resposta (`BattleSchemaResponse`):
 {
   "units": {
     "hero": {
-      "name": "Midrway", "job": "Novice", "team": "player",
+      "name": "Midrway", "job": "Novice", "team": "player", "level": 1,
       "sheet": "novice", "avatar": "characters_badges/0_novice_badge.png", "ai": null,
       "offset_x": 0, "offset_y": 0,
       "hp": 50, "max_hp": 50, "ap": 5, "max_ap": 5,
-      "skills": ["Basic Attack"]
-    },
-    "monster_1": {
-      "name": "Poring", "job": null, "team": "enemy",
-      "sheet": "poring", "avatar": "monsters/poring.gif", "ai": "approach_and_attack",
-      "offset_x": 0, "offset_y": 0,
-      "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
       "skills": ["Basic Attack"]
     }
   },
   "skills": {
     "Basic Attack": { "ap_cost": 1, "damage": 10, "range": 1, "icon": "skills/Basic Attack.png" }
-  }
+  },
+  "spawn_pool": [
+    {
+      "weight": 40,
+      "unit": {
+        "name": "Poring", "job": null, "team": "enemy", "level": 1,
+        "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
+        "offset_x": 0, "offset_y": 0,
+        "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
+        "skills": ["Basic Attack"]
+      }
+    }
+  ]
 }
 ```
 
+(`spawn_pool` traz uma entrada por monstro do mapa; o exemplo mostra só o Poring.)
+
 Origem de cada campo:
 
-| Campo | Herói (`hero`) | Monstro (`monster_1`) |
+| Campo | Herói (`hero`) | Monstro (`spawn_pool[].unit`) |
 |---|---|---|
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
-| `avatar` | `JobModel.avatar` | `MonsterModel.image` |
+| `level` | `CharacterModel.level` | `MonsterModel.level` |
+| `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
 | `ap` / `max_ap` | `JobModel.max_ap` (nos dois) | `MonsterModel.max_ap` (nos dois) |
 | `skills` | `JobModel.skill_links`, em ordem de `slot` | `MonsterModel.skill_links`, em ordem de `slot` |
@@ -173,11 +206,13 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | GET | `/api/v1/characters/` | `get_characters` | 200 | n/a |
 | GET | `/api/v1/characters/{character_id}` | `get_character_by_id` | 200 | 404 |
 | DELETE | `/api/v1/characters/{character_id}` | `delete_character` | 204 | 404 |
+| POST | `/api/v1/characters/{character_id}/battle-result` | `post_battle_result` | 200 | 404, 422 |
+| PATCH | `/api/v1/characters/{character_id}/place` | `patch_character_place` | 200 | 404, 422 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-A única rota de exclusão é `DELETE /api/v1/characters/{character_id}` (sem corpo na resposta). Não existem rotas de atualização (PUT/PATCH) nem exclusão para os demais recursos.
+A única rota de atualização de um personagem é `PATCH /api/v1/characters/{character_id}/place` (a EXP muda só pelo `battle-result`); a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo). Não existem outras.
 
 ## Como adicionar um endpoint
 

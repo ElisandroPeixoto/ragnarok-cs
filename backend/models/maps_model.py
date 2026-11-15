@@ -11,7 +11,10 @@ class MapModel(DBBaseModel):
     level_range: str = Column(String(30), nullable=False, default="-")
     image: str = Column(String, nullable=False, default="")
     about: str = Column(Text, nullable=False, default="")
+    zone: str = Column(String(30), nullable=False, default="safe")   # "safe", "hostile_passive" or "hostile_aggressive"
 
     npcs = relationship("NpcModel", lazy="selectin")
+    places = relationship("MapPlaceModel", foreign_keys="MapPlaceModel.map_id", order_by="MapPlaceModel.slot",
+                          lazy="selectin")
     monster_spawns = relationship("MapMonsterModel", lazy="selectin")
     connections = relationship("MapConnectionModel", foreign_keys="MapConnectionModel.from_map_id", lazy="selectin")

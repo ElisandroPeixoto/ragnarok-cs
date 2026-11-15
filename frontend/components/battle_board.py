@@ -5,11 +5,39 @@ from services.battle_geometry import (
     is_inside_board, sort_units_by_depth, get_sprite_bounds, tile_to_pixel, pixel_to_tile,
 )
 from services.battle_actions import can_move, find_path, perform_move, perform_attack, get_attack_tiles
-from services.battle_animation import board_position, walk_remaining
+from services.battle_animation import board_position, walk_remaining, popup_pose
 from services.assets import asset_file_exists
 from components.battle_grid import STATIC_GRID_SHAPES, create_tile_diamond, create_fill_paint
 import themes as t
 from components.unit_sprite import unit_sprite
+
+
+POPUP_WIDTH, POPUP_HEIGHT = 80, 30
+POPUP_FRAME_MS = 90   # Flutter tweens between the ~12 fps re-renders so the jump looks smooth
+
+
+def damage_popup_control(popup: dict, board) -> ft.Container | None:
+    """Damage number jumping from the hit unit's head: white when the hero hit, red when a monster did."""
+    pose = popup_pose(popup)
+    if pose is None:
+        return None
+    dx, dy, opacity = pose
+    center_x, center_y = tile_to_pixel(popup["col"], popup["row"], board)
+    color = t.DAMAGE_POPUP_BY_PLAYER if popup["from_player"] else t.DAMAGE_POPUP_BY_ENEMY
+    return ft.Container(
+        key=f"popup-{popup['id']}",
+        left=center_x - POPUP_WIDTH / 2 + dx,
+        top=center_y - popup["head"] - POPUP_HEIGHT + dy,
+        width=POPUP_WIDTH, height=POPUP_HEIGHT, alignment=ft.Alignment.CENTER,
+        opacity=opacity,
+        animate_position=ft.Animation(POPUP_FRAME_MS, ft.AnimationCurve.LINEAR),
+        animate_opacity=ft.Animation(POPUP_FRAME_MS, ft.AnimationCurve.LINEAR),
+        content=ft.Text(
+            str(popup["amount"]), size=26, weight=ft.FontWeight.BOLD, color=color, font_family="Cinzel",
+            style=ft.TextStyle(shadow=[ft.BoxShadow(blur_radius=3, color=t.DAMAGE_POPUP_OUTLINE),
+                                       ft.BoxShadow(blur_radius=1, color=t.DAMAGE_POPUP_OUTLINE)]),
+        ),
+    )
 
 
 _hover_state = {
@@ -145,8 +173,12 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
         sprite.left, sprite.top = left, top
         sprite_controls.append(sprite)
 
+    # ---------- layer 4: floating damage numbers, above every sprite ----------
+    popup_controls = [control for control in (damage_popup_control(popup, board) for popup in state.damage_popups)
+                      if control is not None]
+
     stage = ft.Stack(
-        controls=[background, grid_layer, *sprite_controls],
+        controls=[background, grid_layer, *sprite_controls, *popup_controls],
         width=board.width,
         height=board.height,
     )

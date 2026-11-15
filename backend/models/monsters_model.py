@@ -8,10 +8,11 @@ class MonsterModel(DBBaseModel):
 
     id: int = Column(Integer, primary_key=True, autoincrement=True)
     name: str = Column(String(255), nullable=False, unique=True)
-    image: str = Column(String, nullable=False)
+    sheet: str = Column(String, nullable=False)   # sprite sheet: battle sprite and map/card picture
+    level: int = Column(Integer, nullable=False, default=1)
+    base_exp: int = Column(Integer, nullable=False, default=0)   # EXP for a kill at a similar level (see docs/regra-de-experiencia.md)
 
-    # Battle data; monsters without a sheet can't be hunted yet
-    sheet: str | None = Column(String, nullable=True)
+    # Battle data
     max_hp: int = Column(Integer, nullable=False, default=50)
     max_ap: int = Column(Integer, nullable=False, default=2)
     ai: str = Column(String(50), nullable=False, default="passive")

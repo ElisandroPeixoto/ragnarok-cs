@@ -24,7 +24,7 @@ def view_wrapper(component, route, appbar_visible=True):
 routes: list[ft.Route] = [
     ft.Route(index=True, component=view_wrapper(start_game, "/", appbar_visible=False)),
     ft.Route(path="/char_selection", component=view_wrapper(character_selection, "/char_selection", appbar_visible=False)),
-    ft.Route(path="/char_creation", component=view_wrapper(character_creation, "/char_creation")),
+    ft.Route(path="/char_creation", component=view_wrapper(character_creation, "/char_creation", appbar_visible=False)),
     ft.Route(path="/profile_page", component=view_wrapper(profile_page, "/profile_page", appbar_visible=False)),
     ft.Route(path="/battle", component=view_wrapper(battle_page, "/battle", appbar_visible=False)),
 ]

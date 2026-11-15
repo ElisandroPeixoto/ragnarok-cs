@@ -37,13 +37,13 @@ Cada unidade é um **dict simples**, mutado diretamente. Campos:
 | `anim`, `anim_started` | `battle_animation.play` | clip atual e quando começou |
 | `walk_path` | `battle_animation.start_walk` | tiles da última caminhada (partida → destino), usados para desenhar a unidade andando |
 
-As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`. `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
+As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro sorteado nas ondas; os ids nunca se repetem). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
 
 ## Estado da batalha: `services/battle_state.py`
 
 ### Posições iniciais
 
-`spawn_units(units, board)` roda dentro de `BattleState.__init__`:
+`place_unit(unit, taken, board)` escolhe o tile do herói em `BattleState.__init__` e o de cada monstro em `spawn_wave`:
 
 | Time | Colunas possíveis (`SPAWN_COLUMNS`) | Linha | Direção inicial (`SPAWN_FACING`) |
 |---|---|---|---|
@@ -55,18 +55,38 @@ O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_ti
 ### `BattleState`
 
 ```python
-BattleState(units: dict, skills: dict, board: BoardConfig, turn_duration: int = 30)
+BattleState(units: dict, skills: dict, board: BoardConfig, spawn_pool: list | None = None,
+            turn_duration: int = 30)
 ```
+
+### Ondas de monstros
+
+A caçada é **infinita**: só termina quando o herói morre (derrota) ou o jogador clica em **Leave**.
+
+- `spawn_wave(count)` sorteia `count` monstros do `spawn_pool` com `random.choices`, usando o `weight` de cada um (a chance do monstro no mapa). O mesmo monstro pode aparecer repetido. Se as colunas dos inimigos estiverem cheias, a onda para.
+- Um monstro já está no campo no início (`__init__`, rodada 1). Depois, `begin_round()` chama `spawn_wave` **em toda rodada par** (2, 4, 6…), e a quantidade depende da rodada (`SPAWN_SCHEDULE`, `monsters_for_round`):
+
+| Rodada | Monstros que nascem |
+|---|---|
+| 1 (início) | 1 |
+| 2 e 4 | 1 |
+| 6 e 8 | 2 |
+| 10 e 12 | 3 |
+| 14, 16 e 18 | 5 |
+| 20 em diante (pares) | 8 |
+
+- `begin_round()` também remove da batalha os monstros mortos a cada nova rodada, para o tabuleiro e a lista de unidades não encherem.
+- Se não houver monstros vivos, o jogador continua jogando (e passando o turno) até a próxima onda.
 
 | Atributo | Significado |
 |---|---|
 | `units` | cópia profunda (`copy.deepcopy`) das unidades recebidas |
 | `skills` | definição das skills (`{nome: {ap_cost, damage, range, icon}}`) |
 | `board` | `BoardConfig` |
-| `turn_order` | `list(units.keys())`, hoje `["hero", "monster_1"]`: **o herói sempre começa** |
+| `turn_order` | o herói primeiro, depois os monstros na ordem em que nasceram, ex.: `["hero", "monster_1", "monster_2"]`: **o herói sempre começa** |
 | `turn_index`, `round` | de quem é a vez e a rodada atual (começa em 1) |
 | `turn_duration`, `time_left` | limite de 30 s por turno (`TURN_DURATION`) |
-| `winner` | `None`, `"victory"` ou `"defeat"` |
+| `winner` | `None` ou `"defeat"` (não existe vitória: a caçada é infinita) |
 | `log` | `BattleLog` |
 | `input_locked` | `True` durante o turno do inimigo |
 | `closed` | `True` quando a tela sai; para os loops |
@@ -76,9 +96,9 @@ Métodos:
 - `current_unit_id` / `current_unit()`: de quem é a vez.
 - `is_alive(unit_id)`, `unit_at(col, row)` (só unidades vivas).
 - `refill_ap(unit_id)`: AP volta ao máximo.
-- `end_turn()`: avança para a próxima unidade **viva**; ao dar a volta na lista, incrementa `round`; reinicia o relógio e recarrega o AP de quem vai jogar.
+- `end_turn()`: avança para a próxima unidade **viva**; ao dar a volta na lista, incrementa `round` e chama `begin_round()`; reinicia o relógio e recarrega o AP de quem vai jogar.
 - `tick()`: chamado a cada segundo; desconta `time_left` e, se zerar, chama `end_turn()` e devolve `True`.
-- `check_battle_end()`: sem inimigos vivos → `victory`; sem jogador vivo → `defeat`. Registra uma entrada `end` no log.
+- `check_battle_end()`: sem jogador vivo → `defeat`. Registra uma entrada `end` no log.
 
 ## Ações: `services/battle_actions.py`
 
@@ -108,9 +128,16 @@ O **custo é o tamanho do caminho mais curto** (`find_path`): 1 AP por tile. `fi
 `perform_attack`:
 1. Desconta `ap_cost` e aplica `damage` (fixo, sem defesa ou variação; o HP não fica negativo).
 2. Vira o atacante para o alvo e toca `attack`. O alvo toca `hurt`, ou `dead` se o HP zerar.
-3. Se o alvo morreu, registra `LogEntry(kind="defeat")` e chama `state.check_battle_end()`.
+3. Cria o número de dano flutuante (`damage_popup`, em `state.damage_popups`) e registra `LogEntry(kind="attack")`, que aparece no Battle Log como "X uses Skill in Y: **-N damage**", com o dano em vermelho (`DAMAGE_TEXT`). Vale para o herói e para os monstros.
+4. Se o alvo morreu, registra `LogEntry(kind="defeat")` e chama `state.check_battle_end()`.
 
-> O ataque em si **não é registrado no log**. `LogEntry` já sabe formatar `kind="attack"` (com o dano em vermelho), mas `perform_attack` não adiciona essa entrada.
+### Números de dano (`services/battle_animation.py`)
+
+Cada golpe gera um número que **salta** da cabeça do alvo: sobe até `POPUP_JUMP_HEIGHT` (34 px) em 40% do tempo, desce um pouco, desliza `POPUP_DRIFT_X` para o lado e some no fim de `POPUP_DURATION` (1,1 s). Ele aparece `POPUP_DELAY` (0,25 s) depois do início do ataque, mais ou menos quando o golpe acerta.
+
+- `damage_popup(target, amount, from_player)` guarda o tile e a altura da cabeça do alvo (`head_height`, pelo `box` do clip `idle`), porque monstros mortos saem da batalha na rodada seguinte.
+- `popup_pose(popup)` é uma função pura do tempo: devolve `(dx, dy, opacidade)` ou `None` fora da janela. `perform_attack` descarta os números expirados (`popup_alive`).
+- Cor: **branco** (`DAMAGE_POPUP_BY_PLAYER`) quando o herói causa o dano, **vermelho** (`DAMAGE_POPUP_BY_ENEMY`) quando um monstro acerta o herói. Fonte Cinzel, com sombra preta (`DAMAGE_POPUP_OUTLINE`) para ler sobre o tabuleiro.
 
 `get_attack_tiles(state, unit_id, skill_name)` devolve os tiles que a skill alcança nas 4 direções, usados para destacá-los no tabuleiro.
 
@@ -152,7 +179,8 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
 | Ação | Onde | Como |
 |---|---|---|
 | Mover | `components/battle_board.py` | sem skill selecionada, clicar num tile (`handle_tap` → `perform_move`): a unidade anda até lá pelo caminho mais curto. Com o mouse sobre um tile (`on_hover`), o caminho fica verde (`VALID_TILE_COLOR`) se `can_move` aceitar; senão, o tile fica vermelho. |
-| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone; clicar de novo desmarca. Só funciona na vez do jogador e com AP suficiente. |
+| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone, ou o atalho **Q/W/E/R/T** (1ª a 5ª skill do herói, `SKILL_KEYS` em `skills_panel.py`); repetir desmarca. Só funciona na vez do jogador e com AP suficiente. O atalho aparece no canto do ícone. |
+| Atalhos de teclado | `pages/battle_page.py` → `handle_key` | `page.on_keyboard_event`, religado a cada render (para ver a skill selecionada) e removido ao sair da tela. Ignora combinações com Shift, Ctrl, Alt ou Meta. **Espaço** aciona o Turn End (`handle_end_turn`). Fora isso, só seleciona skills. |
 | Atacar | `battle_board.handle_tap` | com uma skill selecionada, os tiles de alcance ficam destacados (`ATTACK_TILE_COLOR`); clicar no sprite de um inimigo chama `perform_attack`. |
 | Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** |
 | Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()` |
@@ -169,18 +197,19 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 └─────────┴─────────────────────────────────────────────────────────┘
 ```
 
-- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, com avatar, nome, job, HP e AP (rótulo "PA"). A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
+- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, com avatar, nome, job, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
 - `battle_log_panel` (`components/battle_log_panel.py`): mostra `state.log.entries` com rolagem automática.
 - `turn_panel`: rodada, tempo restante, "Enemy turn...", "Victory!" ou "Defeat...", e os botões.
 - `CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH` (1446 px) também limita a largura das telas de mapa.
 
 ### Desenho do tabuleiro (`components/battle_board.py`)
 
-Três camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
+Quatro camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 1. **Fundo**: `board.background_image` (`battle_boards/forest_battlefield.jpg`) ou uma cor de reserva.
-2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (contornos montados uma vez na importação, em `components/battle_grid.py`) mais os destaques do momento.
+2. **Grade**: `cv.Canvas` com `STATIC_GRID_SHAPES` (montados uma vez na importação, em `components/battle_grid.py`: todos os tiles com a mesma cor, no tom do terreno do fundo (`TILE_COLOR`, translúcida), e os contornos por cima) mais os destaques do momento.
 3. **Sprites**: unidades ordenadas por profundidade (`sort_units_by_depth`). Unidades mortas continuam desenhadas para mostrar o último frame de `dead`. A posição e a profundidade usam `board_position`, então quem está andando aparece entre os tiles.
+4. **Números de dano**: `damage_popup_control` para cada item de `state.damage_popups`, por cima de todos os sprites. Como a página só re-renderiza ~12 vezes por segundo, cada número usa `animate_position`/`animate_opacity` (`POPUP_FRAME_MS`) com uma `key` própria, e o Flutter suaviza o movimento entre um quadro e outro.
 
 > Existe um ramo para unidades **sem** sprite sheet que usa os campos `sprite`, `width`, `height` e `placeholder_color`. O backend não envia esses campos; o ramo sobrou da época do mockup e só não quebra porque toda unidade enviada hoje tem `sheet`.
 
@@ -201,10 +230,10 @@ Direções no tabuleiro: +col = SE, -col = NW, +row = SW, -row = NE (`battle_ani
 
 ## Log: `services/battle_log.py`
 
-`LogEntry` (dataclass) tem `round`, `kind` (`move`, `attack`, `defeat`, `end`) e os campos opcionais `actor`, `target`, `skill`, `damage`, `tiles`, `dest` e `result`. A propriedade `message` gera o texto, e `damage_text` gera o "-N damage". `BattleLog` é só uma lista com `add()` e `print_all()`.
+`LogEntry` (dataclass) tem `round`, `kind` (`move`, `attack`, `defeat`, `exp`, `exp_loss`, `level_up`, `end`) e os campos opcionais `actor`, `target`, `skill`, `damage`, `tiles`, `dest`, `exp`, `level` e `result`. A propriedade `message` gera o texto, `damage_text` gera o "-N damage" (vermelho) e `level_text` gera o "Level N" da subida de nível (dourado). `BattleLog` é só uma lista com `add()` e `print_all()`.
 
 ## Fim da batalha
 
-- **Vitória**: todos os inimigos com HP 0. **Derrota**: o herói com HP 0.
+- **Não há vitória**: a caçada é infinita. **Derrota**: o herói com HP 0. Também dá para encerrar a qualquer momento com **Leave**.
 - O painel de turno mostra o resultado; não é possível agir, só sair com **Leave**.
 - **Nada é persistido**: o HP do personagem não muda, não há EXP, zeny nem drops, e sair no meio da luta não tem penalidade.

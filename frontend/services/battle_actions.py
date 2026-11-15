@@ -2,7 +2,7 @@ from collections import deque
 from services.battle_geometry import is_inside_board
 from services.battle_state import BattleState
 from services.battle_log import LogEntry
-from services.battle_animation import play, face_towards, start_walk
+from services.battle_animation import play, face_towards, start_walk, damage_popup, popup_alive
 
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))   # walk only along rows/columns (no diagonals)
@@ -65,9 +65,16 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
         face_towards(target, attacker["col"], attacker["row"])
         play(target, "hurt")
 
+    state.damage_popups = [popup for popup in state.damage_popups if popup_alive(popup)]
+    state.damage_popups.append(damage_popup(target, skill["damage"], from_player=attacker["team"] == "player"))
+    state.log.add(LogEntry(round=state.round, kind="attack", actor=attacker["name"], target=target["name"],
+                           skill=skill_name, damage=skill["damage"]))
+
     target_dead = target["hp"] == 0
     if target_dead:
         state.log.add(LogEntry(round=state.round, kind="defeat", target=target["name"]))
+        if attacker["team"] == "player" and target["team"] == "enemy":
+            state.pending_kills.append(target["name"])   # reported to the backend, which decides the EXP
         state.check_battle_end()
 
     return {"ok": True, "reason": "", "damage": skill["damage"], "target_dead": target_dead}

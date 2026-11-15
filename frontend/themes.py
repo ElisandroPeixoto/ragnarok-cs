@@ -17,7 +17,11 @@ BUTTON_ALERT = "#5A1B22"
 NORMAL_TEXT = "#FFFFFF"
 TITLE_TEXT = "#D4C48A"
 MUTED_TEXT = "#7A7568"
-DAMAGE_TEXT = "#FF1A1A"
+DAMAGE_TEXT = "#FF1A1A"                 # damage in the battle log
+LEVEL_UP_TEXT = "#D4AF37"               # "Level N" in the battle log (the game's gold, same as CARD_BORDER_SELECTED)
+DAMAGE_POPUP_BY_PLAYER = "#FFFFFF"      # floating number when the hero hits a monster
+DAMAGE_POPUP_BY_ENEMY = "#FF1A1A"       # floating number when a monster hits the hero
+DAMAGE_POPUP_OUTLINE = "#000000"        # shadow that keeps the number readable over the board
 
 
 # BORDERS
@@ -34,17 +38,26 @@ EXP_BAR_COLOR = "#52451C"
 
 
 # MAP SCREEN
-MAP_PANEL_BG = "#12131D"
-MAP_PANEL_BORDER = "#C8A532"
-MAP_PANEL_HEADER = "#52451C"
-MAP_ITEM_BORDER = "#52451C"
+MAP_PANEL_BORDER = "#C8A532"        # gold frame around the map image
 MAP_TITLE_TEXT = "#C8A532"
 MAP_LIGHT_TEXT = "#E0E0E0"
-MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.53, "#1A160A")
+# Dark wood-brown fill behind the map title: translucent, but dark enough to read over bright maps
+MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.72, "#2B2117")
+MAP_SECTION_BG = ft.Colors.with_opacity(0.85, "#0F1018")   # "In the area" / "Routes" / "Monsters nearby"
+MAP_SECTION_BORDER = "#3D3523"       # dim gold outline of sections and their cards
+MAP_DIVIDER = "#34343E"              # line under the header and under each section title
+MAP_MUTED_TEXT = "#9C9AA6"           # greetings, route direction, "Building"
+MAP_MARKER_BG = ft.Colors.with_opacity(0.78, "#0D0E14")    # place labels drawn over the map image
+MAP_MARKER_BORDER = "#5A5A66"        # place chips / markers when not selected
+MAP_SELECTED = "#E2B93B"             # selected place chip, marker and route card
+MAP_LEVEL_TEXT = "#C8A532"           # "Lv 1-10" on route cards
+MAP_ZONE_SAFE = "#2BD45F"            # "Safe Zone"
 
 
 # BATTLE BOARD
 GRID_LINE_COLOR = "#C4C4C4"
+# Single tile color: the battlefield's ground tone (~#837654), kept translucent and subtle
+TILE_COLOR = ft.Colors.with_opacity(0.15, "#837654")
 PAGE_BACKGROUND_COLOR = "#05070F"
 PLACEHOLDER_BACKGROUND_COLOR = "#1A1712"
 BOARD_BORDER_COLOR = "#2A2410"

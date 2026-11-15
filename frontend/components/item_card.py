@@ -4,8 +4,8 @@ import themes as t
 
 def item_card(leading: ft.Control, label: str, subtitle: str | None = None, on_click=None,
               width: int = 155, height: int = 100, tooltip: str | None = None):
-    """Horizontal card for the map panels: image/icon on the left, name (and subtitle) on the right.
-    Used for NPCs, monsters, places (This Area) and neighboring maps (Nearby)."""
+    """Horizontal card for the map sections: image/icon on the left, name (and subtitle) on the right.
+    Used for the monster cards ("Monsters nearby")."""
     texts = [ft.Text(label, size=14, weight=ft.FontWeight.BOLD, color=t.MAP_LIGHT_TEXT, font_family="Cinzel",
                      text_align=ft.TextAlign.CENTER)]
     if subtitle:
@@ -15,8 +15,7 @@ def item_card(leading: ft.Control, label: str, subtitle: str | None = None, on_c
     return ft.Container(
         width=width,
         height=height,
-        bgcolor=t.MAP_PANEL_BG,
-        border=ft.Border.all(1, t.MAP_ITEM_BORDER),
+        border=ft.Border.all(1, t.MAP_SECTION_BORDER),
         border_radius=10,
         padding=ft.Padding.symmetric(horizontal=10, vertical=4),
         on_click=on_click,

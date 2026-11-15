@@ -59,7 +59,7 @@ Componente `character_selection()`.
 - `info_panel(character)` mostra o HP do personagem selecionado.
 - Botões:
   - **CREATE CHARACTER** → `/char_creation`.
-  - **DELETE CHARACTER**: **sem ação** (não há handler nem endpoint de exclusão).
+  - **DELETE CHARACTER**: abre um pop-up de confirmação (modal, centralizado). Ao confirmar, chama `CharacterService.delete_character` → `DELETE /api/v1/characters/{id}`, remove o personagem da lista e ajusta o slot selecionado. Em slot vazio, não faz nada.
   - **START GAME** → `handle_start_game(e, slots[selected])`.
 
 **`handle_start_game`**: se o slot estiver vazio, não faz nada. Caso contrário, chama `set_current_character(character)` (`services/session_state.py`) e navega para `/profile_page`.
@@ -73,7 +73,7 @@ Componente `profile_page()`. Lê o personagem com `get_current_character()`. Se 
 **Blocos da tela**
 - `sidebar(...)` (`components/sidebar.py`), recolhida por padrão.
 - `zeny_badge(character["zeny"])` no topo.
-- `character_card(character)`: sprite grande (`job_sprite(..., height=190)`), nome, job, level e as barras de HP e EXP (`components/status_bars.status_bar`). O máximo de EXP é a constante `MAX_EXP_DEFAULT = 100`, marcada como TODO até existir uma tabela de progressão.
+- `character_card(character)`: sprite grande (`job_sprite(..., height=190)`), nome, job, level e as barras de HP e EXP (`components/status_bars.status_bar`). A barra mostra `exp_progress`/`exp_needed`, a EXP dentro do nível atual (valores calculados pelo backend, ver [Progressão de level](progressao-de-level.md)), e `MAX` no nível 99.
 - `current_place_card(character, thumbnail)`: imagem e nome do mapa atual e o botão **Enter**, que chama `navigate_to_map(character["current_map_id"])`. A miniatura vem de `map_thumbnail_selector`, que faz `GET /maps/{id}` só para pegar a `image`.
 - `info_panel("ATTRIBUTES")`, `info_panel("STATUS")` e `skills_panel()`: **placeholders**, só exibem o título.
 
@@ -101,10 +101,9 @@ Três funções de `services/sprite_selector.py` decidem a imagem por job **no f
 
 ## O que ainda não existe
 
-- Excluir personagem (botão sem ação; sem `DELETE /characters/{id}`).
 - Escolher job na criação (sempre Novice) e trocar de job.
 - Validação de nome no backend (vazio, tamanho, duplicado).
-- Atributos (STR, AGI…), SP em uso, progressão de nível e EXP.
-- Persistir mudanças: nenhuma rota altera um personagem depois de criado, então mapa atual, HP, EXP e zeny nunca mudam.
+- Atributos (STR, AGI…) e SP em uso.
+- Persistir mudanças: só o mapa atual (`PATCH .../place`) e a EXP e o nível (`POST .../battle-result`, a cada abate e na morte) são salvos; HP e zeny nunca mudam.
 - Atualizar o personagem guardado em `session_state` (é uma cópia tirada na seleção).
 - Mostrar erros da API para o jogador.

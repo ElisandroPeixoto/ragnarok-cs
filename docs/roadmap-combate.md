@@ -8,16 +8,16 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 
 | Área | Situação |
 |---|---|
-| Montagem do encontro | ✅ `POST /api/v1/battles/` sorteia 1 monstro do mapa pelo `spawn_rate` |
+| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o frontend sorteia monstros infinitos (em toda rodada par, quantidade crescente com a rodada, peso por monstro) |
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
-| Turnos | ✅ ordem fixa (herói, depois monstro), 30 s por turno, AP recarregado a cada turno |
+| Turnos | ✅ ordem fixa (herói, depois os monstros), 30 s por turno, AP recarregado a cada turno |
 | Movimento | ✅ clique no tile; anda pelo caminho mais curto (BFS, desvia de unidades e obstáculos) com a animação `walk`, 1 AP por tile |
 | Ataque | ✅ skill selecionada + clique no inimigo; alvo em linha reta dentro do alcance; dano fixo |
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
 | Animação | ✅ sprite sheets com clips por direção (idle, walk, attack, hurt, dead) |
-| Vitória/derrota | ✅ detectadas e exibidas; ⚠️ sem consequência alguma |
-| Log | ⚠️ registra movimento, derrota e fim, mas não os ataques |
+| Derrota | ✅ detectada e exibida; ⚠️ sem consequência alguma (a caçada é infinita, não há vitória) |
+| Log | ✅ registra movimento, ataques (com o dano em vermelho), derrota e fim |
 | Persistência | ❌ nada volta para o backend |
 
 ## Lacunas conhecidas
@@ -25,17 +25,14 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 Pontos encontrados no código, em ordem aproximada de impacto:
 
 1. **O resultado não é salvo.** Vencer não dá EXP, zeny nem drops; perder não custa nada; o HP do personagem não muda. Não existe endpoint para isso.
-2. **Ataques não aparecem no Battle Log.** `perform_attack` (`services/battle_actions.py`) só registra `defeat`. `LogEntry` já sabe formatar `kind="attack"`; falta adicionar a entrada.
-3. **Só um monstro por batalha.** O endpoint devolve sempre `monster_1`. O frontend já aceita vários (turnos, spawn e IA iteram sobre todas as unidades).
-4. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
-5. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
-6. **Ordem de turno fixa.** `turn_order = list(units.keys())`: o herói sempre começa, sem iniciativa ou velocidade.
-7. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
-8. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
-9. **Monstros sem dados de batalha.** Lunatic e Wilow aparecem nos mapas, mas não podem ser caçados (não têm `sheet`).
-10. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
-11. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
-12. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
+2. **Só uma skill.** `Basic Attack` (dano 10, alcance 1) é a única skill no seed.
+3. **Dano fixo.** Sem atributos, defesa, crítico, esquiva ou variação. O personagem não tem atributos (STR, AGI…) no modelo.
+4. **Ordem de turno fixa.** `turn_order`: o herói sempre começa, depois os monstros na ordem em que nasceram, sem iniciativa ou velocidade.
+5. **Sem obstáculos.** `BoardConfig.blocked_tiles` existe e é respeitado por movimento e spawn, mas está sempre vazio; o fundo também é sempre o mesmo.
+6. **Regras duplicadas fora do servidor.** Toda a regra roda no cliente; quando houver recompensa, o backend precisa validar ou recalcular o resultado.
+7. **Erros invisíveis.** Se `POST /battles/` falhar, o botão Hunt não dá nenhum retorno ao jogador.
+8. **Restos do mockup.** O ramo de `battle_board.py` para unidades sem sheet usa campos (`sprite`, `width`, `height`, `placeholder_color`) que o backend nunca envia.
+9. **Dados de job repetidos.** `services/sprite_selector.py` repete `sheet` e `avatar` que já existem em `JobModel`.
 
 ## Proposta de fases
 
@@ -47,21 +44,19 @@ Objetivo: lutar passar a ter consequência.
 - Gravar a batalha em uma tabela (ex.: `battles`: personagem, mapa, monstros, status) quando ela começa. Assim o backend sabe que o encontro existe e pode recusar resultados de batalhas inventadas.
 - Recompensas simples por monstro (colunas `base_exp`, `zeny` em `MonsterModel`) e atualização de `CharacterModel` (`exp`, `zeny`, `hp`).
 - Atualizar o personagem em `session_state` com a resposta, para o perfil mostrar os novos valores.
-- Registrar os ataques no log (lacuna 2).
-- Mostrar o erro quando o Hunt falhar (lacuna 10).
+- Mostrar o erro quando o Hunt falhar (lacuna 7).
 
 ### Fase 2: conteúdo e variedade
 
-- Gerar as sheets de Lunatic e Wilow e preencher os dados de batalha no seed.
+- Dar a Lunatic e Wilow atributos próprios (hoje copiam os do Poring).
 - Mais skills, com alcances e custos diferentes, e skills por job.
-- Vários monstros por encontro (`monster_1`, `monster_2`… vindos do backend; a quantidade pode depender do mapa).
 - Usar `blocked_tiles` e fundos diferentes por mapa (ex.: um campo `battle_board` em `MapModel`).
 
 ### Fase 3: atributos e fórmulas
 
 - Atributos no personagem e no monstro (ex.: STR, AGI, VIT, DEX) e cálculo de ATK/DEF/HIT/FLEE.
 - Dano calculado em vez de fixo: `damage` da skill vira um multiplicador.
-- Progressão de nível: tabela de EXP por nível (substitui `MAX_EXP_DEFAULT` em `profile_page.py`) e ganho de atributos.
+- Ganho de atributos ao subir de nível (a tabela de EXP por nível já existe: ver [Progressão de level](progressao-de-level.md)).
 - Ordem de turno por velocidade/AGI.
 
 ### Fase 4: regras táticas

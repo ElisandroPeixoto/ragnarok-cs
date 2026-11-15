@@ -9,7 +9,13 @@ from components.job_sprite import job_sprite
 from services.map_thumbnail_selector import map_thumbnail_selector
 from typing import cast
 
-MAX_EXP_DEFAULT = 100  # TODO: calculate from level/job progression table
+
+def exp_bar(character: dict):
+    """EXP inside the current level over what the level asks for (the backend computes both); full at max level."""
+    needed = character.get("exp_needed", 0)
+    if not needed:
+        return status_bar("EXP", 1, 1, t.EXP_BAR_COLOR, text="MAX")
+    return status_bar("EXP", character.get("exp_progress", 0), needed, t.EXP_BAR_COLOR)
 
 
 def character_card(character: dict):
@@ -28,7 +34,7 @@ def character_card(character: dict):
                                                     ft.Text(f"Job: {character['job']}", size=13, color=t.NORMAL_TEXT, font_family="Cinzel"),
                                                     ft.Container(height=4),
                                                     status_bar("HP", character["hp"], character["max_hp"], t.HP_BAR_COLOR),
-                                                    status_bar("EXP", character["exp"], MAX_EXP_DEFAULT, t.EXP_BAR_COLOR)]))
+                                                    exp_bar(character)]))
 
 def current_place_card(character: dict, thumbnail: str | None):
     return ft.Container(bgcolor=t.CARD_BG,
@@ -41,7 +47,7 @@ def current_place_card(character: dict, thumbnail: str | None):
                                                               height=60,
                                                               border_radius=4,
                                                               bgcolor="#1A1712",
-                                                              image=ft.DecorationImage(src=thumbnail, fit=ft.BoxFit.COVER) if thumbnail else None,
+                                                              image=ft.DecorationImage(src=thumbnail, fit=ft.BoxFit.CONTAIN) if thumbnail else None,
                                                               ),
                                                  ft.Column(spacing=2,
                                                            controls=[ft.Text("Current Place:", size=13, color=t.MUTED_TEXT, font_family="Cinzel"),

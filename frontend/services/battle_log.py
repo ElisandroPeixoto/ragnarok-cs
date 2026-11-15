@@ -4,12 +4,14 @@ from dataclasses import dataclass
 @dataclass
 class LogEntry:
     round: int
-    kind: str  # "move" | "attack" | "defeat" | "end"
+    kind: str  # "move" | "attack" | "defeat" | "exp" | "exp_loss" | "level_up" | "end"
     actor: str = ""  # who played
     target: str = ""  # who was attacked
     skill: str = ""  # skill used
     damage: int = 0  # how much damage
     tiles: int = 0  # how many tiles moved
+    exp: int = 0  # EXP earned
+    level: int = 0  # level reached
     dest: tuple | None = None  # (col, row) destiny
     result: str = ""
 
@@ -22,16 +24,26 @@ class LogEntry:
             return f"{self.actor} moves {self.tiles} {plural} to ({self.dest[0]}, {self.dest[1]})"
         if self.kind == "defeat":
             return f"{self.target} was defeated"
+        if self.kind == "exp":
+            return f"{self.actor} gains {self.exp} EXP"
+        if self.kind == "exp_loss":
+            return f"{self.actor} loses {self.exp} EXP"
+        if self.kind == "level_up":
+            return f"{self.actor} level up to"
         if self.kind == "end":
             return "Victory!" if self.result == "victory" else "Defeat..."
         return ""
+
+    @property
+    def level_text(self) -> str:
+        return f"Level {self.level}" if self.kind == "level_up" else ""
 
     @property
     def damage_text(self) -> str:
         return f"-{self.damage} damage" if self.kind == "attack" else ""
 
     def __str__(self) -> str:
-        return f"[R{self.round:02d}] {self.message} {self.damage_text}".strip()
+        return f"[R{self.round:02d}] {self.message} {self.damage_text}{self.level_text}".strip()
 
 
 class BattleLog:

@@ -1,0 +1,255 @@
+{
+  "src": "sprites/lunatic/lunatic_sheet.png",
+  "frame_w": 54,
+  "frame_h": 59,
+  "cols": 34,
+  "rows": 20,
+  "anchor_x": 27,
+  "anchor_y": 43,
+  "clips": {
+    "idle_se": {
+      "row": 0,
+      "frames": 12,
+      "fps": 20.0,
+      "loop": true,
+      "box": [
+        12,
+        26,
+        33,
+        27
+      ]
+    },
+    "idle_sw": {
+      "row": 1,
+      "frames": 12,
+      "fps": 20.0,
+      "loop": true,
+      "box": [
+        11,
+        26,
+        33,
+        27
+      ]
+    },
+    "idle_nw": {
+      "row": 2,
+      "frames": 12,
+      "fps": 20.0,
+      "loop": true,
+      "box": [
+        10,
+        26,
+        36,
+        27
+      ]
+    },
+    "idle_ne": {
+      "row": 3,
+      "frames": 12,
+      "fps": 20.0,
+      "loop": true,
+      "box": [
+        8,
+        26,
+        36,
+        27
+      ]
+    },
+    "walk_se": {
+      "row": 4,
+      "frames": 15,
+      "fps": 40.0,
+      "loop": true,
+      "box": [
+        13,
+        11,
+        31,
+        42
+      ]
+    },
+    "walk_sw": {
+      "row": 5,
+      "frames": 15,
+      "fps": 40.0,
+      "loop": true,
+      "box": [
+        12,
+        11,
+        31,
+        42
+      ]
+    },
+    "walk_nw": {
+      "row": 6,
+      "frames": 15,
+      "fps": 40.0,
+      "loop": true,
+      "box": [
+        10,
+        8,
+        36,
+        45
+      ]
+    },
+    "walk_ne": {
+      "row": 7,
+      "frames": 15,
+      "fps": 40.0,
+      "loop": true,
+      "box": [
+        8,
+        8,
+        36,
+        45
+      ]
+    },
+    "attack_se": {
+      "row": 8,
+      "frames": 19,
+      "fps": 40.0,
+      "loop": false,
+      "box": [
+        9,
+        1,
+        35,
+        52
+      ]
+    },
+    "attack_sw": {
+      "row": 9,
+      "frames": 19,
+      "fps": 40.0,
+      "loop": false,
+      "box": [
+        12,
+        1,
+        35,
+        52
+      ]
+    },
+    "attack_nw": {
+      "row": 10,
+      "frames": 19,
+      "fps": 40.0,
+      "loop": false,
+      "box": [
+        9,
+        1,
+        36,
+        53
+      ]
+    },
+    "attack_ne": {
+      "row": 11,
+      "frames": 19,
+      "fps": 40.0,
+      "loop": false,
+      "box": [
+        9,
+        1,
+        36,
+        53
+      ]
+    },
+    "hurt_se": {
+      "row": 12,
+      "frames": 7,
+      "fps": 20.0,
+      "loop": false,
+      "box": [
+        6,
+        26,
+        39,
+        27
+      ]
+    },
+    "hurt_sw": {
+      "row": 13,
+      "frames": 7,
+      "fps": 20.0,
+      "loop": false,
+      "box": [
+        11,
+        26,
+        39,
+        27
+      ]
+    },
+    "hurt_nw": {
+      "row": 14,
+      "frames": 7,
+      "fps": 20.0,
+      "loop": false,
+      "box": [
+        12,
+        26,
+        41,
+        28
+      ]
+    },
+    "hurt_ne": {
+      "row": 15,
+      "frames": 7,
+      "fps": 20.0,
+      "loop": false,
+      "box": [
+        3,
+        26,
+        41,
+        28
+      ]
+    },
+    "dead_se": {
+      "row": 16,
+      "frames": 34,
+      "fps": 40.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        6,
+        1,
+        39,
+        53
+      ]
+    },
+    "dead_sw": {
+      "row": 17,
+      "frames": 34,
+      "fps": 40.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        11,
+        1,
+        39,
+        53
+      ]
+    },
+    "dead_nw": {
+      "row": 18,
+      "frames": 34,
+      "fps": 40.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        10,
+        1,
+        41,
+        57
+      ]
+    },
+    "dead_ne": {
+      "row": 19,
+      "frames": 34,
+      "fps": 40.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        5,
+        1,
+        40,
+        57
+      ]
+    }
+  }
+}
