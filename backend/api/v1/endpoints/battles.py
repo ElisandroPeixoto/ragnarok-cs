@@ -41,7 +41,7 @@ def monster_unit(monster: MonsterModel, hero_level: int) -> dict:
 
 
 """Start an endless hunt: the hero plus the map's monster pool. The client rolls a wave of
-`spawn_rate` monsters from the pool (weighted by each monster's spawn_rate) every few rounds"""
+monsters from the pool (weighted by each monster's spawn_rate) on every even round"""
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=BattleSchemaResponse)
 async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(get_session)):
     character = await db.get(CharacterModel, battle.character_id)
@@ -68,6 +68,5 @@ async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(ge
     return {
         "units": {"hero": hero_unit(character, job)},
         "skills": skills,
-        "spawn_rate": game_map.spawn_rate,
         "spawn_pool": [{"weight": spawn.spawn_rate, "unit": monster_unit(spawn.monster, character.level)} for spawn in spawns],
     }

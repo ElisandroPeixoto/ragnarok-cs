@@ -142,7 +142,7 @@ O que acontece:
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
 3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
 4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
-5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), o `spawn_pool` (cada monstro do mapa com `weight` = `MapMonsterModel.spawn_rate` e `unit` = `monster_unit(monster)`) e o `spawn_rate` do mapa (`MapModel.spawn_rate`, monstros por onda). **Os monstros não são criados aqui**: o frontend sorteia cada onda a partir do pool (a caçada é infinita).
+5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), o `spawn_pool` (cada monstro do mapa com `weight` = `MapMonsterModel.spawn_rate` e `unit` = `monster_unit(monster)`) (sem quantidade por onda: ela depende da rodada, ver [Sistema de combate](sistema-de-combate.md)). **Os monstros não são criados aqui**: o frontend sorteia os monstros de cada rodada par a partir do pool (a caçada é infinita).
 6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
@@ -161,7 +161,6 @@ Resposta (`BattleSchemaResponse`):
   "skills": {
     "Basic Attack": { "ap_cost": 1, "damage": 10, "range": 1, "icon": "skills/Basic Attack.png" }
   },
-  "spawn_rate": 1,
   "spawn_pool": [
     {
       "weight": 40,

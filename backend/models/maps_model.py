@@ -11,7 +11,6 @@ class MapModel(DBBaseModel):
     level_range: str = Column(String(30), nullable=False, default="-")
     image: str = Column(String, nullable=False, default="")
     about: str = Column(Text, nullable=False, default="")
-    spawn_rate: int = Column(Integer, nullable=False, default=1)   # monsters per spawn wave in a hunt
     zone: str = Column(String(30), nullable=False, default="safe")   # "safe", "hostile_passive" or "hostile_aggressive"
 
     npcs = relationship("NpcModel", lazy="selectin")

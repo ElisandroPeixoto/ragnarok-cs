@@ -96,7 +96,6 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
 | `image` | String | capa do mapa |
 | `about` | Text | descrição, ainda não exibida |
-| `spawn_rate` | Integer | quantos monstros nascem por onda na caçada (padrão 1); não confundir com o `spawn_rate` por monstro de `map_monsters` |
 | `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 
 Relações (todas `lazy="selectin"`): `npcs`, `places` (ordenados por `slot`), `monster_spawns`, `connections`.
@@ -123,7 +122,7 @@ Pontos de interesse desenhados como marcadores sobre a imagem do mapa.
 
 ### `map_monsters`: `MapMonsterModel` (`models/map_monster_model.py`)
 
-Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, a chance do monstro (peso do sorteio) em cada onda da caçada; também é mostrado no card do monstro no mapa. Relação `monster` → `MonsterModel`.
+Liga monstros a mapas: `map_id` + `monster_id` (PK composta) e `spawn_rate`, a chance do monstro (peso do sorteio) cada vez que a caçada sorteia monstros; também é mostrado no card do monstro no mapa. Relação `monster` → `MonsterModel`.
 
 ### `map_connections`: `MapConnectionModel` (`models/map_connection_model.py`)
 
@@ -150,7 +149,7 @@ Ordem de execução de `seed()`:
 2. **Skills**: cria ou atualiza por nome (upsert).
 3. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
 4. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
-5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, descrição, `spawn_rate` e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
+5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
 6. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
 7. **Conexões**: cria as que ainda não existem.
 

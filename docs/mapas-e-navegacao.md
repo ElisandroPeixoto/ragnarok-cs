@@ -90,7 +90,7 @@ Só aparece em mapas com monstros. `monsters_nearby(map_id, monsters, character)
 2. Em caso de `ApiError`, imprime no console e fica na tela.
 3. Com sucesso, chama `navigate_to_battle(map_route(map_id), setup)`.
 
-> O Hunt abre a caçada com os monstros do mapa; as ondas sorteiam os monstros pela chance (`spawn_rate`) de cada um.
+> O Hunt abre a caçada com os monstros do mapa; os monstros que nascem a cada rodada par são sorteados pela chance (`spawn_rate`) de cada um.
 
 ## Mapas existentes (seed)
 

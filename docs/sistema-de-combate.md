@@ -56,15 +56,25 @@ O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_ti
 
 ```python
 BattleState(units: dict, skills: dict, board: BoardConfig, spawn_pool: list | None = None,
-            spawn_rate: int = 1, turn_duration: int = 30)
+            turn_duration: int = 30)
 ```
 
 ### Ondas de monstros
 
 A caçada é **infinita**: só termina quando o herói morre (derrota) ou o jogador clica em **Leave**.
 
-- `spawn_wave()` sorteia `spawn_rate` monstros do `spawn_pool` com `random.choices`, usando o `weight` de cada um (a chance do monstro no mapa). O mesmo monstro pode aparecer repetido. Se as colunas dos inimigos estiverem cheias, a onda para.
-- A primeira onda vem no `__init__` (rodada 1). Depois, `begin_round()` chama `spawn_wave()` a cada `WAVE_INTERVAL = 3` rodadas (rodadas 4, 7, 10…).
+- `spawn_wave(count)` sorteia `count` monstros do `spawn_pool` com `random.choices`, usando o `weight` de cada um (a chance do monstro no mapa). O mesmo monstro pode aparecer repetido. Se as colunas dos inimigos estiverem cheias, a onda para.
+- Um monstro já está no campo no início (`__init__`, rodada 1). Depois, `begin_round()` chama `spawn_wave` **em toda rodada par** (2, 4, 6…), e a quantidade depende da rodada (`SPAWN_SCHEDULE`, `monsters_for_round`):
+
+| Rodada | Monstros que nascem |
+|---|---|
+| 1 (início) | 1 |
+| 2 e 4 | 1 |
+| 6 e 8 | 2 |
+| 10 e 12 | 3 |
+| 14, 16 e 18 | 5 |
+| 20 em diante (pares) | 8 |
+
 - `begin_round()` também remove da batalha os monstros mortos a cada nova rodada, para o tabuleiro e a lista de unidades não encherem.
 - Se não houver monstros vivos, o jogador continua jogando (e passando o turno) até a próxima onda.
 

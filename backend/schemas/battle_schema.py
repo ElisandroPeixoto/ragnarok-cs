@@ -42,5 +42,4 @@ class SpawnEntrySchema(BaseModel):
 class BattleSchemaResponse(BaseModel):
     units: Dict[str, UnitSchema]        # only the hero: monsters come from spawn_pool, wave by wave
     skills: Dict[str, SkillSchema]
-    spawn_rate: int                     # monsters per spawn wave
     spawn_pool: List[SpawnEntrySchema]

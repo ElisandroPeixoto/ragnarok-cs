@@ -80,7 +80,6 @@ MAPS = {
     "training_field_1": {
         "name": "Training Field 1", "level_range": "1 - 10", "zone": "hostile_passive",
         "image": "maps/training_field_1.jpg", "about": "...",
-        "spawn_rate": 1,   # monsters per spawn wave (default 1)
         "places": [
             {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.30, "y": 0.66},
             {"name": "Academy Road", "kind": "exit", "icon": "exit", "x": 0.63, "y": 0.90,
@@ -112,10 +111,10 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN level INTEGER NOT NULL DEFAULT 1")
         if "base_exp" not in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN base_exp INTEGER NOT NULL DEFAULT 0")
-        # maps gained "spawn_rate" (monsters per wave); add it to older databases
+        # how many monsters arrive is now decided by the round (frontend SPAWN_SCHEDULE): drop the per-map column
         map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
-        if "spawn_rate" not in map_columns:
-            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN spawn_rate INTEGER NOT NULL DEFAULT 1")
+        if "spawn_rate" in map_columns:
+            await conn.exec_driver_sql("ALTER TABLE maps DROP COLUMN spawn_rate")
         # maps gained "zone"; npcs gained their area ("place_id") and a "greeting"
         if "zone" not in map_columns:
             await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN zone VARCHAR(30) NOT NULL DEFAULT 'safe'")
@@ -171,7 +170,7 @@ async def seed() -> None:
         # 4) maps and monster spawns
         for map_id, data in MAPS.items():
             values = {"name": data["name"], "level_range": data["level_range"], "image": data["image"],
-                      "about": data["about"], "spawn_rate": data.get("spawn_rate", 1), "zone": data.get("zone", "safe")}
+                      "about": data["about"], "zone": data.get("zone", "safe")}
             existing = await db.get(MapModel, map_id)
             if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
                 upsert(existing, values)
