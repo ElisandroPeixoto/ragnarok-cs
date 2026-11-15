@@ -50,10 +50,10 @@ O último caso (personagem mais de 30 níveis abaixo) cai para 40% de propósito
 | Evento | O que acontece com a EXP |
 |---|---|
 | Herói abate um monstro | o log mostra "Charname gains N EXP" (o `exp_reward` do monstro); o abate é anotado em `state.kills` |
-| Clica em **Leave** | o cliente envia os abates; o backend soma o EXP de cada um e grava o total no personagem |
-| Herói **morre** | o cliente envia os abates com `defeated: true`; o backend soma o EXP e tira **20%** do total (arredondado para baixo, contando o que ganhou na caçada). O log mostra "Charname loses N EXP" quando a resposta chega |
+| Clica em **Leave** | o cliente envia os abates; o backend soma o EXP de cada um, recalcula o nível ([Progressão de level](progressao-de-level.md)) e grava no personagem |
+| Herói **morre** | o cliente envia os abates com `defeated: true`; o backend soma o EXP, recalcula o nível e tira **20% da EXP acumulada no nível atual** (arredondado para baixo, contando o que ganhou na caçada). A perda nunca vem da EXP total, então **morrer não faz perder nível**. O log mostra "Charname loses N EXP" quando a resposta chega |
 
-Exemplo: o herói começa com 50 de EXP, ganha 6 e morre: 56 − 11 = **45**.
+Exemplo: o herói no nível 1 começa com 50 de EXP, ganha 6 e morre: 56 − 11 = **45**. No nível 3 com 250 de EXP total (50 dentro do nível), morrer tira 10 (20% de 50): fica com 240 e continua no nível 3.
 
 O salvamento é `POST /api/v1/characters/{id}/battle-result` (ver [Endpoints](endpoints-backend.md)), feito uma vez por caçada e só se houve abate ou morte. Fechar o app no meio da caçada, sem Leave nem morte, **não salva** a EXP ganha.
 
@@ -72,5 +72,4 @@ O cliente não envia valores de EXP, então não dá para gravar um número arbi
 
 ## O que ainda falta
 
-- **Subir de nível**: não existe tabela de progressão. A barra de EXP usa `MAX_EXP_DEFAULT = 100` (ver [Personagens](personagens.md)) e fica cheia quando a EXP passa disso.
 - Os `base_exp` atuais (Poring 6, Lunatic 8, Wilow 10) são valores provisórios.

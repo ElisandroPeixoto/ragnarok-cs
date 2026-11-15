@@ -69,12 +69,17 @@ def battle_screen(setup: dict):
         character, defeated = get_current_character(), state.winner == "defeat"
         if character is None or not (state.kills or defeated):
             return
+        level_before = character["level"]
         try:
             result = await CharacterService.send_battle_result(character["id"], state.kills, defeated)
         except ApiError as error:
             print(f"Failed to save the EXP: {error.detail}")
             return
         set_current_character(result["character"])
+        if result["character"]["level"] > level_before:
+            state.log.add(LogEntry(round=state.round, kind="level_up", actor=character["name"],
+                                   level=result["character"]["level"]))
+            refresh()
         if result["exp_lost"]:
             state.log.add(LogEntry(round=state.round, kind="exp_loss", actor=character["name"],
                                    exp=result["exp_lost"]))

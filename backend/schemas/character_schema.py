@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
+from core.level_progression import exp_progress, exp_to_next
 from decimal import Decimal
 
 
@@ -33,6 +34,18 @@ class CharacterSchemaResponse(CharacterSchemaBase):
 
     class Config:
         from_attributes = True
+
+    @computed_field
+    @property
+    def exp_progress(self) -> int:
+        """EXP accumulated inside the current level (the EXP bar's value)"""
+        return exp_progress(self.level, self.exp)
+
+    @computed_field
+    @property
+    def exp_needed(self) -> int:
+        """EXP the current level asks for to go up (the EXP bar's maximum); 0 at the maximum level"""
+        return exp_to_next(self.level) or 0
 
 
 class BattleResultResponse(BaseModel):

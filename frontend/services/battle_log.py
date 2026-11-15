@@ -4,13 +4,14 @@ from dataclasses import dataclass
 @dataclass
 class LogEntry:
     round: int
-    kind: str  # "move" | "attack" | "defeat" | "exp" | "exp_loss" | "end"
+    kind: str  # "move" | "attack" | "defeat" | "exp" | "exp_loss" | "level_up" | "end"
     actor: str = ""  # who played
     target: str = ""  # who was attacked
     skill: str = ""  # skill used
     damage: int = 0  # how much damage
     tiles: int = 0  # how many tiles moved
     exp: int = 0  # EXP earned
+    level: int = 0  # level reached
     dest: tuple | None = None  # (col, row) destiny
     result: str = ""
 
@@ -27,6 +28,8 @@ class LogEntry:
             return f"{self.actor} gains {self.exp} EXP"
         if self.kind == "exp_loss":
             return f"{self.actor} loses {self.exp} EXP"
+        if self.kind == "level_up":
+            return f"{self.actor} reached level {self.level}!"
         if self.kind == "end":
             return "Victory!" if self.result == "victory" else "Defeat..."
         return ""

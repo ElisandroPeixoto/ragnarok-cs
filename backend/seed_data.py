@@ -13,6 +13,8 @@ from models.skills_model import SkillModel
 from models.jobs_model import JobModel
 from models.job_skill_model import JobSkillModel
 from models.monster_skill_model import MonsterSkillModel
+from models.character_model import CharacterModel
+from core.level_progression import MAX_EXP, level_for_exp
 
 
 """
@@ -202,6 +204,11 @@ async def seed() -> None:
             for target in data["navigation"]:
                 if await db.get(MapConnectionModel, (map_id, target)) is None:
                     db.add(MapConnectionModel(from_map_id=map_id, to_map_id=target))
+
+        # 7) characters: their level follows their total EXP (the level table may have changed)
+        for character in (await db.execute(select(CharacterModel))).scalars().all():
+            character.exp = min(character.exp, MAX_EXP)
+            character.level = level_for_exp(character.exp)
 
         await db.commit()
     print("Skills, jobs, monsters and maps seeded.")

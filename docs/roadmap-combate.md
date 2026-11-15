@@ -56,7 +56,7 @@ Objetivo: lutar passar a ter consequência.
 
 - Atributos no personagem e no monstro (ex.: STR, AGI, VIT, DEX) e cálculo de ATK/DEF/HIT/FLEE.
 - Dano calculado em vez de fixo: `damage` da skill vira um multiplicador.
-- Progressão de nível: tabela de EXP por nível (substitui `MAX_EXP_DEFAULT` em `profile_page.py`) e ganho de atributos.
+- Ganho de atributos ao subir de nível (a tabela de EXP por nível já existe: ver [Progressão de level](progressao-de-level.md)).
 - Ordem de turno por velocidade/AGI.
 
 ### Fase 4: regras táticas

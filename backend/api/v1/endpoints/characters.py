@@ -6,6 +6,7 @@ from models.maps_model import MapModel
 from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaBattleResult, BattleResultResponse
 from models.monsters_model import MonsterModel
 from core.exp_rule import exp_gain, exp_after_death
+from core.level_progression import MAX_EXP, level_for_exp, total_exp_for_level, exp_progress
 from core.deps import get_session
 from typing import List
 
@@ -71,7 +72,8 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
 
 # POST Character battle result
 """Settle a hunt: the client reports the monsters killed and whether the hero died; the backend applies the EXP
-rule (docs/regra-de-experiencia.md): EXP for each kill by level difference, then -20% of the total if the hero died"""
+rule (docs/regra-de-experiencia.md): EXP for each kill by level difference, level-ups (docs/progressao-de-level.md),
+then -20% of the EXP accumulated in the current level if the hero died"""
 @router.post("/{character_id}/battle-result", status_code=status.HTTP_200_OK, response_model=BattleResultResponse)
 async def post_battle_result(character_id: int, result: CharacterSchemaBattleResult,
                              db: AsyncSession = Depends(get_session)):
@@ -87,9 +89,14 @@ async def post_battle_result(character_id: int, result: CharacterSchemaBattleRes
         monsters[name] = monster
 
     gained = sum(exp_gain(character.level, monsters[name].level, monsters[name].base_exp) for name in result.kills)
-    total = character.exp + gained
-    lost = total - exp_after_death(total) if result.defeated else 0
+    total = min(character.exp + gained, MAX_EXP)
+    level = level_for_exp(total)
+    lost = 0
+    if result.defeated:   # only the progress inside the (new) level is penalized: the level never drops
+        progress = exp_progress(level, total)
+        lost = progress - exp_after_death(progress)
     character.exp = total - lost
+    character.level = level
     await db.commit()
     await db.refresh(character)
 

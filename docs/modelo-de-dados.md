@@ -30,7 +30,7 @@ erDiagram
 | `name` | String(255) | n/a | obrigatório |
 | `job` | String(255), FK `jobs.name` | `"Novice"` | |
 | `level` | Integer | 1 | |
-| `exp` | Integer | 0 | |
+| `exp` | Integer | 0 | EXP **total** acumulada; o nível sai dela (ver [Progressão de level](progressao-de-level.md)) |
 | `hp` / `max_hp` | Integer | 50 / 50 | HP do herói na batalha |
 | `max_sp` | Integer | 10 | ainda não usado no jogo |
 | `zeny` | Numeric(10, 2) | 0.00 | |

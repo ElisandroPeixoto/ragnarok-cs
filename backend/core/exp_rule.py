@@ -23,9 +23,10 @@ def exp_percentage(hero_level: int, monster_level: int) -> int:
     return 100  # unreachable: the last tier has no limit
 
 
-def exp_after_death(current_exp: int) -> int:
-    """The hero's EXP after dying: loses DEATH_EXP_PENALTY% of the current EXP, rounded down."""
-    return current_exp - current_exp * DEATH_EXP_PENALTY // 100
+def exp_after_death(level_progress: int) -> int:
+    """The EXP accumulated in the current level after dying: loses DEATH_EXP_PENALTY% of it, rounded down.
+    Only the progress inside the level is penalized, so dying never lowers the level."""
+    return level_progress - level_progress * DEATH_EXP_PENALTY // 100
 
 
 def exp_gain(hero_level: int, monster_level: int, base_exp: int) -> int:

@@ -36,7 +36,7 @@ Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `
 Resposta (`CharacterSchemaResponse`):
 ```json
 {
-  "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0,
+  "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0, "exp_progress": 0, "exp_needed": 100,
   "hp": 50, "max_hp": 50, "max_sp": 10, "zeny": "0.00",
   "current_map": "Novice Academy", "current_map_id": "novice_academy"
 }
@@ -60,7 +60,7 @@ O frontend ainda não usa esta rota.
 
 Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422**.
 
-Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem e, se `defeated`, tira 20% do total. Resposta: `{ "character": {…CharacterSchemaResponse…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota ao clicar em Leave ou assim que o herói morre. Veja [Regra de experiência](regra-de-experiencia.md).
+Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem, recalcula o `level` (`core/level_progression.py`, pode subir vários) e, se `defeated`, tira 20% da EXP acumulada no nível atual (nunca perde nível). Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota ao clicar em Leave ou assim que o herói morre. Veja [Regra de experiência](regra-de-experiencia.md).
 
 ### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
 
