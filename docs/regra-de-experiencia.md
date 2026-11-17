@@ -1,6 +1,6 @@
 # Regra de experiência
 
-Como o personagem ganha EXP ao derrotar um monstro. **A regra vive só no backend** (`backend/core/exp_rule.py`). O combate roda no cliente, mas o cliente não calcula EXP: ele apenas avisa quais monstros o herói abateu e se morreu, e o backend decide o valor e grava.
+Como o personagem ganha EXP ao derrotar um monstro. **A regra vive só no backend** (`backend/core/exp_rule.py`). O combate roda no cliente, mas o cliente não calcula EXP: ele apenas avisa como a caçada terminou (vitória ou derrota) e, na vitória, quais monstros o herói matou. O backend decide o valor e grava.
 
 ## Dados envolvidos
 
@@ -49,25 +49,27 @@ O último caso (personagem mais de 30 níveis abaixo) cai para 40% de propósito
 
 | Evento | O que acontece com a EXP |
 |---|---|
-| Herói abate um monstro | o abate entra em `state.pending_kills`; logo em seguida o cliente o envia, o backend soma o EXP, recalcula o nível ([Progressão de level](progressao-de-level.md)) e grava. O log mostra "Charname gains N EXP" (e "level up to Level N", se subiu) com os valores devolvidos |
-| Clica em **Leave** | só espera algum envio em andamento e reporta o que ainda faltar; a EXP já está salva |
-| Herói **morre** | o cliente envia os abates com `defeated: true`; o backend soma o EXP, recalcula o nível e tira **20% da EXP acumulada no nível atual** (arredondado para baixo, contando o que ganhou na caçada). A perda nunca vem da EXP total, então **morrer não faz perder nível**. O log mostra "Charname loses N EXP" quando a resposta chega |
+| Herói mata um monstro | o log mostra "Charname gains N EXP" (o `exp_reward` do monstro), mas **nada é gravado**: a EXP fica pendente (`state.exp_pending`) |
+| **Vitória** (todos os monstros mortos) | a batalha sai sozinha; o backend soma a EXP de **todos** os monstros, recalcula o nível ([Progressão de level](progressao-de-level.md)) e grava |
+| **Derrota** (o herói morre) | a EXP dos monstros mortos **não é paga**; o backend tira **20% da EXP acumulada no nível atual** (arredondado para baixo). A perda nunca vem da EXP total, então **morrer não faz perder nível** |
+| Clica em **Leave** | não perde nada e **não recebe** a EXP dos monstros que já matou: nenhum envio é feito |
 
-Exemplo: o herói no nível 1 começa com 50 de EXP, ganha 6 e morre: 56 − 11 = **45**. No nível 3 com 250 de EXP total (50 dentro do nível), morrer tira 10 (20% de 50): fica com 240 e continua no nível 3.
+Exemplo: o herói no nível 1 com 50 de EXP vence uma caçada de 3 monstros que valem 6 + 8 + 10: fica com 74. Se morrer com 50, perde 10 (20%) e fica com 40, sem receber nada pelos monstros que matou. No nível 3 com 250 de EXP total (50 dentro do nível), morrer tira 10: fica com 240 e continua no nível 3.
 
-O salvamento é `POST /api/v1/characters/{id}/battle-result` (ver [Endpoints](endpoints-backend.md)), feito a cada abate (e na morte). Como a EXP é gravada na hora, fechar o app no meio da caçada **não perde** a EXP já ganha.
+O salvamento é `POST /api/v1/characters/{id}/battle-result` (ver [Endpoints](endpoints-backend.md)), **uma única vez, ao fim da batalha**. Fechar o app no meio da caçada não grava nada (como o Leave).
 
 ### O que o backend valida
 
-O cliente não envia valores de EXP, então não dá para gravar um número arbitrário. Ele ainda pode mentir sobre **quais monstros abateu** (a batalha roda no cliente); o backend só confere que cada nome existe (404 se não) e limita a lista a 1000 abates.
+O cliente não envia valores de EXP, então não dá para gravar um número arbitrário. Ele ainda pode mentir sobre **quais monstros matou** (a batalha roda no cliente); o backend só confere que a vitória traz de 3 a 6 nomes (422 se não) e que cada nome existe (404 se não). Numa derrota os nomes são ignorados.
 
 ## No código
 
 - `backend/core/exp_rule.py`: `exp_percentage(hero_level, monster_level)` devolve a porcentagem; `exp_gain(hero_level, monster_level, base_exp)` devolve o EXP; `exp_after_death(exp)` aplica `DEATH_EXP_PENALTY` (20%).
 - As faixas ficam nas listas `HERO_HIGHER_TIERS` e `HERO_LOWER_TIERS` (limite da diferença, porcentagem); a última faixa não tem limite. Para mudar a regra, edite só esse arquivo.
-- `endpoints/characters.py`: `post_battle_result` recalcula o EXP de cada abate com o nível atual do personagem, soma, recalcula o nível, aplica a perda se `defeated` e grava. Devolve `{character, exp_gained, exp_lost}`.
-- Frontend: quando o herói abate um monstro, `perform_attack` anota o nome em `state.pending_kills`. Só o herói ganha; abates feitos por monstros não geram EXP.
-- `battle_page.settle` (chamada pelo `anim_loop` a cada quadro e pelo Leave) envia os abates pendentes (e a morte, uma vez: `state.defeat_reported`) com `CharacterService.send_battle_result`, atualiza o personagem em `session_state` e registra no log `LogEntry(kind="exp")`, `level_up` e `exp_loss` conforme a resposta. `state.settling` evita dois envios ao mesmo tempo.
+- `endpoints/battles.py`: `monster_unit` preenche `exp_reward` com `exp_gain` para o nível do herói (só para o log). O nível não muda durante a caçada, então o valor do log é o mesmo que o backend vai pagar.
+- `endpoints/characters.py`: `post_battle_result`. Vitória: valida 3 a 6 nomes, soma o EXP de cada um com o nível atual do personagem, recalcula o nível e grava. Derrota: ignora os nomes e aplica a perda de 20% do progresso do nível. Devolve `{character, exp_gained, exp_lost}`.
+- Frontend: quando o herói mata um monstro, `perform_attack` anota o nome em `state.kills`, soma `exp_reward` em `state.exp_pending` e registra `LogEntry(kind="exp")`. Só o herói ganha; monstros não geram EXP.
+- `battle_page.finish_battle` envia `CharacterService.send_battle_result(id, victory, kills)` (uma vez, quando surge o vencedor), atualiza o personagem em `session_state` e guarda o relatório para o pop up de resultado.
 
 ## O que ainda falta
 

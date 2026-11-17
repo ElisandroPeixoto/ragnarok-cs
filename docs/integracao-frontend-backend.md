@@ -90,10 +90,16 @@ sequenceDiagram
     F->>B: GET /maps/{map_id}
     U->>F: Hunt
     F->>B: POST /battles/ {character_id, map_id}
-    B-->>F: {units, skills}
+    B-->>F: {units, skills, monsters}
     Note over F: set_battle_setup(...) e navega para /battle
-    U->>F: Leave
-    F->>F: volta para /map/{map_id}
+    alt vitória ou derrota
+        F->>B: POST /characters/{id}/battle-result
+        B-->>F: {character, exp_gained, exp_lost}
+        F->>F: volta para /map/{map_id} e abre o pop up de resultado
+    else Leave
+        U->>F: Leave
+        F->>F: volta para /map/{map_id} (nada é enviado)
+    end
 ```
 
 ## Rotas do frontend (`frontend/routes.py`)
@@ -114,7 +120,7 @@ sequenceDiagram
 O formato de cada resposta está em [Endpoints do backend](endpoints-backend.md). Dois pontos sensíveis:
 
 - **`GET /maps/{id}`**: `to_response()` em `backend/api/v1/endpoints/maps.py` "achata" as relações do ORM (lugares, NPCs, spawns, conexões) no formato que `map_screen.py` lê. Se os modelos mudarem, mantenha esse formato estável.
-- **`POST /battles/`**: as unidades **não vêm com posição**. O frontend adiciona `col`, `row` e `facing` em `place_unit` (`services/battle_state.py`). A resposta traz só o herói em `units`, mais `spawn_pool`: os monstros são sorteados pelo frontend, a cada rodada par. Os campos estão descritos em [Sistema de combate](sistema-de-combate.md).
+- **`POST /battles/`**: as unidades **não vêm com posição**. O frontend adiciona `col`, `row` e `facing` em `place_unit` (`services/battle_state.py`). A resposta traz só o herói em `units`, mais `monsters`: de 3 a 6 monstros já sorteados pelo backend. Os campos estão descritos em [Sistema de combate](sistema-de-combate.md).
 
 ## Pontos de atenção
 

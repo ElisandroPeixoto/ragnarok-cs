@@ -56,11 +56,15 @@ Função: `get_character_by_id`. Status: **200**, ou **404** `{"detail": "Charac
 
 O frontend ainda não usa esta rota.
 
-### `POST /api/v1/characters/{character_id}/battle-result`: liquidar abates e morte da caçada
+### `POST /api/v1/characters/{character_id}/battle-result`: fechar uma caçada
 
-Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422**.
+Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422** (corpo inválido, ou vitória com menos de 3 ou mais de 6 monstros).
 
-Corpo: `{ "kills": ["Poring", "Poring", "Wilow"], "defeated": false }`: os nomes dos monstros abatidos (um por abate, até 1000) e se o herói morreu. O cliente **não envia EXP**: o backend calcula o ganho de cada abate pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem, recalcula o `level` (`core/level_progression.py`, pode subir vários) e, se `defeated`, tira 20% da EXP acumulada no nível atual (nunca perde nível). Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 22, "exp_lost": 0 }`. O frontend chama esta rota **logo após cada abate** (`kills` com os monstros ainda não reportados) e quando o herói morre (`defeated: true`), então a EXP é salva e o nível sobe durante a caçada. Veja [Regra de experiência](regra-de-experiencia.md).
+Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Wilow"] }`. `victory` diz como a caçada acabou; `kills` são os nomes dos monstros da caçada (3 a 6) e só importam na vitória. O cliente **não envia EXP**:
+- **Vitória**: o backend calcula o ganho de cada monstro pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem e recalcula o `level` (`core/level_progression.py`, pode subir vários).
+- **Derrota**: os nomes são ignorados; o backend tira 20% da EXP acumulada no nível atual (nunca perde nível).
+
+Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 24, "exp_lost": 0 }`. O frontend chama esta rota **uma vez**, quando a batalha termina por vitória ou derrota (o botão Leave não chama). Veja [Regra de experiência](regra-de-experiencia.md).
 
 ### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
 
@@ -142,7 +146,7 @@ O que acontece:
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
 3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
 4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
-5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), o `spawn_pool` (cada monstro do mapa com `weight` = `MapMonsterModel.spawn_rate` e `unit` = `monster_unit(monster)`) (sem quantidade por onda: ela depende da rodada, ver [Sistema de combate](sistema-de-combate.md)). **Os monstros não são criados aqui**: o frontend sorteia os monstros de cada rodada par a partir do pool (a caçada é infinita).
+5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), e `monsters`: de `MIN_MONSTERS` a `MAX_MONSTERS` (3 a 6, `core/battle_rules.py`) monstros sorteados com `random.choices` entre os do mapa, tendo `MapMonsterModel.spawn_rate` como peso (o mesmo monstro pode se repetir), cada um montado por `monster_unit(monster, nível do herói)`. A caçada termina quando o herói mata todos (vitória) ou morre (derrota): não há mais ondas.
 6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
@@ -161,31 +165,29 @@ Resposta (`BattleSchemaResponse`):
   "skills": {
     "Basic Attack": { "ap_cost": 1, "damage": 10, "range": 1, "icon": "skills/Basic Attack.png" }
   },
-  "spawn_pool": [
+  "monsters": [
     {
-      "weight": 40,
-      "unit": {
-        "name": "Poring", "job": null, "team": "enemy", "level": 1,
-        "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
-        "offset_x": 0, "offset_y": 0,
-        "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
-        "skills": ["Basic Attack"]
-      }
+      "name": "Poring", "job": null, "team": "enemy", "level": 1, "exp_reward": 6,
+      "sheet": "poring", "avatar": null, "ai": "approach_and_attack",
+      "offset_x": 0, "offset_y": 0,
+      "hp": 50, "max_hp": 50, "ap": 2, "max_ap": 2,
+      "skills": ["Basic Attack"]
     }
   ]
 }
 ```
 
-(`spawn_pool` traz uma entrada por monstro do mapa; o exemplo mostra só o Poring.)
+(`monsters` traz de 3 a 6 entradas, uma por monstro da caçada; o exemplo mostra só o primeiro.)
 
 Origem de cada campo:
 
-| Campo | Herói (`hero`) | Monstro (`spawn_pool[].unit`) |
+| Campo | Herói (`hero`) | Monstro (`monsters[]`) |
 |---|---|---|
 | `name` | `CharacterModel.name` | `MonsterModel.name` |
 | `job` | `JobModel.name` | `null` |
 | `sheet`, `offset_x`, `offset_y` | `JobModel` | `MonsterModel` |
 | `level` | `CharacterModel.level` | `MonsterModel.level` |
+| `exp_reward` | — | EXP que o herói ganha por este monstro se vencer (`exp_gain` com o nível dele); só para o log, a EXP real é calculada em `battle-result` |
 | `avatar` | `JobModel.avatar` | `null` (o card mostra o idle da `sheet`) |
 | `hp` / `max_hp` | `CharacterModel.hp` / `max_hp` | `MonsterModel.max_hp` (nos dois) |
 | `ap` / `max_ap` | `JobModel.max_ap` (nos dois) | `MonsterModel.max_ap` (nos dois) |

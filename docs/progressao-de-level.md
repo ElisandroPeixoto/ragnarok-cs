@@ -43,16 +43,16 @@ A barra do perfil mostra a EXP **dentro do nível atual** sobre o que o nível p
 
 ## Quando o nível sobe
 
-`POST /api/v1/characters/{id}/battle-result` (chamada logo após cada abate e na morte, ver [Regra de experiência](regra-de-experiencia.md)):
+`POST /api/v1/characters/{id}/battle-result` (chamada **uma vez, ao fim de uma vitória**, ver [Regra de experiência](regra-de-experiencia.md)):
 
-1. soma a EXP dos abates à EXP total (limitada a 63250);
+1. soma a EXP de todos os monstros da caçada à EXP total (limitada a 63250);
 2. recalcula o nível (`level_for_exp`); **pode subir vários níveis de uma vez**;
 3. grava `exp` e `level` no personagem.
 
-O frontend mostra "Charname level up to **Level N**" no Battle Log quando a resposta chega, com "Level N" em dourado (`LEVEL_UP_TEXT`, `#D4AF37`, o dourado do jogo).
+A subida de nível aparece no pop up de resultado da vitória ("Level up: Level N", em dourado: `LEVEL_UP_TEXT`, `#D4AF37`, o dourado do jogo). O Battle Log não mostra mais essa linha, porque o nível só muda depois que a batalha acabou.
 
 Detalhes:
-- Como cada abate é liquidado na hora, subir de nível vale **já para o abate seguinte** (a EXP por diferença de nível usa o nível atual do personagem).
+- O nível só muda ao fim da vitória, então todos os monstros de uma caçada pagam pelo nível que o personagem tinha ao começar. O pop up de resultado mostra "Level up: Level N" quando ele subiu.
 - Morrer tira 20% da EXP acumulada **no nível atual**, nunca da EXP total, então **morrer não faz perder nível** (ver [Regra de experiência](regra-de-experiencia.md)).
 - O `seed_data.py` recalcula o nível de todos os personagens a partir da EXP total a cada execução. Assim, mudar a tabela ou ter personagens antigos não deixa nível e EXP inconsistentes.
 

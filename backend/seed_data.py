@@ -113,7 +113,7 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN level INTEGER NOT NULL DEFAULT 1")
         if "base_exp" not in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN base_exp INTEGER NOT NULL DEFAULT 0")
-        # how many monsters arrive is now decided by the round (frontend SPAWN_SCHEDULE): drop the per-map column
+        # the number of monsters of a hunt is now rolled for every hunt (core/battle_rules.py): drop the per-map column
         map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
         if "spawn_rate" in map_columns:
             await conn.exec_driver_sql("ALTER TABLE maps DROP COLUMN spawn_rate")

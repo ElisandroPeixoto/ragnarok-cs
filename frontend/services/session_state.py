@@ -3,6 +3,7 @@
 _current_character: dict | None = None
 _battle_return_route: str | None = None
 _battle_setup: dict | None = None
+_battle_result: dict | None = None
 
 
 def set_current_character(character: dict) -> None:
@@ -30,3 +31,16 @@ def set_battle_setup(setup: dict) -> None:
 
 def get_battle_setup() -> dict | None:
     return _battle_setup
+
+
+def set_battle_result(result: dict) -> None:
+    """What the map screen shows in the pop up after a battle (see components/battle_result_dialog.py)"""
+    global _battle_result
+    _battle_result = result
+
+
+def pop_battle_result() -> dict | None:
+    """Returns the pending battle result and forgets it, so the pop up shows only once"""
+    global _battle_result
+    result, _battle_result = _battle_result, None
+    return result

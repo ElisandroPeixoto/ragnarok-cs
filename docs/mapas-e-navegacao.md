@@ -90,7 +90,7 @@ Só aparece em mapas com monstros. `monsters_nearby(map_id, monsters, character)
 2. Em caso de `ApiError`, imprime no console e fica na tela.
 3. Com sucesso, chama `navigate_to_battle(map_route(map_id), setup)`.
 
-> O Hunt abre a caçada com os monstros do mapa; os monstros que nascem a cada rodada par são sorteados pela chance (`spawn_rate`) de cada um.
+> O Hunt abre uma caçada com 3 a 6 monstros do mapa, sorteados pela chance (`spawn_rate`) de cada um. Ao fim da batalha (vitória ou derrota) o jogador volta para este mapa e vê o pop up de resultado (`battle_result_dialog`, aberto por `map_screen`).
 
 ## Mapas existentes (seed)
 

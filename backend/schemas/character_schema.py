@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, computed_field
 from core.level_progression import exp_progress, exp_to_next
+from core.battle_rules import MAX_MONSTERS
 from decimal import Decimal
 
 
@@ -15,9 +16,10 @@ class CharacterSchemaPlaceUpdate(BaseModel):
 
 
 class CharacterSchemaBattleResult(BaseModel):
-    """What the client reports when a hunt ends; the backend works out the EXP from it"""
-    kills: list[str] = Field(default_factory=list, max_length=1000)   # monster names, one per kill
-    defeated: bool = False                                           # the hero died
+    """What the client reports when a hunt ends; the backend works out the EXP from it.
+    Victory: `kills` has every monster of the hunt (names). Defeat: the kills are ignored"""
+    victory: bool
+    kills: list[str] = Field(default_factory=list, max_length=MAX_MONSTERS)   # monster names, one per monster
 
 
 class CharacterSchemaResponse(CharacterSchemaBase):

@@ -3,7 +3,8 @@ import themes as t
 from components.sidebar import sidebar
 from components.item_card import item_card
 from components.sheet_sprite import monster_sprite
-from services.session_state import get_current_character
+from services.session_state import get_current_character, pop_battle_result
+from components.battle_result_dialog import battle_result_dialog
 from services.map_service import MapService
 from services.api_client import ApiError
 from services.sprite_selector import badge_selector
@@ -313,6 +314,14 @@ def map_screen(map_data: dict, character: dict):
     show_places, set_show_places = ft.use_state(True)
     selected_area_id, set_selected_area_id = ft.use_state(lambda: default_area_id(areas, npcs))
     selected_route_key, set_selected_route_key = ft.use_state(cast("int | str | None", None))
+
+    def show_battle_result():
+        """Back from a battle: pop up with Victory!/Defeat and the damage report (shown once)."""
+        result = pop_battle_result()
+        if result:
+            ft.context.page.show_dialog(battle_result_dialog(result, lambda e: ft.context.page.pop_dialog()))
+
+    ft.use_effect(show_battle_result, [])
 
     def select_place(place: dict):
         """Markers and chips: an area shows its NPCs below; an exit or building highlights its route."""

@@ -37,13 +37,13 @@ Cada unidade é um **dict simples**, mutado diretamente. Campos:
 | `anim`, `anim_started` | `battle_animation.play` | clip atual e quando começou |
 | `walk_path` | `battle_animation.start_walk` | tiles da última caminhada (partida → destino), usados para desenhar a unidade andando |
 
-As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro sorteado nas ondas; os ids nunca se repetem). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
+As unidades ficam em `state.units`, com as chaves `"hero"` e `"monster_1"`, `"monster_2"`… (um por monstro da caçada, na ordem em que foram sorteados). `components/skills_panel.py` lê as skills de `state.units["hero"]`, então a chave `hero` é obrigatória.
 
 ## Estado da batalha: `services/battle_state.py`
 
 ### Posições iniciais
 
-`place_unit(unit, taken, board)` escolhe o tile do herói em `BattleState.__init__` e o de cada monstro em `spawn_wave`:
+`place_unit(unit, taken, board)` escolhe o tile do herói em `BattleState.__init__` e o de cada monstro em `spawn_monsters`:
 
 | Time | Colunas possíveis (`SPAWN_COLUMNS`) | Linha | Direção inicial (`SPAWN_FACING`) |
 |---|---|---|---|
@@ -55,28 +55,17 @@ O sorteio usa `random.choice` sobre os tiles livres. Ele evita `board.blocked_ti
 ### `BattleState`
 
 ```python
-BattleState(units: dict, skills: dict, board: BoardConfig, spawn_pool: list | None = None,
+BattleState(units: dict, skills: dict, board: BoardConfig, monsters: list | None = None,
             turn_duration: int = 30)
 ```
 
-### Ondas de monstros
+### Os monstros da caçada
 
-A caçada é **infinita**: só termina quando o herói morre (derrota) ou o jogador clica em **Leave**.
+A caçada **não é infinita**: ela começa com uma quantidade aleatória de **3 a 6 monstros** (`MIN_MONSTERS` e `MAX_MONSTERS`, `backend/core/battle_rules.py`) e termina quando o herói mata todos (**vitória**) ou morre (**derrota**).
 
-- `spawn_wave(count)` sorteia `count` monstros do `spawn_pool` com `random.choices`, usando o `weight` de cada um (a chance do monstro no mapa). O mesmo monstro pode aparecer repetido. Se as colunas dos inimigos estiverem cheias, a onda para.
-- Um monstro já está no campo no início (`__init__`, rodada 1). Depois, `begin_round()` chama `spawn_wave` **em toda rodada par** (2, 4, 6…), e a quantidade depende da rodada (`SPAWN_SCHEDULE`, `monsters_for_round`):
-
-| Rodada | Monstros que nascem |
-|---|---|
-| 1 (início) | 1 |
-| 2 e 4 | 1 |
-| 6 e 8 | 2 |
-| 10 e 12 | 3 |
-| 14, 16 e 18 | 5 |
-| 20 em diante (pares) | 8 |
-
-- `begin_round()` também remove da batalha os monstros mortos a cada nova rodada, para o tabuleiro e a lista de unidades não encherem.
-- Se não houver monstros vivos, o jogador continua jogando (e passando o turno) até a próxima onda.
+- O **backend** sorteia os monstros em `POST /api/v1/battles/` (`random.choices`, usando o `spawn_rate` de cada monstro no mapa como peso; o mesmo monstro pode se repetir) e devolve a lista pronta em `monsters`. Não há mais `spawn_pool` nem novos monstros no meio da luta.
+- `BattleState.spawn_monsters(monsters)` coloca cada monstro num tile livre das colunas 7–9 (`place_unit`), com os ids `monster_1`, `monster_2`… na ordem recebida.
+- `begin_round()` só remove do tabuleiro os monstros mortos a cada nova rodada, para a lista de unidades não encher; os números da tela de resultado ficam em `monster_damage`, que não depende disso.
 
 | Atributo | Significado |
 |---|---|
@@ -86,7 +75,10 @@ A caçada é **infinita**: só termina quando o herói morre (derrota) ou o joga
 | `turn_order` | o herói primeiro, depois os monstros na ordem em que nasceram, ex.: `["hero", "monster_1", "monster_2"]`: **o herói sempre começa** |
 | `turn_index`, `round` | de quem é a vez e a rodada atual (começa em 1) |
 | `turn_duration`, `time_left` | limite de 30 s por turno (`TURN_DURATION`) |
-| `winner` | `None` ou `"defeat"` (não existe vitória: a caçada é infinita) |
+| `winner` | `None`, `"victory"` (todos os monstros mortos) ou `"defeat"` (o herói morreu) |
+| `kills`, `exp_pending` | nomes dos monstros que o herói matou e a EXP deles (mostrada no log; só é paga se o herói vencer) |
+| `monster_damage`, `damage_taken` | dano causado a cada monstro e dano recebido pelo herói (tela de resultado) |
+| `finishing` | `True` quando o fim da batalha já está sendo processado |
 | `log` | `BattleLog` |
 | `input_locked` | `True` durante o turno do inimigo |
 | `closed` | `True` quando a tela sai; para os loops |
@@ -170,7 +162,7 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
   - Para quando a batalha acaba ou a tela fecha.
 - **`anim_loop`**: re-renderiza a ~12 fps (`ANIM_INTERVAL = 1/12`) para as animações andarem. Ele **não para quando há vencedor**, para que o clip `dead` termine de tocar; só para com `state.closed`.
 
-`on_unmount` e o botão **Leave** marcam `state.closed = True`.
+`on_unmount` e o botão **Leave** marcam `state.closed = True`. Quando aparece um vencedor, o `anim_loop` dispara `finish_battle` (uma única vez, `state.finishing`): ver [Fim da batalha](#fim-da-batalha).
 
 `refresh(clear_skill=False)` deve ser chamado depois de **qualquer** mudança no estado: incrementa `state.version` e atualiza um `use_state`, o que força o re-render.
 
@@ -183,7 +175,7 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
 | Atalhos de teclado | `pages/battle_page.py` → `handle_key` | `page.on_keyboard_event`, religado a cada render (para ver a skill selecionada) e removido ao sair da tela. Ignora combinações com Shift, Ctrl, Alt ou Meta. **Espaço** aciona o Turn End (`handle_end_turn`). Fora isso, só seleciona skills. |
 | Atacar | `battle_board.handle_tap` | com uma skill selecionada, os tiles de alcance ficam destacados (`ATTACK_TILE_COLOR`); clicar no sprite de um inimigo chama `perform_attack`. |
 | Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** |
-| Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()` |
+| Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()`, **sem custo e sem EXP** (nada é enviado ao backend) |
 
 O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_board.py`.
 
@@ -234,6 +226,12 @@ Direções no tabuleiro: +col = SE, -col = NW, +row = SW, -row = NE (`battle_ani
 
 ## Fim da batalha
 
-- **Não há vitória**: a caçada é infinita. **Derrota**: o herói com HP 0. Também dá para encerrar a qualquer momento com **Leave**.
-- O painel de turno mostra o resultado; não é possível agir, só sair com **Leave**.
-- **Nada é persistido**: o HP do personagem não muda, não há EXP, zeny nem drops, e sair no meio da luta não tem penalidade.
+- **Vitória**: todos os monstros mortos (`check_battle_end` marca `winner = "victory"`). **Derrota**: o herói com HP 0 (`winner = "defeat"`).
+- O painel de turno mostra "Victory!" ou "Defeat..." e a entrada final entra no log. Depois de `END_DELAY` (2 s, para a animação de morte terminar) o `anim_loop` chama `finish_battle`, que **sai sozinho da batalha**:
+  1. envia o resultado ao backend (`POST /api/v1/characters/{id}/battle-result`, ver [Regra de experiência](regra-de-experiencia.md)): na vitória, os nomes dos monstros mortos; na derrota, só o aviso. O backend paga ou tira a EXP e devolve o personagem;
+  2. guarda o relatório em `session_state` (`set_battle_result`);
+  3. volta para o mapa (`navigate_back_from_battle`).
+- **Tela de resultado**: o mapa abre um pop up (`components/battle_result_dialog.py`, lido uma única vez por `pop_battle_result` em `map_screen`) com o título **"Victory!"** em amarelo (`VICTORY_TEXT`, o dourado do jogo) ou **"Defeat"** em vermelho (`DEFEAT_TEXT`), o **dano total causado**, o **dano causado a cada monstro** (monstros repetidos viram "Poring 1", "Poring 2"…), o **dano recebido** e a EXP (ganha e o novo nível na vitória; perdida na derrota).
+- O dano contado é o HP que realmente saiu: um golpe de 10 num monstro com 4 de HP conta 4.
+- **Leave** (botão) encerra sem resultado: não perde EXP, não ganha EXP dos monstros que já matou e não abre o pop up.
+- O HP do personagem e o zeny não mudam; só EXP e nível são gravados, e só ao fim de uma vitória ou derrota.

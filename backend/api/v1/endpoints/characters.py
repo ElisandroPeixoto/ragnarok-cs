@@ -6,6 +6,7 @@ from models.maps_model import MapModel
 from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaBattleResult, BattleResultResponse
 from models.monsters_model import MonsterModel
 from core.exp_rule import exp_gain, exp_after_death
+from core.battle_rules import MIN_MONSTERS, MAX_MONSTERS
 from core.level_progression import MAX_EXP, level_for_exp, total_exp_for_level, exp_progress
 from core.deps import get_session
 from typing import List
@@ -71,10 +72,9 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
 
 
 # POST Character battle result
-"""Settle what happened in a hunt: the client reports the monsters killed (it does so right after each kill) and
-whether the hero died; the backend applies the EXP rule (docs/regra-de-experiencia.md): EXP for each kill by level
-difference, level-ups (docs/progressao-de-level.md), then -20% of the EXP accumulated in the current level if the
-hero died"""
+"""Settle a finished hunt (docs/regra-de-experiencia.md). Victory (every monster killed): the EXP of all the monsters
+by level difference, plus level-ups (docs/progressao-de-level.md). Defeat: -20% of the EXP accumulated in the current
+level and no EXP for the kills. Leaving a hunt is never reported: it costs nothing and pays nothing"""
 @router.post("/{character_id}/battle-result", status_code=status.HTTP_200_OK, response_model=BattleResultResponse)
 async def post_battle_result(character_id: int, result: CharacterSchemaBattleResult,
                              db: AsyncSession = Depends(get_session)):
@@ -82,18 +82,22 @@ async def post_battle_result(character_id: int, result: CharacterSchemaBattleRes
     if character is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
 
-    monsters = {}
-    for name in set(result.kills):
-        monster = (await db.execute(select(MonsterModel).where(MonsterModel.name == name))).scalar_one_or_none()
-        if monster is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Monster '{name}' not found")
-        monsters[name] = monster
-
-    gained = sum(exp_gain(character.level, monsters[name].level, monsters[name].base_exp) for name in result.kills)
+    gained = 0
+    if result.victory:
+        if not MIN_MONSTERS <= len(result.kills) <= MAX_MONSTERS:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail=f"A hunt has {MIN_MONSTERS} to {MAX_MONSTERS} monsters")
+        monsters = {}
+        for name in set(result.kills):
+            monster = (await db.execute(select(MonsterModel).where(MonsterModel.name == name))).scalar_one_or_none()
+            if monster is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Monster '{name}' not found")
+            monsters[name] = monster
+        gained = sum(exp_gain(character.level, monsters[name].level, monsters[name].base_exp) for name in result.kills)
     total = min(character.exp + gained, MAX_EXP)
     level = level_for_exp(total)
     lost = 0
-    if result.defeated:   # only the progress inside the (new) level is penalized: the level never drops
+    if not result.victory:   # only the progress inside the level is penalized: the level never drops
         progress = exp_progress(level, total)
         lost = progress - exp_after_death(progress)
     character.exp = total - lost
