@@ -54,6 +54,7 @@ Outputs `assets/sprites/<name>/<name>_sheet.png` + `<name>.json`: frame size, an
 
 ### Frontend
 - `main.py` → `ft.Router(routes)`; `routes.py` wraps each page component in a `ft.View` via `view_wrapper`. Navigation uses `ft.context.page.navigate(route)`; helpers live in `services/map_router_manager.py`.
+- Travelling between maps (`map_router_manager.change_place`) shows `components/travel_dialog.py` — the character's `walk_se` clip looping in a modal pop up — for `TRAVEL_SECONDS` (5) while the new place is saved, then opens the map. The dialog is built outside a render, so its animation is an async loop updating a container, not an `@ft.component`.
 - `services/session_state.py` is a module-level global store (current character, route to return to after battle).
 - `services/api_client.py` exposes a shared `api` (`ApiClient`, raises `ApiError`); per-domain wrappers are `CharacterService`, `MapService`.
 - `themes.py` holds all colors; `config.ASSETS_DIR` points at the repo-root `assets/`. Asset paths in data/DB are relative to that folder.

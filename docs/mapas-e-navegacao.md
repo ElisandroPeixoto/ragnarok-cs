@@ -73,9 +73,10 @@ Os lugares vêm do backend (`map_places`) com um `kind`:
 |---|---|---|---|
 | `area` | marcador | aba em "In the area" (`area_chip`) | seleciona a área e mostra os NPCs dela (`npc_card`: imagem, nome, `greeting` e botão **Talk**) |
 | `building` | marcador | card em "Routes": "Safe Zone", "Building", sem seta | destaca o card (entrar no prédio vem depois) |
-| `exit` | marcador | card em "Routes" com o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` |
+| `exit` | marcador | card em "Routes" com o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` (ver "Viagem entre mapas") |
 
 - A área inicial é a primeira com NPCs (`default_area_id`); sem ninguém na área, aparece "No one around".
+- **Viagem entre mapas**: `change_place` (`services/map_router_manager.py`) abre um pop up modal (`components/travel_dialog.py`) com **só a animação do personagem andando** para a direita (clip `walk_se` da sheet do job), parado no lugar, e o deixa aberto por `TRAVEL_SECONDS = 5` (duração provisória). Enquanto isso grava o novo lugar no backend (`PATCH .../place`); passados os 5 s, o pop up fecha e o mapa de destino abre. Se a gravação falhar, o pop up fecha e o jogador continua no mapa atual. O pop up não é um `@ft.component` (ele é criado fora de um render): o contêiner recebe os quadros num loop assíncrono que é cancelado ao fechar.
 - `build_routes` monta "Routes": saídas primeiro, depois prédios, e por último conexões de `navigation` que não têm marcador de saída (sem zona nem direção).
 - O botão **Talk** ainda não faz nada (tooltip "Coming soon").
 - Ícones: `PLACE_ICONS` traduz a chave `icon` do lugar (`square`, `port`, `house`, `building`, `exit`, `training`) para um ícone do Flet. **TODO**: trocar pelos PNG/SVG do projeto.
