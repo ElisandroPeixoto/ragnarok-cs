@@ -25,14 +25,9 @@ def unit_card(unit: dict, is_active: bool):
         ft.Text(f"({unit['col']}, {unit['row']})", size=12, color=t.MAP_MUTED_TEXT, font_family="Cinzel"),
     ]))
 
-    ap_pill = ft.Container(   # Action Points stand out: gold, bold and bigger than the other numbers
-        padding=ft.Padding.symmetric(horizontal=8, vertical=1), border_radius=10, bgcolor=t.AP_BG,
-        border=ft.Border.all(1, t.AP_TEXT),
-        content=ft.Row(spacing=4, tight=True, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
-            ft.Text("AP", size=11, color=t.AP_TEXT, font_family="Cinzel"),
-            ft.Text(f"{unit['ap']}/{unit['max_ap']}", size=15, weight=ft.FontWeight.BOLD, color=t.AP_TEXT,
-                    font_family="Cinzel"),
-        ]),
+    ap_pill = ft.Container(   # Action Points: a subtle gold tag, same size as the HP text
+        padding=ft.Padding.symmetric(horizontal=8, vertical=1), border_radius=10, bgcolor=t.AP_BG_SUBTLE,
+        content=ft.Text(f"AP:  {unit['ap']}/{unit['max_ap']}", size=12, color=t.AP_TEXT_SUBTLE, font_family="Cinzel"),
     )
     stats = ft.Row(
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.CENTER,

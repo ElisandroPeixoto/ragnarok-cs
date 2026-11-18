@@ -189,7 +189,7 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 └─────────┴─────────────────────────────────────────────────────────┘
 ```
 
-- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, (compactos: avatar de 48 px) com avatar, nome, job, a **coordenada no tabuleiro** `(col, row)`, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. O **AP** fica em destaque: uma pílula dourada (`AP_TEXT`/`AP_BG`) com o número maior e em negrito. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
+- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, (compactos: avatar de 48 px) com avatar, nome, job, a **coordenada no tabuleiro** `(col, row)`, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. O **AP** aparece como uma etiqueta dourada discreta (`AP_TEXT_SUBTLE`/`AP_BG_SUBTLE`), do mesmo tamanho do HP; o dourado forte (`AP_TEXT`) fica só nos selos de custo das skills e no AP do painel de skills. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
 - `battle_log_panel` (`components/battle_log_panel.py`): cabeçalho com ícone e "Live Feed", e `state.log.entries` com rolagem automática, cada linha com a rodada em cinza (`R01`).
 - `skills_panel` (`components/skills_panel.py`): cabeçalho com ícone, "Skills" e o **AP** disponível do herói em dourado; as skills em cards de duas colunas (ícone com o atalho, nome, dano e custo em AP), com rolagem se passarem do espaço.
 - `turn_panel`: cabeçalho "Turn", duas caixas (**Round** e **Time**; o tempo vira "Enemy" no turno dos monstros e "Victory!"/"Defeat" no fim), o botão **Turn End** e o botão de **Leave** só com ícone.
