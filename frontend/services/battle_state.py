@@ -10,18 +10,6 @@ SPAWN_COLUMNS = {"player": (0,), "enemy": (7, 8, 9)}
 SPAWN_FACING = {"player": "se", "enemy": "nw"}
 
 
-# Monsters arrive on every EVEN round (2, 4, 6...), plus one at the start (round 1). How many depends on the
-# round: the first row whose threshold the round reaches wins (round 6-9 -> 2, 10-13 -> 3, 14-19 -> 5, 20+ -> 8)
-SPAWN_SCHEDULE = ((20, 8), (14, 5), (10, 3), (6, 2), (1, 1))   # (from round, monsters)
-
-
-def monsters_for_round(round_number: int) -> int:
-    for from_round, count in SPAWN_SCHEDULE:
-        if round_number >= from_round:
-            return count
-    return 1
-
-
 def place_unit(unit: dict, taken: set, board: BoardConfig) -> bool:
     """Picks the unit's starting tile at random among the free ones of its team's columns and sets
     its facing. Adds the tile to `taken`; returns False if there is no free tile."""
@@ -37,32 +25,33 @@ def place_unit(unit: dict, taken: set, board: BoardConfig) -> bool:
 
 
 class BattleState:
-    def __init__(self, units: dict, skills: dict, board: BoardConfig, spawn_pool: list[dict] | None = None,
+    def __init__(self, units: dict, skills: dict, board: BoardConfig, monsters: list[dict] | None = None,
                  turn_duration: int = TURN_DURATION):
-        """units (the hero), skills and spawn_pool come from the backend (BattleService.start_battle);
-        positions are rolled here. The battle is endless: monsters keep arriving on even rounds
-        (see SPAWN_SCHEDULE), drawn from `spawn_pool` by weight (repeats allowed)."""
+        """units (the hero), skills and monsters (3 to 6, already rolled) come from the backend
+        (BattleService.start_battle); positions are rolled here. The battle ends when the hero kills
+        every monster (victory) or dies (defeat)."""
         self.units = copy.deepcopy(units)
         self.skills = skills
         self.board = board
-        self.spawn_pool = spawn_pool or []
-        self.monster_count = 0   # ids are never reused: monster_1, monster_2, ...
         for unit in self.units.values():
             place_unit(unit, set(board.blocked_tiles), board)
         # the hero acts first; monsters are appended in the order they arrive
         self.turn_order: list[str] = list(self.units)
         self.turn_index : int = 0
         self.round : int = 1
-        self.spawn_wave(monsters_for_round(self.round))
+        self.spawn_monsters(monsters or [])
         self.turn_duration: int = turn_duration
         self.time_left = turn_duration
         self.winner: str | None = None
         self.log = BattleLog()
         self.damage_popups: list[dict] = []   # floating damage numbers (see battle_animation.damage_popup)
-        # EXP is settled by the backend (battle_page.settle): kills wait here until they are reported
-        self.pending_kills: list[str] = []    # names of monsters the hero killed and the backend does not know yet
-        self.defeat_reported = False          # True once the hero's death was reported (the EXP penalty)
-        self.settling = False                 # a battle-result request is in flight
+        # What the hero did, for the log and the result screen. EXP is only paid by the backend on victory
+        self.kills: list[str] = []            # names of the monsters the hero killed
+        self.exp_pending = 0                  # EXP of those kills (shown in the log; paid only if the hero wins)
+        self.damage_taken = 0                 # damage the hero received
+        self.monster_names = {unit_id: unit["name"] for unit_id, unit in self.units.items() if unit["team"] == "enemy"}
+        self.monster_damage = {unit_id: 0 for unit_id in self.monster_names}   # damage the hero dealt to each one
+        self.finishing = False                # the end of the battle is being processed (battle_page.finish_battle)
 
         # UI Flags
         self.input_locked = False  # True when enemy is playing
@@ -109,26 +98,19 @@ class BattleState:
         self.refill_ap(self.current_unit_id)
 
     def begin_round(self) -> None:
-        """Runs when a new round starts (the hero is next): clears the dead monsters and, on even
-        rounds, brings new monsters (how many: see SPAWN_SCHEDULE)."""
+        """Runs when a new round starts (the hero is next): clears the dead monsters from the board."""
         for unit_id in [uid for uid, unit in self.units.items() if unit["team"] == "enemy" and unit["hp"] <= 0]:
             del self.units[unit_id]
             self.turn_order.remove(unit_id)
-        if self.round % 2 == 0:
-            self.spawn_wave(monsters_for_round(self.round))
 
-    def spawn_wave(self, count: int) -> None:
-        """Rolls `count` monsters from the pool (weighted, repeats allowed) onto free enemy tiles."""
-        if not self.spawn_pool:
-            return
+    def spawn_monsters(self, monsters: list[dict]) -> None:
+        """Puts the hunt's monsters on free enemy tiles (ids monster_1, monster_2... in the given order)."""
         taken = set(self.board.blocked_tiles) | {(u["col"], u["row"]) for u in self.units.values() if u["hp"] > 0}
-        weights = [entry["weight"] for entry in self.spawn_pool]
-        for entry in random.choices(self.spawn_pool, weights=weights, k=count):
-            unit = copy.deepcopy(entry["unit"])
+        for number, monster in enumerate(monsters, start=1):
+            unit = copy.deepcopy(monster)
             if not place_unit(unit, taken, self.board):
                 break   # enemy columns are full
-            self.monster_count += 1
-            unit_id = f"monster_{self.monster_count}"
+            unit_id = f"monster_{number}"
             self.units[unit_id] = unit
             self.turn_order.append(unit_id)
 
@@ -145,9 +127,29 @@ class BattleState:
 
     # Battle End
     def check_battle_end(self) -> str | None:
-        """The hunt is endless: it only ends when the player's team is dead (otherwise leave by the button)."""
-        player_alive = any(u["team"] == "player" and u["hp"] > 0 for u in self.units.values())
-        if self.winner is None and not player_alive:
-            self.winner = "defeat"
-            self.log.add(LogEntry(round=self.round, kind="end", result=self.winner))
+        """Defeat when the player's team is dead; victory when every monster is dead. (Leaving by the button
+        ends the battle without a result.)"""
+        if self.winner is None:
+            player_alive = any(u["team"] == "player" and u["hp"] > 0 for u in self.units.values())
+            enemy_alive = any(u["team"] == "enemy" and u["hp"] > 0 for u in self.units.values())
+            if not player_alive:
+                self.winner = "defeat"
+            elif not enemy_alive:
+                self.winner = "victory"
+            if self.winner:
+                self.log.add(LogEntry(round=self.round, kind="end", result=self.winner))
         return self.winner
+
+    def damage_report(self) -> list[dict]:
+        """[{"name", "damage"}] for every monster of the hunt, in spawn order; repeated names get " 1", " 2"..."""
+        report = [{"name": self.monster_names[unit_id], "damage": damage}
+                  for unit_id, damage in self.monster_damage.items()]
+        counts = {}
+        for entry in report:
+            counts[entry["name"]] = counts.get(entry["name"], 0) + 1
+        seen = {}
+        for entry in report:
+            if counts[entry["name"]] > 1:
+                seen[entry["name"]] = seen.get(entry["name"], 0) + 1
+                entry["name"] = f"{entry['name']} {seen[entry['name']]}"
+        return report

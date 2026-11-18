@@ -73,9 +73,10 @@ Os lugares vêm do backend (`map_places`) com um `kind`:
 |---|---|---|---|
 | `area` | marcador | aba em "In the area" (`area_chip`) | seleciona a área e mostra os NPCs dela (`npc_card`: imagem, nome, `greeting` e botão **Talk**) |
 | `building` | marcador | card em "Routes": "Safe Zone", "Building", sem seta | destaca o card (entrar no prédio vem depois) |
-| `exit` | marcador | card em "Routes" com o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` |
+| `exit` | marcador | card em "Routes" com o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` (ver "Viagem entre mapas") |
 
 - A área inicial é a primeira com NPCs (`default_area_id`); sem ninguém na área, aparece "No one around".
+- **Viagem entre mapas**: `change_place` (`services/map_router_manager.py`) abre um pop up modal (`components/travel_dialog.py`) com a animação do personagem andando para a direita (clip `walk_se` da sheet do job), parado no lugar, e um botão **Cancel** logo abaixo. O pop up fica aberto por `TRAVEL_SECONDS = 5` (duração provisória); só então o novo lugar é gravado no backend (`PATCH .../place`), o pop up fecha e o mapa de destino abre (a gravação leva uma fração de segundo a mais). **Cancel** fecha o pop up antes disso: nada é gravado, nenhuma navegação acontece e o personagem continua no mapa atual. Se a gravação falhar, o pop up fecha e o jogador também continua no mapa atual. O pop up não é um `@ft.component` (ele é criado fora de um render): o contêiner recebe os quadros num loop assíncrono que é cancelado ao fechar.
 - `build_routes` monta "Routes": saídas primeiro, depois prédios, e por último conexões de `navigation` que não têm marcador de saída (sem zona nem direção).
 - O botão **Talk** ainda não faz nada (tooltip "Coming soon").
 - Ícones: `PLACE_ICONS` traduz a chave `icon` do lugar (`square`, `port`, `house`, `building`, `exit`, `training`) para um ícone do Flet. **TODO**: trocar pelos PNG/SVG do projeto.
@@ -90,7 +91,7 @@ Só aparece em mapas com monstros. `monsters_nearby(map_id, monsters, character)
 2. Em caso de `ApiError`, imprime no console e fica na tela.
 3. Com sucesso, chama `navigate_to_battle(map_route(map_id), setup)`.
 
-> O Hunt abre a caçada com os monstros do mapa; os monstros que nascem a cada rodada par são sorteados pela chance (`spawn_rate`) de cada um.
+> O Hunt abre uma caçada com 3 a 6 monstros do mapa, sorteados pela chance (`spawn_rate`) de cada um. Ao fim da batalha (vitória ou derrota) o jogador volta para este mapa e vê o pop up de resultado (`battle_result_dialog`, aberto por `map_screen`).
 
 ## Mapas existentes (seed)
 

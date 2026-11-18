@@ -55,7 +55,12 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
     skill = state.skills[skill_name]
 
     attacker["ap"] -= skill["ap_cost"]
+    dealt = min(skill["damage"], target["hp"])   # the HP actually removed (an overkill counts only what was left)
     target["hp"] = max(0, target["hp"] - skill["damage"])
+    if attacker["team"] == "player" and target["team"] == "enemy":
+        state.monster_damage[target_id] += dealt
+    elif target["team"] == "player":
+        state.damage_taken += dealt
 
     face_towards(attacker, target["col"], target["row"])
     play(attacker, "attack")
@@ -74,7 +79,10 @@ def perform_attack(state: BattleState, attacker_id: str, target_id: str, skill_n
     if target_dead:
         state.log.add(LogEntry(round=state.round, kind="defeat", target=target["name"]))
         if attacker["team"] == "player" and target["team"] == "enemy":
-            state.pending_kills.append(target["name"])   # reported to the backend, which decides the EXP
+            gained = target.get("exp_reward", 0)   # worked out by the backend; paid only if the hero wins
+            state.kills.append(target["name"])
+            state.exp_pending += gained
+            state.log.add(LogEntry(round=state.round, kind="exp", actor=attacker["name"], exp=gained))
         state.check_battle_end()
 
     return {"ok": True, "reason": "", "damage": skill["damage"], "target_dead": target_dead}

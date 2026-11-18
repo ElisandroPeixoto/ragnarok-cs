@@ -22,6 +22,7 @@ class UnitSchema(BaseModel):
     sheet: str
     avatar: str | None = None   # badge image; monsters use their sheet instead
     ai: str | None = None
+    exp_reward: int = 0           # monsters only: EXP the hero earns if he wins the hunt (docs/regra-de-experiencia.md)
     level: int = 1
     offset_x: int
     offset_y: int
@@ -32,13 +33,7 @@ class UnitSchema(BaseModel):
     skills: List[str]
 
 
-class SpawnEntrySchema(BaseModel):
-    """A monster that can appear in the hunt; weight = its chance relative to the others"""
-    weight: int
-    unit: UnitSchema
-
-
 class BattleSchemaResponse(BaseModel):
-    units: Dict[str, UnitSchema]        # only the hero: monsters come from spawn_pool, wave by wave
+    units: Dict[str, UnitSchema]        # only the hero
     skills: Dict[str, SkillSchema]
-    spawn_pool: List[SpawnEntrySchema]
+    monsters: List[UnitSchema]          # the hunt's monsters (3 to 6, rolled by the map's spawn chances)

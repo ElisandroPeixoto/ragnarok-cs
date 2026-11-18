@@ -12,7 +12,7 @@ from components.battle_log_panel import battle_log_panel
 from components.turn_panel import turn_panel
 from services.battle_geometry import BoardConfig
 from services.map_router_manager import navigate_back_from_battle
-from services.session_state import get_battle_setup, get_current_character, set_current_character
+from services.session_state import get_battle_setup, get_current_character, set_current_character, set_battle_result
 from services.character_service import CharacterService
 from services.api_client import ApiError
 from components.sidebar import sidebar
@@ -28,6 +28,7 @@ BOTTOM_HEIGHT = 200
 GAP = 16
 CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH
 
+END_DELAY = 2.0               # seconds between the last hit and going back to the map
 ENEMY_ACTION_DELAY = 0.7      # seconds between the monster's actions (so the player can follow them)
 TICK_INTERVAL = 0.25          # the loop wakes up 4x per second; the turn clock ticks once per second
 ANIM_INTERVAL = 1 / 12      # ~12 re-renders per second; lower to 1/8 if it gets heavy
@@ -48,7 +49,7 @@ def battle_page():
 def battle_screen(setup: dict):
     # lambda: create it (and roll the positions) only on the first render, not on every re-render
     state, _ = ft.use_state(lambda: BattleState(
-        setup["units"], setup["skills"], board_config, setup["spawn_pool"]))
+        setup["units"], setup["skills"], board_config, setup["monsters"]))
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)
@@ -60,43 +61,32 @@ def battle_screen(setup: dict):
         state.version += 1
         set_tick(state.version)
 
-    def has_unsettled() -> bool:
-        return bool(state.pending_kills) or (state.winner == "defeat" and not state.defeat_reported)
-
-    async def settle():
-        """Reports the pending kills (and the hero's death) to the backend, which applies the EXP rule and the
-        level table and returns the updated character. The log then shows the EXP gained, the level up and the
-        death penalty, so a level up shows up right after the kill that caused it."""
-        if state.settling:
-            return
-        state.settling = True
-        try:
-            while has_unsettled():
-                character = get_current_character()
-                kills, defeated = list(state.pending_kills), state.winner == "defeat"
-                state.pending_kills.clear()
-                state.defeat_reported = state.defeat_reported or defeated
-                if character is None:
-                    return
-                level_before = character["level"]
-                try:
-                    result = await CharacterService.send_battle_result(character["id"], kills, defeated)
-                except ApiError as error:
-                    print(f"Failed to save the EXP: {error.detail}")
-                    return
-                set_current_character(result["character"])
-                if result["exp_gained"]:
-                    state.log.add(LogEntry(round=state.round, kind="exp", actor=character["name"],
-                                           exp=result["exp_gained"]))
-                if result["character"]["level"] > level_before:
-                    state.log.add(LogEntry(round=state.round, kind="level_up", actor=character["name"],
-                                           level=result["character"]["level"]))
-                if result["exp_lost"]:
-                    state.log.add(LogEntry(round=state.round, kind="exp_loss", actor=character["name"],
-                                           exp=result["exp_lost"]))
-                refresh()
-        finally:
-            state.settling = False
+    async def finish_battle():
+        """The hero won or died: reports it to the backend (which pays or takes EXP), stores the result for the
+        pop up and goes back to the map. Leaving by the button never gets here: it costs and pays nothing."""
+        await asyncio.sleep(END_DELAY)   # let the last hit and the death animation play
+        character, victory = get_current_character(), state.winner == "victory"
+        level_before = character["level"] if character else None
+        outcome = {"exp_gained": 0, "exp_lost": 0}
+        if character is not None:
+            try:
+                outcome = await CharacterService.send_battle_result(character["id"], victory, state.kills)
+                set_current_character(outcome["character"])
+            except ApiError as error:
+                print(f"Failed to save the battle result: {error.detail}")
+        new_level = outcome["character"]["level"] if "character" in outcome else level_before
+        report = state.damage_report()
+        set_battle_result({
+            "victory": victory,
+            "damage_dealt": sum(entry["damage"] for entry in report),
+            "monsters": report,
+            "damage_taken": state.damage_taken,
+            "exp_gained": outcome["exp_gained"],
+            "exp_lost": outcome["exp_lost"],
+            "level_up": new_level if level_before and new_level > level_before else None,
+        })
+        state.closed = True
+        navigate_back_from_battle()
 
     # ---------- STEP 11: turn loop (timer + monster turn) ----------
     def on_mount():
@@ -131,8 +121,9 @@ def battle_screen(setup: dict):
         async def anim_loop():
             while not state.closed:  # keeps going after a winner so the "dead" clip can finish
                 await asyncio.sleep(ANIM_INTERVAL)
-                if has_unsettled():
-                    await settle()   # right after a kill (or the hero's death), not only when leaving
+                if state.winner is not None and not state.finishing:
+                    state.finishing = True
+                    ft.context.page.run_task(finish_battle)
                 refresh()
 
         ft.context.page.run_task(turn_loop)
@@ -179,13 +170,10 @@ def battle_screen(setup: dict):
         refresh(clear_skill=True)
 
     def handle_leave(e):
-        async def leave():
-            while state.settling:   # a request is already in flight: let it finish
-                await asyncio.sleep(0.05)
-            await settle()          # whatever is still unreported
-            state.closed = True
-            navigate_back_from_battle()
-        ft.context.page.run_task(leave)
+        if state.finishing:   # the battle already ended and is going back to the map by itself
+            return
+        state.closed = True   # leaving costs and pays nothing: no result is reported
+        navigate_back_from_battle()
 
     # ---------- layout ----------
     log_width = CONTENT_WIDTH - LEFT_WIDTH - RIGHT_PANEL_WIDTH - 2 * GAP

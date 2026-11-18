@@ -1,6 +1,8 @@
+import asyncio
 import flet as ft
 from services.api_client import ApiError
 from services.character_service import CharacterService
+from components.travel_dialog import travel_dialog
 from services.session_state import (
     set_battle_return_route, get_battle_return_route, set_battle_setup, set_current_character,
 )
@@ -8,6 +10,7 @@ from services.session_state import (
 
 MAP_ROUTE_PREFIX = "/map"
 BATTLE_ROUTE = "/battle"
+TRAVEL_SECONDS = 5   # how long the travel pop up stays on before the new map opens (placeholder duration)
 
 
 def map_route(map_id: str) -> str:
@@ -20,13 +23,32 @@ def navigate_to_map(map_id: str) -> None:
 
 
 def change_place(character: dict, map_id: str) -> None:
-    """Moves the character to another map: saves the new place on the backend, then opens the map."""
+    """Moves the character to another map: a pop up with his walking animation stays on for TRAVEL_SECONDS, then
+    the new place is saved on the backend and the map opens. The pop up's Cancel button stops the trip before
+    that: nothing is saved and the character stays where he is."""
     async def move():
+        page = ft.context.page
+        cancelled = asyncio.Event()
+        dialog, animate = travel_dialog(character["job"], lambda e: cancelled.set())
+        page.show_dialog(dialog)
+        animation = asyncio.create_task(animate())
         try:
-            set_current_character(await CharacterService.change_place(character["id"], map_id))
+            await asyncio.wait_for(cancelled.wait(), TRAVEL_SECONDS)   # returns early only if Cancel is pressed
+            trip_cancelled = True
+        except asyncio.TimeoutError:
+            trip_cancelled = False   # the trip lasted its whole duration
+        animation.cancel()
+        if trip_cancelled:
+            page.pop_dialog()
+            return
+        try:
+            updated = await CharacterService.change_place(character["id"], map_id)
         except ApiError as error:
             print(f"Failed to register the new place: {error.detail}")
             return
+        finally:
+            page.pop_dialog()
+        set_current_character(updated)
         navigate_to_map(map_id)
 
     ft.context.page.run_task(move)

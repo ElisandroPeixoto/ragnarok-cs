@@ -8,7 +8,7 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 
 | Área | Situação |
 |---|---|
-| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o frontend sorteia monstros infinitos (em toda rodada par, quantidade crescente com a rodada, peso por monstro) |
+| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o backend sorteia 3 a 6 monstros (peso por monstro) e a caçada acaba quando todos morrem |
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
 | Turnos | ✅ ordem fixa (herói, depois os monstros), 30 s por turno, AP recarregado a cada turno |
@@ -16,9 +16,9 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 | Ataque | ✅ skill selecionada + clique no inimigo; alvo em linha reta dentro do alcance; dano fixo |
 | IA | ✅ `passive`, `attack_every_turn`, `approach_and_attack` |
 | Animação | ✅ sprite sheets com clips por direção (idle, walk, attack, hurt, dead) |
-| Derrota | ✅ detectada e exibida; ⚠️ sem consequência alguma (a caçada é infinita, não há vitória) |
-| Log | ✅ registra movimento, ataques (com o dano em vermelho), derrota e fim |
-| Persistência | ❌ nada volta para o backend |
+| Vitória e derrota | ✅ vitória (todos os monstros mortos) paga EXP; derrota tira 20% da EXP do nível; a batalha sai sozinha para o mapa com um pop up de resultado |
+| Log | ✅ registra movimento, ataques (com o dano em vermelho), abates com a EXP, derrota e fim |
+| Persistência | ⚠️ só EXP e nível, ao fim da caçada; HP e zeny não mudam |
 
 ## Lacunas conhecidas
 

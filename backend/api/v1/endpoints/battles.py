@@ -1,3 +1,4 @@
+import random
 from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -8,6 +9,8 @@ from models.maps_model import MapModel
 from models.monsters_model import MonsterModel
 from schemas.battle_schema import BattleSchemaCreate, BattleSchemaResponse
 from core.deps import get_session
+from core.battle_rules import MIN_MONSTERS, MAX_MONSTERS
+from core.exp_rule import exp_gain
 
 router = APIRouter()
 
@@ -27,10 +30,11 @@ def hero_unit(character: CharacterModel, job: JobModel) -> dict:
     }
 
 
-def monster_unit(monster: MonsterModel) -> dict:
+def monster_unit(monster: MonsterModel, hero_level: int) -> dict:
     return {
         "name": monster.name, "team": "enemy",
         "sheet": monster.sheet, "level": monster.level, "ai": monster.ai,
+        "exp_reward": exp_gain(hero_level, monster.level, monster.base_exp),   # paid only if the hero wins the hunt
         "offset_x": monster.offset_x, "offset_y": monster.offset_y,
         "hp": monster.max_hp, "max_hp": monster.max_hp,
         "ap": monster.max_ap, "max_ap": monster.max_ap,
@@ -38,8 +42,8 @@ def monster_unit(monster: MonsterModel) -> dict:
     }
 
 
-"""Start an endless hunt: the hero plus the map's monster pool. The client rolls a wave of
-monsters from the pool (weighted by each monster's spawn_rate) on every even round"""
+"""Start a hunt: the hero plus MIN_MONSTERS to MAX_MONSTERS monsters rolled from the map's monsters, weighted by each
+monster's spawn_rate (repeats allowed). The hunt ends when the hero kills them all (victory) or dies (defeat)"""
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=BattleSchemaResponse)
 async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(get_session)):
     character = await db.get(CharacterModel, battle.character_id)
@@ -60,11 +64,13 @@ async def start_battle(battle: BattleSchemaCreate, db: AsyncSession = Depends(ge
     if not spawns:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No monsters to hunt on this map")
 
+    rolled = random.choices(spawns, weights=[spawn.spawn_rate for spawn in spawns],
+                            k=random.randint(MIN_MONSTERS, MAX_MONSTERS))
     monsters = [spawn.monster for spawn in spawns]
     skills = {link.skill.name: skill_to_dict(link.skill)
               for owner in (job, *monsters) for link in owner.skill_links}
     return {
         "units": {"hero": hero_unit(character, job)},
         "skills": skills,
-        "spawn_pool": [{"weight": spawn.spawn_rate, "unit": monster_unit(spawn.monster)} for spawn in spawns],
+        "monsters": [monster_unit(spawn.monster, character.level) for spawn in rolled],
     }
