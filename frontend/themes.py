@@ -11,12 +11,16 @@ PANEL_BG = "#0D0F17"
 BUTTON_PRIMARY = "#52451C"
 BUTTON_SECONDARY = "#141B33"
 BUTTON_ALERT = "#5A1B22"
+BUTTON_TURN_END = "#E8D074"   # "Turn End": a light tone of the game's gold
+BUTTON_TURN_END_TEXT = "#1A1712"
 
 
 # TEXT
 NORMAL_TEXT = "#FFFFFF"
 TITLE_TEXT = "#D4C48A"
 MUTED_TEXT = "#7A7568"
+AP_TEXT = "#D4AF37"                    # Action Points, highlighted on the unit and skill cards (the game's gold)
+AP_BG = ft.Colors.with_opacity(0.16, "#D4AF37")
 DAMAGE_TEXT = "#FF1A1A"                 # damage in the battle log
 VICTORY_TEXT = "#D4AF37"                # "Victory!" on the result pop up (the game's gold)
 DEFEAT_TEXT = "#FF1A1A"                 # "Defeat" on the result pop up
@@ -60,6 +64,7 @@ MAP_ZONE_SAFE = "#2BD45F"            # "Safe Zone"
 GRID_LINE_COLOR = "#C4C4C4"
 # Single tile color: the battlefield's ground tone (~#837654), kept translucent and subtle
 TILE_COLOR = ft.Colors.with_opacity(0.15, "#837654")
+PANEL_INNER_BG = "#080A12"     # inset boxes inside the combat panels (log, round/time)
 PAGE_BACKGROUND_COLOR = "#05070F"
 PLACEHOLDER_BACKGROUND_COLOR = "#1A1712"
 BOARD_BORDER_COLOR = "#2A2410"
