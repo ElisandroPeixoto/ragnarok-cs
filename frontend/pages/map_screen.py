@@ -14,10 +14,15 @@ from services.battle_service import BattleService
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
-# Every map image is drawn at this fixed size (map art is 1358x784)
-MAP_IMAGE_WIDTH = 1040
-MAP_IMAGE_HEIGHT = round(MAP_IMAGE_WIDTH * 784 / 1358)
-MARKER_SLOT_WIDTH = 180   # markers are centered on their x/y inside a slot this wide
+# Left column, fixed size in every map: the location's art (banner) on top, the town map below it.
+# The town map is 4:3 so the whole image fits without cropping and the markers' x/y (fractions) land right.
+LEFT_WIDTH = 720
+ART_HEIGHT = 216
+TOWN_HEIGHT = LEFT_WIDTH * 3 // 4
+TOWN_BORDER = 1
+MAIN_HEIGHT = ART_HEIGHT + 16 + TOWN_HEIGHT   # the right column (In the area / Routes) is as tall as the left one
+FRAME_RADIUS = 8
+MARKER_SLOT_WIDTH = 160   # markers are centered on their x/y inside a slot this wide
 MARKER_HEIGHT = 24
 GAP = 16
 
@@ -113,7 +118,7 @@ def header(character: dict, zone: str):
 # ---------- map image with place markers ----------
 
 def place_marker(place: dict, selected: bool, on_click):
-    """Pill with icon + name, centered on the place's x/y over the map image."""
+    """Pill with icon + name, centered on the place's x/y over the town map."""
     color = t.MAP_SELECTED if selected else t.NORMAL_TEXT
     pill = ft.Container(
         padding=ft.Padding.symmetric(horizontal=8), height=MARKER_HEIGHT, border_radius=MARKER_HEIGHT / 2,
@@ -124,58 +129,79 @@ def place_marker(place: dict, selected: bool, on_click):
         ]),
     )
     return ft.Container(
-        left=place["x"] * MAP_IMAGE_WIDTH - MARKER_SLOT_WIDTH / 2,
-        top=place["y"] * MAP_IMAGE_HEIGHT - MARKER_HEIGHT / 2,
+        left=place["x"] * (LEFT_WIDTH - 2 * TOWN_BORDER) - MARKER_SLOT_WIDTH / 2,
+        top=place["y"] * (TOWN_HEIGHT - 2 * TOWN_BORDER) - MARKER_HEIGHT / 2,
         width=MARKER_SLOT_WIDTH, height=MARKER_HEIGHT, alignment=ft.Alignment.CENTER,
         content=pill,
     )
 
 
-def map_frame(map_data: dict, show_places: bool, is_selected, on_place_click):
+def art_banner(map_data: dict):
+    """The location's art on top, with the map's name and recommended level over its top-left corner."""
     title_box = ft.Container(
         left=0, top=0, bgcolor=t.MAP_TITLE_OVERLAY,
         border_radius=ft.BorderRadius.only(bottom_right=10),
         padding=ft.Padding(left=14, top=8, right=18, bottom=10),
         content=ft.Column(spacing=2, controls=[
-            cinzel(map_data["name"], 26, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
-            cinzel(f"Recommended Level: {map_data.get('level_range', '-')}", 13, t.MAP_LIGHT_TEXT),
+            cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
+            cinzel(f"Recommended Level: {map_data.get('level_range', '-')}", 12, t.MAP_LIGHT_TEXT),
         ]),
     )
+    return ft.Container(
+        width=LEFT_WIDTH, height=ART_HEIGHT, border=ft.Border.all(2, t.MAP_PANEL_BORDER),
+        border_radius=FRAME_RADIUS, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+        content=ft.Stack(expand=True, controls=[
+            ft.Image(src=map_data.get("image", ""), fit=ft.BoxFit.COVER, left=0, top=0, right=0, bottom=0),
+            title_box,
+        ]),
+    )
+
+
+def town_frame(map_data: dict, show_places: bool, is_selected, on_place_click, on_toggle_places):
+    """The town map with the clickable place markers. A map with no town image gets an empty square."""
+    frame = dict(width=LEFT_WIDTH, height=TOWN_HEIGHT, border=ft.Border.all(TOWN_BORDER, t.MAP_SECTION_BORDER),
+                 border_radius=FRAME_RADIUS)
+    town_image = map_data.get("town_image")
+    if not town_image:
+        return ft.Container(bgcolor=t.MAP_SECTION_BG, **frame)
     markers = [place_marker(place, is_selected(place), on_place_click)
                for place in map_data.get("places", [])] if show_places else []
     return ft.Container(
-        border=ft.Border.all(2, t.MAP_PANEL_BORDER),
-        content=ft.Stack(width=MAP_IMAGE_WIDTH, height=MAP_IMAGE_HEIGHT, controls=[
-            ft.Image(src=map_data.get("image", ""), width=MAP_IMAGE_WIDTH, height=MAP_IMAGE_HEIGHT,
-                     fit=ft.BoxFit.COVER),
-            title_box,
+        clip_behavior=ft.ClipBehavior.ANTI_ALIAS, **frame,
+        content=ft.Stack(expand=True, controls=[
+            ft.Image(src=town_image, fit=ft.BoxFit.COVER, left=0, top=0, right=0, bottom=0),
             *markers,
+            ft.Container(right=10, top=10, content=view_places_button(show_places, on_toggle_places)),
         ]),
     )
 
 
 def view_places_button(show_places: bool, on_toggle):
+    """Small pill over the town map: shows or hides the place markers."""
     return ft.Container(
-        padding=ft.Padding.symmetric(horizontal=6, vertical=4), border_radius=4, on_click=on_toggle,
-        content=ft.Row(spacing=6, tight=True, controls=[
+        padding=ft.Padding.symmetric(horizontal=10, vertical=5), border_radius=14, on_click=on_toggle,
+        bgcolor=t.MAP_MARKER_BG, border=ft.Border.all(1, t.MAP_MARKER_BORDER),
+        content=ft.Row(spacing=6, tight=True, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
             ft.Icon(ft.Icons.VISIBILITY_OFF_OUTLINED if show_places else ft.Icons.VISIBILITY_OUTLINED,
-                    size=20, color=t.NORMAL_TEXT),
-            cinzel("Hide Places" if show_places else "View Places", 12),
+                    size=16, color=t.NORMAL_TEXT),
+            cinzel("Hide Places" if show_places else "View Places", 11),
         ]),
     )
 
 
 # ---------- sections ----------
 
-def section(title: str, icon, content: ft.Control, expand: int | None = None):
-    """Dark card with an icon + title, a divider and the content below."""
+def section(title: str, icon, content: ft.Control, expand: int | None = None, scroll: bool = False):
+    """Dark card with an icon + title, a divider and the content below. With `expand` it fills its share of the
+    parent's height, and `scroll` lets a long content scroll inside the card."""
+    body = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, controls=[content]) if scroll else content
     return ft.Container(
-        expand=expand, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=6,
+        expand=expand, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=FRAME_RADIUS,
         padding=ft.Padding(left=20, top=14, right=20, bottom=18),
         content=ft.Column(spacing=10, controls=[
             ft.Row(spacing=8, controls=[ft.Icon(icon, size=22, color=t.NORMAL_TEXT), cinzel(title, 18)]),
             ft.Divider(height=1, thickness=1, color=t.MAP_DIVIDER),
-            content,
+            body,
         ]),
     )
 
@@ -338,23 +364,24 @@ def map_screen(map_data: dict, character: dict):
     def travel(route: dict):
         change_place(character, route["map_id"])
 
-    map_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[
-        map_frame(map_data, show_places, is_selected, select_place),
-        view_places_button(show_places, lambda e: set_show_places(not show_places)),
-    ])
-
     routes_content = (ft.Column(spacing=10, controls=[
         route_card(route, route["key"] == selected_route_key,
                    lambda route: set_selected_route_key(route["key"]), travel)
         for route in routes]) if routes else cinzel("No routes available", 12, t.MAP_MUTED_TEXT))
 
-    sections = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[
-        section("In the area", ft.Icons.EXPLORE_OUTLINED,
-                in_the_area_content(areas, npcs, selected_area_id, select_place), expand=7),
-        section("Routes", ft.Icons.ROUTE, routes_content, expand=5),
+    # left: the location's art and, below it, the town map; right: "In the area" and "Routes", as tall as the left
+    left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=[
+        art_banner(map_data),
+        town_frame(map_data, show_places, is_selected, select_place, lambda e: set_show_places(not show_places)),
     ])
+    right_column = ft.Container(expand=True, height=MAIN_HEIGHT, content=ft.Column(spacing=GAP, expand=True, controls=[
+        section("In the area", ft.Icons.EXPLORE_OUTLINED,
+                in_the_area_content(areas, npcs, selected_area_id, select_place), expand=1, scroll=True),
+        section("Routes", ft.Icons.ROUTE, routes_content, expand=1, scroll=True),
+    ]))
+    main_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[left_column, right_column])
 
-    body = [header(character, map_data.get("zone", "safe")), map_row, sections]
+    body = [header(character, map_data.get("zone", "safe")), main_row]
     monsters = map_data.get("monsters", [])
     if monsters:
         body.append(monsters_nearby(map_data["id"], monsters, character))

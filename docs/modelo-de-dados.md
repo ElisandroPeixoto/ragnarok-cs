@@ -94,7 +94,8 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `id` | String PK | ex.: `"training_field_1"`; vira a rota `/map/training_field_1` |
 | `name` | String(255) | |
 | `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
-| `image` | String | capa do mapa |
+| `image` | String | a arte do local (banner no topo da tela do mapa) |
+| `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3); `NULL` = a tela mostra um quadrado vazio |
 | `about` | Text | descrição, ainda não exibida |
 | `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 
@@ -102,7 +103,7 @@ Relações (todas `lazy="selectin"`): `npcs`, `places` (ordenados por `slot`), `
 
 ### `map_places`: `MapPlaceModel` (`models/map_place_model.py`)
 
-Pontos de interesse desenhados como marcadores sobre a imagem do mapa.
+Pontos de interesse desenhados como marcadores sobre o mapa da cidade (`maps.town_image`).
 
 | Coluna | Tipo | Observação |
 |---|---|---|
@@ -111,7 +112,7 @@ Pontos de interesse desenhados como marcadores sobre a imagem do mapa.
 | `name` | String(255) | pode repetir (ex.: três "House") |
 | `kind` | String(20) | `"area"` (tem NPCs), `"building"` (prédio; entrar vem depois) ou `"exit"` (leva a outro mapa) |
 | `icon` | String(50) | chave do ícone; o frontend traduz em `PLACE_ICONS` |
-| `x`, `y` | Float | centro do marcador, em fração (0–1) da largura/altura da imagem |
+| `x`, `y` | Float | centro do marcador, em fração (0–1) da largura/altura do mapa da cidade |
 | `slot` | Integer | ordem de exibição |
 | `direction` | String(30), nullable | saídas: direção, ex.: `"Northwest"` |
 | `target_map_id` | FK `maps.id`, nullable | saídas: mapa de destino (relação `target_map`) |
@@ -149,7 +150,7 @@ Ordem de execução de `seed()`:
 2. **Skills**: cria ou atualiza por nome (upsert).
 3. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
 4. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
-5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
+5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, `town_image`, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
 6. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
 7. **Conexões**: cria as que ainda não existem.
 
@@ -161,7 +162,7 @@ O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 
 - **Monstro caçável novo**: gere a sprite sheet (ver [Sprites e animação](sprites-e-animacao.md)); adicione a entrada em `MONSTERS` com `image`, `sheet`, `max_hp`, `max_ap`, `ai`, `skills`; inclua `("Nome", peso)` na lista `monsters` do mapa.
 - **Skill nova**: adicione em `SKILLS` e referencie pelo nome em `JOBS[...]["skills"]` ou `MONSTERS[...]["skills"]`.
-- **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e coloque a imagem em `assets/maps/` (1358 × 784, a proporção da tela). Reinicie o frontend para registrar a rota nova.
+- **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e coloque a arte do local em `assets/maps/` (a faixa de 720 × 216 corta a imagem com `BoxFit.COVER`; as artes atuais são 1358 × 784) e, se houver, o mapa da cidade como `town_image` (4:3, ex.: 1440 × 1080). As coordenadas `x`/`y` dos lugares são relativas ao `town_image`. Reinicie o frontend para registrar a rota nova.
 - **Lugar ou NPC novo**: edite `places`/`npcs` do mapa e rode o seed; eles são regravados a cada execução.
 
 > Limitação: **mudar os spawns de um mapa que já está no banco não tem efeito** ao rodar o seed de novo. Nesse caso é preciso apagar o banco e recriar.

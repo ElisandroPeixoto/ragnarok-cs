@@ -30,6 +30,7 @@ def to_response(map_model: MapModel) -> dict:
         "name": map_model.name,
         "level_range": map_model.level_range,
         "image": map_model.image,
+        "town_image": map_model.town_image,
         "about": map_model.about,
         "zone": map_model.zone,
         "places": [place_to_dict(place) for place in map_model.places],

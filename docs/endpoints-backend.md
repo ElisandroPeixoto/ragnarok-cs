@@ -99,6 +99,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "name": "Training Field 1",
   "level_range": "1 - 10",
   "image": "maps/training_field_1.jpg",
+  "town_image": null,
   "about": "...",
   "zone": "hostile_passive",
   "places": [

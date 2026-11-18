@@ -54,7 +54,8 @@ MONSTERS = {
 }
 
 # zone: "safe", "hostile_passive" or "hostile_aggressive" (only "safe" shows a label, "Safe Zone", on the map header and on routes to the map)
-# places: markers over the map image, in display order. x/y = marker center as a fraction of the image size.
+# image: the location's art (banner). town_image: the town map the markers are drawn over (None = an empty square)
+# places: markers over the town map, in display order. x/y = marker center as a fraction of the town image size.
 #   kind "area" holds NPCs, "building" is a place to enter (link comes later), "exit" leads to the "target"
 #   map in "direction" (keep that map in "navigation" too). "icon" is a key the frontend turns into an icon
 # npcs: (name, image, area name, greeting); the area must be a place of kind "area" with a unique name
@@ -62,14 +63,15 @@ MAPS = {
     "novice_academy": {
         "name": "Novice Academy", "level_range": "1 - 10", "zone": "safe",
         "image": "maps/novice_academy.jpg", "about": "Lorem ipsum dolor sit amet...",
+        "town_image": "maps/novice_academy_town.jpg",   # provisional town map
         "places": [
-            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.52, "y": 0.53},
-            {"name": "Port", "kind": "area", "icon": "port", "x": 0.31, "y": 0.72},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.33, "y": 0.60},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.48, "y": 0.71},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.63, "y": 0.82},
-            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.55, "y": 0.22},
-            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.33, "y": 0.28,
+            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.52, "y": 0.47},
+            {"name": "Port", "kind": "area", "icon": "port", "x": 0.21, "y": 0.67},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.21, "y": 0.21},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.59, "y": 0.58},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.75, "y": 0.68},
+            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.58, "y": 0.29},
+            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.77, "y": 0.29,
              "target": "training_field_1", "direction": "Northwest"},
         ],
         "npcs": [
@@ -113,6 +115,9 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN level INTEGER NOT NULL DEFAULT 1")
         if "base_exp" not in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN base_exp INTEGER NOT NULL DEFAULT 0")
+        # maps gained "town_image" (the town map under the location's art)
+        if "town_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN town_image VARCHAR")
         # the number of monsters of a hunt is now rolled for every hunt (core/battle_rules.py): drop the per-map column
         map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
         if "spawn_rate" in map_columns:
@@ -172,7 +177,8 @@ async def seed() -> None:
         # 4) maps and monster spawns
         for map_id, data in MAPS.items():
             values = {"name": data["name"], "level_range": data["level_range"], "image": data["image"],
-                      "about": data["about"], "zone": data.get("zone", "safe")}
+                      "about": data["about"], "zone": data.get("zone", "safe"),
+                      "town_image": data.get("town_image")}
             existing = await db.get(MapModel, map_id)
             if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
                 upsert(existing, values)
