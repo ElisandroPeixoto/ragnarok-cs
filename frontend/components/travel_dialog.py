@@ -10,16 +10,23 @@ WALK_CLIP = "walk_se"
 SPRITE_HEIGHT = 150
 
 
-def travel_dialog(job: str):
-    """Pop up shown while the character travels to another map: only his walking animation, in place.
-    Returns (dialog, animate): `animate()` is a coroutine that plays the walk clip until it is cancelled.
-    It is not an @ft.component because the dialog is created outside of a render (in an async task)."""
+def travel_dialog(job: str, on_cancel):
+    """Pop up shown while the character travels to another map: his walking animation, in place, and a Cancel
+    button below it. Returns (dialog, animate): `animate()` is a coroutine that plays the walk clip until it is
+    cancelled. It is not an @ft.component because the dialog is created outside of a render (in an async task)."""
     sheet_name = sheet_selector(job)
     holder = ft.Container(width=200, height=170, alignment=ft.Alignment.CENTER)
     dialog = ft.AlertDialog(
         modal=True,   # no way to click around while traveling
         bgcolor=t.PANEL_BG,
-        content=holder,
+        content=ft.Column(
+            tight=True, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                holder,
+                ft.Button(content=ft.Text("Cancel", font_family="Cinzel", color=t.NORMAL_TEXT),
+                          bgcolor=t.BUTTON_SECONDARY, on_click=on_cancel),
+            ],
+        ),
     )
 
     async def animate():

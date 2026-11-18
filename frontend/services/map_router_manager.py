@@ -23,21 +23,30 @@ def navigate_to_map(map_id: str) -> None:
 
 
 def change_place(character: dict, map_id: str) -> None:
-    """Moves the character to another map: a pop up with his walking animation stays on for TRAVEL_SECONDS while
-    the new place is saved on the backend, then the map opens."""
+    """Moves the character to another map: a pop up with his walking animation stays on for TRAVEL_SECONDS, then
+    the new place is saved on the backend and the map opens. The pop up's Cancel button stops the trip before
+    that: nothing is saved and the character stays where he is."""
     async def move():
         page = ft.context.page
-        dialog, animate = travel_dialog(character["job"])
+        cancelled = asyncio.Event()
+        dialog, animate = travel_dialog(character["job"], lambda e: cancelled.set())
         page.show_dialog(dialog)
         animation = asyncio.create_task(animate())
         try:
-            updated, _ = await asyncio.gather(CharacterService.change_place(character["id"], map_id),
-                                              asyncio.sleep(TRAVEL_SECONDS))
+            await asyncio.wait_for(cancelled.wait(), TRAVEL_SECONDS)   # returns early only if Cancel is pressed
+            trip_cancelled = True
+        except asyncio.TimeoutError:
+            trip_cancelled = False   # the trip lasted its whole duration
+        animation.cancel()
+        if trip_cancelled:
+            page.pop_dialog()
+            return
+        try:
+            updated = await CharacterService.change_place(character["id"], map_id)
         except ApiError as error:
             print(f"Failed to register the new place: {error.detail}")
             return
         finally:
-            animation.cancel()
             page.pop_dialog()
         set_current_character(updated)
         navigate_to_map(map_id)
