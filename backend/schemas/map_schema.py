@@ -5,9 +5,13 @@ from schemas.monster_schema import MonsterSchema
 
 class NavigationSchema(BaseModel):
     name: str
-    image: str
     map_id: str
     level_range: str
+
+
+class ParentMapSchema(BaseModel):
+    map_id: str
+    name: str
 
 
 class PlaceTargetSchema(BaseModel):
@@ -15,6 +19,7 @@ class PlaceTargetSchema(BaseModel):
     name: str
     level_range: str
     zone: str
+    is_building: bool = False
 
 
 class PlaceSchema(BaseModel):
@@ -37,9 +42,11 @@ class MapSchemaResponse(BaseModel):
     id: str
     name: str
     level_range: str
-    image: str
+    town_image: Optional[str] = None
+    background_image: Optional[str] = None
     about: str
     zone: str
+    parent_map: Optional[ParentMapSchema] = None
     places: List[PlaceSchema]
     npcs: List[NpcSchema]
     monsters: List[MonsterSchema]

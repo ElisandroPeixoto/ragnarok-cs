@@ -20,8 +20,8 @@ class BoardConfig:
         self.tile_height: int = 48
 
         # Pixel position of the CENTER of tile (0, 0) on the stage
-        self.origin_x: int = 540
-        self.origin_y: int = 200
+        self.origin_x: int = 580
+        self.origin_y: int = 140
 
         # Scenery obstacles as (col, row) pairs
         self.blocked_tiles: list[tuple[int, int]] = []

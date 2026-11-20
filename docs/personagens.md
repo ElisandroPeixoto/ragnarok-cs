@@ -43,7 +43,7 @@ Componente `character_creation()`.
 | `hp` / `max_hp` | 50 / 50 |
 | `max_sp` | 10 |
 | `zeny` | 0.00 |
-| `current_map` / `current_map_id` | `Novice Academy` / `novice_academy` |
+| `current_map` / `current_map_id` | `Novice Island` / `novice_academy` |
 
 O job precisa existir na tabela `jobs` (FK `characters.job → jobs.name`), e o Novice é criado pelo `seed_data.py`. O SQLite não verifica chaves estrangeiras por padrão, mas `POST /battles/` devolve 404 se o job não existir.
 
@@ -70,11 +70,13 @@ Componente `character_selection()`.
 
 Componente `profile_page()`. Lê o personagem com `get_current_character()`. Se não houver um, mostra "No character selected" e um botão para voltar à seleção.
 
+O conteúdo (saldo de zeny, card do personagem, lugar atual, atributos/status e skills) fica **centralizado**, com largura máxima de `BATTLE_CONTENT_WIDTH` (1446 px, a mesma da tela dos mapas) e rolagem vertical; em janelas mais estreitas ele encolhe junto.
+
 **Blocos da tela**
 - `sidebar(...)` (`components/sidebar.py`), recolhida por padrão.
 - `zeny_badge(character["zeny"])` no topo.
 - `character_card(character)`: sprite grande (`job_sprite(..., height=190)`), nome, job, level e as barras de HP e EXP (`components/status_bars.status_bar`). A barra mostra `exp_progress`/`exp_needed`, a EXP dentro do nível atual (valores calculados pelo backend, ver [Progressão de level](progressao-de-level.md)), e `MAX` no nível 99.
-- `current_place_card(character, thumbnail)`: imagem e nome do mapa atual e o botão **Enter**, que chama `navigate_to_map(character["current_map_id"])`. A miniatura vem de `map_thumbnail_selector`, que faz `GET /maps/{id}` só para pegar a `image`.
+- `current_place_card(character, thumbnail)`: imagem e nome do mapa atual e o botão **Enter**, que chama `navigate_to_map(character["current_map_id"])`. A miniatura vem de `map_thumbnail_selector`, que faz `GET /maps/{id}` só para pegar a `town_image`.
 - `info_panel("ATTRIBUTES")`, `info_panel("STATUS")` e `skills_panel()`: **placeholders**, só exibem o título.
 
 ## Barra lateral: `components/sidebar.py`

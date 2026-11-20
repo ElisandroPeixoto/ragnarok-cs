@@ -7,6 +7,7 @@ from services.map_router_manager import navigate_to_map
 from services.session_state import get_current_character
 from components.job_sprite import job_sprite
 from services.map_thumbnail_selector import map_thumbnail_selector
+from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 from typing import cast
 
 
@@ -138,10 +139,13 @@ def profile_page():
                      height=490,
                      controls=[character_card(character), right_column])
 
+    # the content has a maximum width and stays centered, like the map screen; narrower windows shrink it
     main_content = ft.Column(expand=True,
-                             spacing=16,
                              scroll=ft.ScrollMode.AUTO,
-                             controls=[top_bar, top_row, skills_panel()])
+                             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                             controls=[ft.Container(width=BATTLE_CONTENT_WIDTH,
+                                                    content=ft.Column(spacing=16,
+                                                                      controls=[top_bar, top_row, skills_panel()]))])
 
     return ft.Container(expand=True,
                         bgcolor=t.BACKGROUND_OPACITY,

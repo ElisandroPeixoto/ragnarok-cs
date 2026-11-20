@@ -11,13 +11,23 @@ from services.sprite_selector import badge_selector
 from typing import cast
 from services.map_router_manager import map_route, navigate_to_battle, change_place
 from services.battle_service import BattleService
+from services import map_zoom
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
-# Every map image is drawn at this fixed size (map art is 1358x784)
-MAP_IMAGE_WIDTH = 1040
-MAP_IMAGE_HEIGHT = round(MAP_IMAGE_WIDTH * 784 / 1358)
-MARKER_SLOT_WIDTH = 180   # markers are centered on their x/y inside a slot this wide
+# Left column, fixed size in every map: the title card on top, the town map below it and, in maps with monsters, the
+# "Monsters nearby" card under the map. The town map is 4:3 so the whole image fits without cropping and the
+# markers' x/y (fractions) land right.
+LEFT_WIDTH = 800
+TITLE_HEIGHT = 64
+MONSTERS_HEIGHT = 176
+TOWN_HEIGHT = LEFT_WIDTH * 3 // 4
+TOWN_BORDER = 1
+VIEW_WIDTH = LEFT_WIDTH - 2 * TOWN_BORDER      # the town map's viewport (inside its border)
+VIEW_HEIGHT = TOWN_HEIGHT - 2 * TOWN_BORDER
+TOP_HEIGHT = TITLE_HEIGHT + 16 + TOWN_HEIGHT   # title + town map; the right column is as tall as the left one
+FRAME_RADIUS = 8
+MARKER_SLOT_WIDTH = 160   # markers are centered on their x/y inside a slot this wide
 MARKER_HEIGHT = 24
 GAP = 16
 
@@ -112,8 +122,8 @@ def header(character: dict, zone: str):
 
 # ---------- map image with place markers ----------
 
-def place_marker(place: dict, selected: bool, on_click):
-    """Pill with icon + name, centered on the place's x/y over the map image."""
+def place_marker(place: dict, selected: bool, on_click, view: map_zoom.View):
+    """Pill with icon + name, centered on the place's x/y over the (zoomed) town map. The pill never scales."""
     color = t.MAP_SELECTED if selected else t.NORMAL_TEXT
     pill = ft.Container(
         padding=ft.Padding.symmetric(horizontal=8), height=MARKER_HEIGHT, border_radius=MARKER_HEIGHT / 2,
@@ -123,59 +133,113 @@ def place_marker(place: dict, selected: bool, on_click):
             ft.Icon(place_icon(place), size=13, color=color), cinzel(place["name"], 11, color),
         ]),
     )
+    center_x, center_y = map_zoom.to_viewport(view, place["x"], place["y"], VIEW_WIDTH, VIEW_HEIGHT)
+    if not (-20 <= center_x <= VIEW_WIDTH + 20 and -20 <= center_y <= VIEW_HEIGHT + 20):
+        return None   # zoomed out of sight
     return ft.Container(
-        left=place["x"] * MAP_IMAGE_WIDTH - MARKER_SLOT_WIDTH / 2,
-        top=place["y"] * MAP_IMAGE_HEIGHT - MARKER_HEIGHT / 2,
+        left=center_x - MARKER_SLOT_WIDTH / 2, top=center_y - MARKER_HEIGHT / 2,
         width=MARKER_SLOT_WIDTH, height=MARKER_HEIGHT, alignment=ft.Alignment.CENTER,
         content=pill,
     )
 
 
-def map_frame(map_data: dict, show_places: bool, is_selected, on_place_click):
-    title_box = ft.Container(
-        left=0, top=0, bgcolor=t.MAP_TITLE_OVERLAY,
-        border_radius=ft.BorderRadius.only(bottom_right=10),
-        padding=ft.Padding(left=14, top=8, right=18, bottom=10),
-        content=ft.Column(spacing=2, controls=[
-            cinzel(map_data["name"], 26, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
-            cinzel(f"Recommended Level: {map_data.get('level_range', '-')}", 13, t.MAP_LIGHT_TEXT),
-        ]),
-    )
-    markers = [place_marker(place, is_selected(place), on_place_click)
-               for place in map_data.get("places", [])] if show_places else []
+def title_card(map_data: dict):
+    """The map's name and recommended level, in a card on top of the town map."""
+    level_range = map_data.get("level_range")   # empty for buildings: no recommended level
+    parent = map_data.get("parent_map")         # buildings: the map they stand in, right under the title
     return ft.Container(
-        border=ft.Border.all(2, t.MAP_PANEL_BORDER),
-        content=ft.Stack(width=MAP_IMAGE_WIDTH, height=MAP_IMAGE_HEIGHT, controls=[
-            ft.Image(src=map_data.get("image", ""), width=MAP_IMAGE_WIDTH, height=MAP_IMAGE_HEIGHT,
-                     fit=ft.BoxFit.COVER),
-            title_box,
-            *markers,
+        width=LEFT_WIDTH, height=TITLE_HEIGHT, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_PANEL_BORDER),
+        border_radius=FRAME_RADIUS, padding=ft.Padding.symmetric(horizontal=18), alignment=ft.Alignment.CENTER_LEFT,
+        content=ft.Column(spacing=1, tight=True, controls=[
+            cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
+            *([cinzel(f"Recommended Level: {level_range}", 12, t.MAP_LIGHT_TEXT)] if level_range else []),
+            *([ft.Row(spacing=4, tight=True, controls=[
+                ft.Icon(PLACE_ICONS["building"], size=14, color=t.MAP_LIGHT_TEXT),
+                cinzel(parent["name"], 12, t.MAP_LIGHT_TEXT)])] if parent else []),
         ]),
     )
+
+
+def zoom_button(icon, tooltip: str, on_click):
+    return ft.Container(
+        width=30, height=30, border_radius=15, bgcolor=t.MAP_MARKER_BG, border=ft.Border.all(1, t.MAP_MARKER_BORDER),
+        alignment=ft.Alignment.CENTER, tooltip=tooltip, on_click=on_click,
+        content=ft.Icon(icon, size=18, color=t.NORMAL_TEXT),
+    )
+
+
+def town_frame(map_data: dict, show_places: bool, is_selected, on_place_click, on_toggle_places,
+               view: map_zoom.View, on_zoom, on_pan, on_reset_view):
+    """The town map with the clickable place markers, which can be zoomed (wheel or +/-) and dragged. A map with no
+    town image gets an empty square. on_zoom(factor, x, y) zooms around a viewport pixel; on_pan(dx, dy) drags."""
+    frame = dict(width=LEFT_WIDTH, height=TOWN_HEIGHT, border=ft.Border.all(TOWN_BORDER, t.MAP_SECTION_BORDER),
+                 border_radius=FRAME_RADIUS)
+    town_image = map_data.get("town_image")
+    if not town_image:
+        return ft.Container(bgcolor=t.MAP_SECTION_BG, **frame)
+
+    left, top, width, height = map_zoom.image_rect(view, VIEW_WIDTH, VIEW_HEIGHT)
+    markers = [place_marker(place, is_selected(place), on_place_click, view)
+               for place in map_data.get("places", [])] if show_places else []
+    surface = ft.GestureDetector(
+        on_scroll=lambda e: on_zoom(map_zoom.WHEEL_STEP if scroll_amount(e) < 0 else 1 / map_zoom.WHEEL_STEP,
+                                    e.local_position.x, e.local_position.y),
+        on_pan_update=lambda e: on_pan(e.local_delta.x, e.local_delta.y),
+        content=ft.Stack(width=VIEW_WIDTH, height=VIEW_HEIGHT, controls=[
+            ft.Image(src=town_image, fit=ft.BoxFit.FILL, left=left, top=top, width=width, height=height,
+                     filter_quality=ft.FilterQuality.MEDIUM),
+            *[marker for marker in markers if marker is not None],
+        ]),
+    )
+    center = (VIEW_WIDTH / 2, VIEW_HEIGHT / 2)
+    controls_box = ft.Container(right=10, top=10, content=ft.Column(
+        spacing=6, horizontal_alignment=ft.CrossAxisAlignment.END, controls=[
+            view_places_button(show_places, on_toggle_places),
+            ft.Row(spacing=6, tight=True, controls=[
+                zoom_button(ft.Icons.REMOVE, "Zoom out", lambda e: on_zoom(1 / map_zoom.BUTTON_STEP, *center)),
+                zoom_button(ft.Icons.ADD, "Zoom in", lambda e: on_zoom(map_zoom.BUTTON_STEP, *center)),
+                zoom_button(ft.Icons.FIT_SCREEN, "Reset zoom", lambda e: on_reset_view()),
+            ]),
+        ]))
+    return ft.Container(
+        clip_behavior=ft.ClipBehavior.ANTI_ALIAS, **frame,
+        content=ft.Stack(expand=True, controls=[surface, controls_box]),
+    )
+
+
+def scroll_amount(event) -> float:
+    """Vertical amount of a mouse wheel event (negative = wheel up = zoom in)."""
+    delta = event.scroll_delta
+    return getattr(delta, "y", delta)
 
 
 def view_places_button(show_places: bool, on_toggle):
+    """Small pill over the town map: shows or hides the place markers."""
     return ft.Container(
-        padding=ft.Padding.symmetric(horizontal=6, vertical=4), border_radius=4, on_click=on_toggle,
-        content=ft.Row(spacing=6, tight=True, controls=[
+        padding=ft.Padding.symmetric(horizontal=10, vertical=5), border_radius=14, on_click=on_toggle,
+        bgcolor=t.MAP_MARKER_BG, border=ft.Border.all(1, t.MAP_MARKER_BORDER),
+        content=ft.Row(spacing=6, tight=True, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
             ft.Icon(ft.Icons.VISIBILITY_OFF_OUTLINED if show_places else ft.Icons.VISIBILITY_OUTLINED,
-                    size=20, color=t.NORMAL_TEXT),
-            cinzel("Hide Places" if show_places else "View Places", 12),
+                    size=16, color=t.NORMAL_TEXT),
+            cinzel("Hide Places" if show_places else "View Places", 11),
         ]),
     )
 
 
 # ---------- sections ----------
 
-def section(title: str, icon, content: ft.Control, expand: int | None = None):
-    """Dark card with an icon + title, a divider and the content below."""
+def section(title: str, icon, content: ft.Control, expand: int | None = None, scroll: bool = False,
+            height: int | None = None):
+    """Dark card with an icon + title, a divider and the content below. With `expand` it fills its share of the
+    parent's height, and `scroll` lets a long content scroll inside the card."""
+    body = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, controls=[content]) if scroll else content
     return ft.Container(
-        expand=expand, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=6,
+        expand=expand, height=height, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=FRAME_RADIUS,
         padding=ft.Padding(left=20, top=14, right=20, bottom=18),
         content=ft.Column(spacing=10, controls=[
             ft.Row(spacing=8, controls=[ft.Icon(icon, size=22, color=t.NORMAL_TEXT), cinzel(title, 18)]),
             ft.Divider(height=1, thickness=1, color=t.MAP_DIVIDER),
-            content,
+            body,
         ]),
     )
 
@@ -237,7 +301,8 @@ def route_card(route: dict, selected: bool, on_select, on_travel):
     if zone_label:
         tags.append(zone_label)
     info = ft.Column(expand=True, spacing=4, controls=[
-        cinzel(route["name"], 16),
+        ft.Row(spacing=6, controls=[ft.Icon(route.get("icon", DEFAULT_PLACE_ICON), size=16, color=t.NORMAL_TEXT),
+                                    cinzel(route["name"], 16)]),
         ft.Row(spacing=14, controls=tags),
         ft.Container(height=4),
         cinzel(route.get("detail") or "", 11, t.MAP_MUTED_TEXT),
@@ -265,15 +330,23 @@ def build_routes(map_data: dict) -> list[dict]:
         target = place.get("target")
         if place["kind"] == "exit" and target:
             routes.append({"key": place["id"], "name": target["name"], "level_range": target["level_range"],
-                           "zone": target["zone"], "detail": place.get("direction"), "map_id": target["map_id"]})
+                           "zone": target["zone"], "detail": place.get("direction"), "map_id": target["map_id"],
+                           "icon": place_icon(place), "building": target.get("is_building", False)})
+        elif place["kind"] == "exit":   # the map behind it does not exist yet: listed, without the travel arrow
+            routes.append({"key": place["id"], "name": place["name"], "detail": place.get("direction"), "map_id": None,
+                           "icon": place_icon(place)})
     linked = {route["map_id"] for route in routes}
     for place in places:
         if place["kind"] == "building":   # buildings are safe; entering them comes later
-            routes.append({"key": place["id"], "name": place["name"], "zone": "safe", "detail": "Building"})
+            routes.append({"key": place["id"], "name": place["name"], "zone": "safe", "detail": "Building",
+                           "icon": place_icon(place)})
     for connection in map_data.get("navigation", []):
         if connection["map_id"] not in linked:
             routes.append({"key": f"map:{connection['map_id']}", "name": connection["name"],
-                           "level_range": connection.get("level_range"), "map_id": connection["map_id"]})
+                           "level_range": connection.get("level_range"), "map_id": connection["map_id"],
+                           "icon": PLACE_ICONS["exit"],
+                           # leaving a building to the map it stands in is instant too
+                           "building": connection["map_id"] == (map_data.get("parent_map") or {}).get("map_id")})
     return routes
 
 
@@ -284,13 +357,14 @@ def monster_card(monster: dict):
 
 
 def monsters_nearby(map_id: str, monsters: list, character: dict):
+    """The map's monsters and the Hunt button, in a card of fixed height under the town map."""
     return section("Monsters nearby", ft.Icons.PETS, ft.Row(
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             ft.Row(expand=True, wrap=True, spacing=10, run_spacing=10, controls=[monster_card(m) for m in monsters]),
             hunt_button(map_id, character),
         ],
-    ))
+    ), height=MONSTERS_HEIGHT, scroll=True)
 
 
 # ---------- page ----------
@@ -314,6 +388,7 @@ def map_screen(map_data: dict, character: dict):
     show_places, set_show_places = ft.use_state(True)
     selected_area_id, set_selected_area_id = ft.use_state(lambda: default_area_id(areas, npcs))
     selected_route_key, set_selected_route_key = ft.use_state(cast("int | str | None", None))
+    view, set_view = ft.use_state(map_zoom.DEFAULT_VIEW)   # town map zoom: (zoom, center x, center y)
 
     def show_battle_result():
         """Back from a battle: pop up with Victory!/Defeat and the damage report (shown once)."""
@@ -335,29 +410,41 @@ def map_screen(map_data: dict, character: dict):
             return place["id"] == selected_area_id
         return place["id"] == selected_route_key
 
-    def travel(route: dict):
-        change_place(character, route["map_id"])
+    def zoom_map(factor: float, x: float, y: float):
+        set_view(lambda current: map_zoom.zoom_at(current, factor, x, y, VIEW_WIDTH, VIEW_HEIGHT))
 
-    map_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[
-        map_frame(map_data, show_places, is_selected, select_place),
-        view_places_button(show_places, lambda e: set_show_places(not show_places)),
-    ])
+    def pan_map(dx: float, dy: float):
+        set_view(lambda current: map_zoom.pan(current, dx, dy, VIEW_WIDTH, VIEW_HEIGHT))
+
+    def travel(route: dict):
+        change_place(character, route["map_id"], instant=route.get("building", False))
 
     routes_content = (ft.Column(spacing=10, controls=[
         route_card(route, route["key"] == selected_route_key,
                    lambda route: set_selected_route_key(route["key"]), travel)
         for route in routes]) if routes else cinzel("No routes available", 12, t.MAP_MUTED_TEXT))
 
-    sections = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[
-        section("In the area", ft.Icons.EXPLORE_OUTLINED,
-                in_the_area_content(areas, npcs, selected_area_id, select_place), expand=7),
-        section("Routes", ft.Icons.ROUTE, routes_content, expand=5),
-    ])
-
-    body = [header(character, map_data.get("zone", "safe")), map_row, sections]
+    # left: the title card, the town map and (maps with monsters) "Monsters nearby" under it;
+    # right: "In the area" and "Routes", as tall as the left column
     monsters = map_data.get("monsters", [])
+    left_controls = [
+        title_card(map_data),
+        town_frame(map_data, show_places, is_selected, select_place, lambda e: set_show_places(not show_places),
+                   view, zoom_map, pan_map, lambda: set_view(map_zoom.DEFAULT_VIEW)),
+    ]
+    main_height = TOP_HEIGHT
     if monsters:
-        body.append(monsters_nearby(map_data["id"], monsters, character))
+        left_controls.append(monsters_nearby(map_data["id"], monsters, character))
+        main_height += GAP + MONSTERS_HEIGHT
+    left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=left_controls)
+    right_column = ft.Container(expand=True, height=main_height, content=ft.Column(spacing=GAP, expand=True, controls=[
+        section("In the area", ft.Icons.EXPLORE_OUTLINED,
+                in_the_area_content(areas, npcs, selected_area_id, select_place), expand=1, scroll=True),
+        section("Routes", ft.Icons.ROUTE, routes_content, expand=1, scroll=True),
+    ]))
+    main_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[left_column, right_column])
+
+    body = [header(character, map_data.get("zone", "safe")), main_row]
 
     return ft.Container(
         expand=True,
@@ -418,11 +505,12 @@ def build_map_page(map_id: str):
         else:
             content = map_screen(map_data, character)
 
-        # TODO: placeholder - replace this battle board picture with a proper map screen background image
+        # the map's own background picture (maps.background_image), faded behind the screen
+        background = map_data.get("background_image") if map_data else None
         background_layer = ft.Container(
             expand=True,
             opacity=0.15,
-            image=ft.DecorationImage(src="battle_boards/forest_battlefield.jpg", fit=ft.BoxFit.COVER),
+            image=ft.DecorationImage(src=background, fit=ft.BoxFit.COVER) if background else None,
         )
 
         return ft.Container(

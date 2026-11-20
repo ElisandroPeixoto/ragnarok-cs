@@ -5,6 +5,6 @@ from services.api_client import ApiError
 async def map_thumbnail_selector(map_id: str) -> str | None:
     try:
         map_data = await MapService.get_map(map_id)
-        return map_data.get("image")
+        return map_data.get("town_image")   # the town map is the map's picture
     except ApiError:
         return None

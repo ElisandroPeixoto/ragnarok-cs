@@ -22,12 +22,21 @@ def navigate_to_map(map_id: str) -> None:
     ft.context.page.navigate(map_route(map_id))
 
 
-def change_place(character: dict, map_id: str) -> None:
+def change_place(character: dict, map_id: str, instant: bool = False) -> None:
     """Moves the character to another map: a pop up with his walking animation stays on for TRAVEL_SECONDS, then
     the new place is saved on the backend and the map opens. The pop up's Cancel button stops the trip before
-    that: nothing is saved and the character stays where he is."""
+    that: nothing is saved and the character stays where he is. Going into a building is `instant`: no pop up."""
     async def move():
         page = ft.context.page
+        if instant:
+            try:
+                updated = await CharacterService.change_place(character["id"], map_id)
+            except ApiError as error:
+                print(f"Failed to register the new place: {error.detail}")
+                return
+            set_current_character(updated)
+            navigate_to_map(map_id)
+            return
         cancelled = asyncio.Event()
         dialog, animate = travel_dialog(character["job"], lambda e: cancelled.set())
         page.show_dialog(dialog)

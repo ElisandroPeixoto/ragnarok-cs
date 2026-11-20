@@ -11,12 +11,18 @@ PANEL_BG = "#0D0F17"
 BUTTON_PRIMARY = "#52451C"
 BUTTON_SECONDARY = "#141B33"
 BUTTON_ALERT = "#5A1B22"
+BUTTON_TURN_END = "#E8D074"   # "Turn End": a light tone of the game's gold
+BUTTON_TURN_END_TEXT = "#1A1712"
 
 
 # TEXT
 NORMAL_TEXT = "#FFFFFF"
 TITLE_TEXT = "#D4C48A"
 MUTED_TEXT = "#7A7568"
+AP_TEXT = "#D4AF37"                    # Action Points, highlighted on the unit and skill cards (the game's gold)
+AP_BG = ft.Colors.with_opacity(0.16, "#D4AF37")
+AP_TEXT_SUBTLE = "#B9A872"             # AP on the unit cards: a muted gold, discreet next to the HP
+AP_BG_SUBTLE = ft.Colors.with_opacity(0.07, "#D4AF37")
 DAMAGE_TEXT = "#FF1A1A"                 # damage in the battle log
 VICTORY_TEXT = "#D4AF37"                # "Victory!" on the result pop up (the game's gold)
 DEFEAT_TEXT = "#FF1A1A"                 # "Defeat" on the result pop up
@@ -40,11 +46,9 @@ EXP_BAR_COLOR = "#52451C"
 
 
 # MAP SCREEN
-MAP_PANEL_BORDER = "#C8A532"        # gold frame around the map image
+MAP_PANEL_BORDER = "#6B5A24"        # dim gold frame of the map title card
 MAP_TITLE_TEXT = "#C8A532"
 MAP_LIGHT_TEXT = "#E0E0E0"
-# Dark wood-brown fill behind the map title: translucent, but dark enough to read over bright maps
-MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.72, "#2B2117")
 MAP_SECTION_BG = ft.Colors.with_opacity(0.85, "#0F1018")   # "In the area" / "Routes" / "Monsters nearby"
 MAP_SECTION_BORDER = "#3D3523"       # dim gold outline of sections and their cards
 MAP_DIVIDER = "#34343E"              # line under the header and under each section title
@@ -60,6 +64,7 @@ MAP_ZONE_SAFE = "#2BD45F"            # "Safe Zone"
 GRID_LINE_COLOR = "#C4C4C4"
 # Single tile color: the battlefield's ground tone (~#837654), kept translucent and subtle
 TILE_COLOR = ft.Colors.with_opacity(0.15, "#837654")
+PANEL_INNER_BG = "#080A12"     # inset boxes inside the combat panels (log, round/time)
 PAGE_BACKGROUND_COLOR = "#05070F"
 PLACEHOLDER_BACKGROUND_COLOR = "#1A1712"
 BOARD_BORDER_COLOR = "#2A2410"

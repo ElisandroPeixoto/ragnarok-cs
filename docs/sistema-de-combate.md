@@ -171,11 +171,11 @@ Ao montar, `battle_screen` inicia duas tarefas assíncronas:
 | Ação | Onde | Como |
 |---|---|---|
 | Mover | `components/battle_board.py` | sem skill selecionada, clicar num tile (`handle_tap` → `perform_move`): a unidade anda até lá pelo caminho mais curto. Com o mouse sobre um tile (`on_hover`), o caminho fica verde (`VALID_TILE_COLOR`) se `can_move` aceitar; senão, o tile fica vermelho. |
-| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone, ou o atalho **Q/W/E/R/T** (1ª a 5ª skill do herói, `SKILL_KEYS` em `skills_panel.py`); repetir desmarca. Só funciona na vez do jogador e com AP suficiente. O atalho aparece no canto do ícone. |
+| Escolher skill | `components/skills_panel.py` → `handle_select_skill` | clique no ícone, ou o atalho **Q/W/E/R/T** (1ª a 5ª skill do herói, `SKILL_KEYS` em `skills_panel.py`); repetir desmarca. Só funciona na vez do jogador e com AP suficiente. O atalho aparece no canto do ícone, e o card mostra o custo em AP (`ap_badge`) e o dano. |
 | Atalhos de teclado | `pages/battle_page.py` → `handle_key` | `page.on_keyboard_event`, religado a cada render (para ver a skill selecionada) e removido ao sair da tela. Ignora combinações com Shift, Ctrl, Alt ou Meta. **Espaço** aciona o Turn End (`handle_end_turn`). Fora isso, só seleciona skills. |
 | Atacar | `battle_board.handle_tap` | com uma skill selecionada, os tiles de alcance ficam destacados (`ATTACK_TILE_COLOR`); clicar no sprite de um inimigo chama `perform_attack`. |
-| Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** |
-| Sair | `turn_panel` → `handle_leave` | botão **Leave**, sempre habilitado; volta para o mapa com `navigate_back_from_battle()`, **sem custo e sem EXP** (nada é enviado ao backend) |
+| Passar a vez | `components/turn_panel.py` → `handle_end_turn` | botão **Turn End** (amarelo claro, `BUTTON_TURN_END`, com ícone de play; apagado fora da vez do jogador) |
+| Sair | `turn_panel` → `handle_leave` | botão só com o ícone de saída (`LOGOUT`, vermelho `BUTTON_ALERT`, tooltip "Leave"), sempre habilitado; volta para o mapa com `navigate_back_from_battle()`, **sem custo e sem EXP** (nada é enviado ao backend) |
 
 O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_board.py`.
 
@@ -189,9 +189,11 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 └─────────┴─────────────────────────────────────────────────────────┘
 ```
 
-- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, com avatar, nome, job, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
-- `battle_log_panel` (`components/battle_log_panel.py`): mostra `state.log.entries` com rolagem automática.
-- `turn_panel`: rodada, tempo restante, "Enemy turn...", "Victory!" ou "Defeat...", e os botões.
+- `units_panel` (`components/unit_card.py`): um card por unidade, na ordem dos turnos, (compactos: avatar de 48 px) com avatar, nome, job, a **coordenada no tabuleiro** `(col, row)`, barra de HP vermelha (`HP_BAR_COLOR`, diminui conforme a unidade perde vida), HP e AP. O **AP** aparece como uma etiqueta dourada discreta (`AP_TEXT_SUBTLE`/`AP_BG_SUBTLE`), do mesmo tamanho do HP; o dourado forte (`AP_TEXT`) fica só nos selos de custo das skills e no AP do painel de skills. A unidade da vez tem borda dourada; mortas ficam com 40% de opacidade.
+- `battle_log_panel` (`components/battle_log_panel.py`): cabeçalho com ícone e "Live Feed", e `state.log.entries` com rolagem automática, cada linha com a rodada em cinza (`R01`).
+- `skills_panel` (`components/skills_panel.py`): cabeçalho com ícone, "Skills" e o **AP** disponível do herói em dourado; as skills em cards de duas colunas (ícone com o atalho, nome, dano e custo em AP), com rolagem se passarem do espaço.
+- `turn_panel`: cabeçalho "Turn", duas caixas (**Round** e **Time**; o tempo vira "Enemy" no turno dos monstros e "Victory!"/"Defeat" no fim), o botão **Turn End** e o botão de **Leave** só com ícone.
+- Os três painéis de baixo usam o mesmo cabeçalho (`components/panel_header.py`: ícone + título + uma nota à direita), inspirado na barra de opções de referência; ficaram de fora do que não existe no projeto (ex.: a skill "Fingir Morto", o cronômetro com horário e o painel de cura).
 - `CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH` (1446 px) também limita a largura das telas de mapa.
 
 ### Desenho do tabuleiro (`components/battle_board.py`)
@@ -207,7 +209,7 @@ Quatro camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 ## Geometria: `services/battle_geometry.py`
 
-`BoardConfig`: palco fixo de 1100×700, grade 10×10, tiles de 96×48 (losango 2:1), origem do tile (0,0) em (540, 200), `blocked_tiles` vazio, `show_grid=True`.
+`BoardConfig`: palco fixo de 1100×700, grade 10×10, tiles de 96×48 (losango 2:1), origem do tile (0,0) em (580, 140), escolhida para a grade ficar dentro da clareira de terra da imagem de fundo (`forest_battlefield.jpg`), `blocked_tiles` vazio, `show_grid=True`.
 
 | Função | Faz |
 |---|---|

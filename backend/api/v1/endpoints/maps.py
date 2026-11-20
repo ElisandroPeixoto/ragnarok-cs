@@ -19,7 +19,7 @@ def place_to_dict(place: MapPlaceModel) -> dict:
         "id": place.id, "name": place.name, "kind": place.kind, "icon": place.icon,
         "x": place.x, "y": place.y, "direction": place.direction,
         "target": {"map_id": target.id, "name": target.name, "level_range": target.level_range,
-                   "zone": target.zone} if target else None,
+                   "zone": target.zone, "is_building": target.parent_map_id is not None} if target else None,
     }
 
 
@@ -29,9 +29,12 @@ def to_response(map_model: MapModel) -> dict:
         "id": map_model.id,
         "name": map_model.name,
         "level_range": map_model.level_range,
-        "image": map_model.image,
+        "town_image": map_model.town_image,
+        "background_image": map_model.background_image,
         "about": map_model.about,
         "zone": map_model.zone,
+        "parent_map": ({"map_id": map_model.parent_map.id, "name": map_model.parent_map.name}
+                       if map_model.parent_map else None),
         "places": [place_to_dict(place) for place in map_model.places],
         "npcs": [{"name": npc.name, "image": npc.image, "place_id": npc.place_id, "greeting": npc.greeting}
                  for npc in map_model.npcs],
@@ -41,7 +44,6 @@ def to_response(map_model: MapModel) -> dict:
                       "base_exp": monster_spawn.monster.base_exp,
                      "spawn_rate": monster_spawn.spawn_rate} for monster_spawn in map_model.monster_spawns],
         "navigation":[{"name": connection.to_map.name,
-                       "image": connection.to_map.image,
                        "map_id": connection.to_map.id,
                        "level_range": connection.to_map.level_range} for connection in map_model.connections],
 

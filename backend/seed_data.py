@@ -54,22 +54,27 @@ MONSTERS = {
 }
 
 # zone: "safe", "hostile_passive" or "hostile_aggressive" (only "safe" shows a label, "Safe Zone", on the map header and on routes to the map)
-# places: markers over the map image, in display order. x/y = marker center as a fraction of the image size.
+# town_image: the town map the markers are drawn over (assets/maps; None = an empty square)
+# parent: set only for buildings, the map they stand in
+# background_image: the faded picture behind the map screen (assets/maps/backgrounds)
+# places: markers over the town map, in display order. x/y = marker center as a fraction of the town image size.
 #   kind "area" holds NPCs, "building" is a place to enter (link comes later), "exit" leads to the "target"
 #   map in "direction" (keep that map in "navigation" too). "icon" is a key the frontend turns into an icon
 # npcs: (name, image, area name, greeting); the area must be a place of kind "area" with a unique name
 MAPS = {
     "novice_academy": {
-        "name": "Novice Academy", "level_range": "1 - 10", "zone": "safe",
-        "image": "maps/novice_academy.jpg", "about": "Lorem ipsum dolor sit amet...",
+        "name": "Novice Island", "level_range": "1 - 10", "zone": "safe",
+        "about": "Lorem ipsum dolor sit amet...",
+        "town_image": "maps/novice_academy.jpg",   # provisional town map
+        "background_image": "maps/backgrounds/forest.jpg",
         "places": [
-            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.52, "y": 0.53},
-            {"name": "Port", "kind": "area", "icon": "port", "x": 0.31, "y": 0.72},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.33, "y": 0.60},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.48, "y": 0.71},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.63, "y": 0.82},
-            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.55, "y": 0.22},
-            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.33, "y": 0.28,
+            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.55, "y": 0.595},
+            {"name": "Port", "kind": "area", "icon": "port", "x": 0.26, "y": 0.775},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.25, "y": 0.395},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.59, "y": 0.711},
+            {"name": "Academy", "kind": "exit", "icon": "building", "x": 0.56, "y": 0.45,
+             "target": "academy", "direction": "Building"},
+            {"name": "Training Field 1", "kind": "exit", "icon": "exit", "x": 0.36, "y": 0.115,
              "target": "training_field_1", "direction": "Northwest"},
         ],
         "npcs": [
@@ -77,20 +82,36 @@ MAPS = {
             ("Sailor", "npcs/sailor.gif", "Port", "Let's go somewhere?"),
         ],
         "monsters": [],
-        "navigation": ["training_field_1"],
+        "navigation": ["training_field_1", "academy"],
     },
     "training_field_1": {
         "name": "Training Field 1", "level_range": "1 - 10", "zone": "hostile_passive",
-        "image": "maps/training_field_1.jpg", "about": "...",
+        "about": "...",
+        "town_image": "maps/training_field_1.jpg",
+        "background_image": "maps/backgrounds/forest.jpg",
         "places": [
-            {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.30, "y": 0.66},
-            {"name": "Academy Road", "kind": "exit", "icon": "exit", "x": 0.63, "y": 0.90,
+            {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.45, "y": 0.36},
+            {"name": "Novice Island", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
              "target": "novice_academy", "direction": "Southeast"},
+            # no map behind it yet: shows up in Routes without a link
+            {"name": "Training Field 2", "kind": "exit", "icon": "exit", "x": 0.875, "y": 0.21,
+             "direction": "Northeast"},
         ],
         "npcs": [
             ("Trainer", "npcs/trainer.gif", "Training Grounds", "Ready to train? Monsters roam these woods."),
         ],
         "monsters": [("Poring", 40), ("Lunatic", 40), ("Wilow", 20)],
+        "navigation": ["novice_academy"],
+    },
+    "academy": {   # inside the Academy building: only the picture for now (no places, NPCs or monsters yet)
+        "name": "Academy", "level_range": "", "zone": "safe",   # a building: no level range
+        "parent": "novice_academy",   # the map the building stands in (shown under the title; travelling there is instant)
+        "about": "...",
+        "town_image": "maps/academy.jpg",
+        "background_image": "maps/backgrounds/forest.jpg",
+        "places": [],
+        "npcs": [],
+        "monsters": [],
         "navigation": ["novice_academy"],
     },
 }
@@ -113,6 +134,19 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN level INTEGER NOT NULL DEFAULT 1")
         if "base_exp" not in columns:
             await conn.exec_driver_sql("ALTER TABLE monsters ADD COLUMN base_exp INTEGER NOT NULL DEFAULT 0")
+        # maps gained "town_image" (the town map under the location's art)
+        if "town_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN town_image VARCHAR")
+        # maps gained "background_image" (the picture behind the map screen)
+        if "background_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN background_image VARCHAR")
+        # maps gained "parent_map_id" (buildings point to the map they stand in)
+        if "parent_map_id" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN parent_map_id VARCHAR REFERENCES maps(id)")
+        # the map screen has no cover art any more: drop its columns from older databases
+        for old_column in ("art_position_y", "image"):
+            if old_column in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+                await conn.exec_driver_sql(f"ALTER TABLE maps DROP COLUMN {old_column}")
         # the number of monsters of a hunt is now rolled for every hunt (core/battle_rules.py): drop the per-map column
         map_columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]
         if "spawn_rate" in map_columns:
@@ -171,8 +205,10 @@ async def seed() -> None:
 
         # 4) maps and monster spawns
         for map_id, data in MAPS.items():
-            values = {"name": data["name"], "level_range": data["level_range"], "image": data["image"],
-                      "about": data["about"], "zone": data.get("zone", "safe")}
+            values = {"name": data["name"], "level_range": data["level_range"], "about": data["about"],
+                      "zone": data.get("zone", "safe"), "town_image": data.get("town_image"),
+                      "background_image": data.get("background_image"),
+                      "parent_map_id": data.get("parent")}
             existing = await db.get(MapModel, map_id)
             if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
                 upsert(existing, values)
@@ -205,8 +241,11 @@ async def seed() -> None:
                 if await db.get(MapConnectionModel, (map_id, target)) is None:
                     db.add(MapConnectionModel(from_map_id=map_id, to_map_id=target))
 
-        # 7) characters: their level follows their total EXP (the level table may have changed)
+        # 7) characters: their level follows their total EXP (the level table may have changed) and the map name
+        #    they carry is kept in sync with the map's current name
+        map_names = {map_id: data["name"] for map_id, data in MAPS.items()}
         for character in (await db.execute(select(CharacterModel))).scalars().all():
+            character.current_map = map_names.get(character.current_map_id, character.current_map)
             character.exp = min(character.exp, MAX_EXP)
             character.level = level_for_exp(character.exp)
 

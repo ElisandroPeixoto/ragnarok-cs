@@ -31,14 +31,14 @@ Corpo (`CharacterSchemaCreate`):
 { "name": "Midrway" }
 ```
 
-Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Academy` (`novice_academy`).
+Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Island` (`novice_academy`).
 
 Resposta (`CharacterSchemaResponse`):
 ```json
 {
   "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0, "exp_progress": 0, "exp_needed": 100,
   "hp": 50, "max_hp": 50, "max_sp": 10, "zeny": "0.00",
-  "current_map": "Novice Academy", "current_map_id": "novice_academy"
+  "current_map": "Novice Island", "current_map_id": "novice_academy"
 }
 ```
 
@@ -81,7 +81,7 @@ Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e 
 Função: `get_maps`. Status: **200**. Resposta: lista de `MapSchemaSummary`.
 
 ```json
-[ { "id": "novice_academy", "name": "Novice Academy" },
+[ { "id": "novice_academy", "name": "Novice Island" },
   { "id": "training_field_1", "name": "Training Field 1" } ]
 ```
 
@@ -98,15 +98,17 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "id": "training_field_1",
   "name": "Training Field 1",
   "level_range": "1 - 10",
-  "image": "maps/training_field_1.jpg",
+  "parent_map": null,   // prédios: { "map_id": "novice_academy", "name": "Novice Island" }
+  "town_image": "maps/training_field_1.jpg",
+  "background_image": "maps/backgrounds/forest.jpg",
   "about": "...",
   "zone": "hostile_passive",
   "places": [
     { "id": 18, "name": "Training Grounds", "kind": "area", "icon": "training",
       "x": 0.3, "y": 0.66, "direction": null, "target": null },
-    { "id": 19, "name": "Academy Road", "kind": "exit", "icon": "exit",
+    { "id": 19, "name": "Novice Island", "kind": "exit", "icon": "exit",
       "x": 0.63, "y": 0.9, "direction": "Southeast",
-      "target": { "map_id": "novice_academy", "name": "Novice Academy",
+      "target": { "map_id": "novice_academy", "name": "Novice Island",
                   "level_range": "1 - 10", "zone": "safe" } }
   ],
   "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif", "place_id": 18,
@@ -117,8 +119,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
     { "name": "Wilow",   "sheet": "wilow",   "spawn_rate": 20 }
   ],
   "navigation": [
-    { "name": "Novice Academy", "image": "maps/novice_academy.jpg",
-      "map_id": "novice_academy", "level_range": "1 - 10" }
+    { "name": "Novice Island", "map_id": "novice_academy", "level_range": "1 - 10" }
   ]
 }
 ```
@@ -145,7 +146,7 @@ O que acontece:
 1. Busca o personagem (`CharacterModel`); se não existir, **404** `Character not found`.
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
 3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
-4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Academy.
+4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Island.
 5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), e `monsters`: de `MIN_MONSTERS` a `MAX_MONSTERS` (3 a 6, `core/battle_rules.py`) monstros sorteados com `random.choices` entre os do mapa, tendo `MapMonsterModel.spawn_rate` como peso (o mesmo monstro pode se repetir), cada um montado por `monster_unit(monster, nível do herói)`. A caçada termina quando o herói mata todos (vitória) ou morre (derrota): não há mais ondas.
 6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
