@@ -65,13 +65,13 @@ MAPS = {
         "image": "maps/novice_academy.jpg", "about": "Lorem ipsum dolor sit amet...",
         "town_image": "maps/novice_academy_town.jpg",   # provisional town map
         "places": [
-            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.52, "y": 0.47},
-            {"name": "Port", "kind": "area", "icon": "port", "x": 0.21, "y": 0.67},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.21, "y": 0.21},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.59, "y": 0.58},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.75, "y": 0.68},
-            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.58, "y": 0.29},
-            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.77, "y": 0.29,
+            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.55, "y": 0.54},
+            {"name": "Port", "kind": "area", "icon": "port", "x": 0.22, "y": 0.65},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.15, "y": 0.31},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.26, "y": 0.48},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.60, "y": 0.64},
+            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.61, "y": 0.38},
+            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.385, "y": 0.115,
              "target": "training_field_1", "direction": "Northwest"},
         ],
         "npcs": [
