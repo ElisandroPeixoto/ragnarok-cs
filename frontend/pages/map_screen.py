@@ -493,11 +493,12 @@ def build_map_page(map_id: str):
         else:
             content = map_screen(map_data, character)
 
-        # TODO: placeholder - replace this battle board picture with a proper map screen background image
+        # the map's own background picture (maps.background_image), faded behind the screen
+        background = map_data.get("background_image") if map_data else None
         background_layer = ft.Container(
             expand=True,
             opacity=0.15,
-            image=ft.DecorationImage(src="battle_boards/forest_battlefield.jpg", fit=ft.BoxFit.COVER),
+            image=ft.DecorationImage(src=background, fit=ft.BoxFit.COVER) if background else None,
         )
 
         return ft.Container(

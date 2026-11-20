@@ -94,7 +94,8 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `id` | String PK | ex.: `"training_field_1"`; vira a rota `/map/training_field_1` |
 | `name` | String(255) | |
 | `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
-| `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3), em `assets/maps/towns/`; `NULL` = a tela mostra um quadrado vazio |
+| `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3), direto em `assets/maps/`; `NULL` = a tela mostra um quadrado vazio |
+| `background_image` | String, opcional | a imagem de fundo da tela do mapa (fica a 15% de opacidade atrás do conteúdo), em `assets/maps/backgrounds/`; `NULL` = só a cor de fundo |
 | `about` | Text | descrição, ainda não exibida |
 | `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 
@@ -161,7 +162,7 @@ O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 
 - **Monstro caçável novo**: gere a sprite sheet (ver [Sprites e animação](sprites-e-animacao.md)); adicione a entrada em `MONSTERS` com `image`, `sheet`, `max_hp`, `max_ap`, `ai`, `skills`; inclua `("Nome", peso)` na lista `monsters` do mapa.
 - **Skill nova**: adicione em `SKILLS` e referencie pelo nome em `JOBS[...]["skills"]` ou `MONSTERS[...]["skills"]`.
-- **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e, se houver, coloque o mapa da cidade em `assets/maps/towns/` e aponte o `town_image` para ele (4:3, ex.: 1440 × 1080; sem `town_image` a tela mostra um quadrado vazio). Não existe mais arte de capa. As coordenadas `x`/`y` dos lugares são relativas ao `town_image`. Reinicie o frontend para registrar a rota nova.
+- **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e, se houver, coloque o mapa da cidade em `assets/maps/` e aponte o `town_image` para ele (4:3, ex.: 1440 × 1080; sem `town_image` a tela mostra um quadrado vazio). Não existe mais arte de capa. O fundo da tela vem de `background_image` (`assets/maps/backgrounds/`; vários mapas podem usar o mesmo arquivo). As coordenadas `x`/`y` dos lugares são relativas ao `town_image`. Reinicie o frontend para registrar a rota nova.
 - **Lugar ou NPC novo**: edite `places`/`npcs` do mapa e rode o seed; eles são regravados a cada execução.
 
 > Limitação: **mudar os spawns de um mapa que já está no banco não tem efeito** ao rodar o seed de novo. Nesse caso é preciso apagar o banco e recriar.

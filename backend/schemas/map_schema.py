@@ -37,6 +37,7 @@ class MapSchemaResponse(BaseModel):
     name: str
     level_range: str
     town_image: Optional[str] = None
+    background_image: Optional[str] = None
     about: str
     zone: str
     places: List[PlaceSchema]

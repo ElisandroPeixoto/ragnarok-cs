@@ -9,6 +9,7 @@ class MapModel(DBBaseModel):
     id: str = Column(String, primary_key=True)
     name: str = Column(String(255), nullable=False)
     level_range: str = Column(String(30), nullable=False, default="-")
+    background_image: str | None = Column(String, nullable=True)   # faded picture behind the map screen (assets/maps/backgrounds)
     town_image: str | None = Column(String, nullable=True)    # the town map with the place markers; None = empty square
     about: str = Column(Text, nullable=False, default="")
     zone: str = Column(String(30), nullable=False, default="safe")   # "safe", "hostile_passive" or "hostile_aggressive"

@@ -54,7 +54,8 @@ MONSTERS = {
 }
 
 # zone: "safe", "hostile_passive" or "hostile_aggressive" (only "safe" shows a label, "Safe Zone", on the map header and on routes to the map)
-# town_image: the town map the markers are drawn over (assets/maps/towns; None = an empty square)
+# town_image: the town map the markers are drawn over (assets/maps; None = an empty square)
+# background_image: the faded picture behind the map screen (assets/maps/backgrounds)
 # places: markers over the town map, in display order. x/y = marker center as a fraction of the town image size.
 #   kind "area" holds NPCs, "building" is a place to enter (link comes later), "exit" leads to the "target"
 #   map in "direction" (keep that map in "navigation" too). "icon" is a key the frontend turns into an icon
@@ -63,7 +64,8 @@ MAPS = {
     "novice_academy": {
         "name": "Novice Academy", "level_range": "1 - 10", "zone": "safe",
         "about": "Lorem ipsum dolor sit amet...",
-        "town_image": "maps/towns/novice_academy.jpg",   # provisional town map
+        "town_image": "maps/novice_academy.jpg",   # provisional town map
+        "background_image": "maps/backgrounds/forest.jpg",
         "places": [
             {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.55, "y": 0.595},
             {"name": "Port", "kind": "area", "icon": "port", "x": 0.26, "y": 0.775},
@@ -83,7 +85,8 @@ MAPS = {
     "training_field_1": {
         "name": "Training Field 1", "level_range": "1 - 10", "zone": "hostile_passive",
         "about": "...",
-        "town_image": "maps/towns/training_field_1.jpg",
+        "town_image": "maps/training_field_1.jpg",
+        "background_image": "maps/backgrounds/forest.jpg",
         "places": [
             {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.45, "y": 0.36},
             {"name": "Novice Academy", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
@@ -121,6 +124,9 @@ async def seed() -> None:
         # maps gained "town_image" (the town map under the location's art)
         if "town_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
             await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN town_image VARCHAR")
+        # maps gained "background_image" (the picture behind the map screen)
+        if "background_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN background_image VARCHAR")
         # the map screen has no cover art any more: drop its columns from older databases
         for old_column in ("art_position_y", "image"):
             if old_column in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
@@ -184,7 +190,8 @@ async def seed() -> None:
         # 4) maps and monster spawns
         for map_id, data in MAPS.items():
             values = {"name": data["name"], "level_range": data["level_range"], "about": data["about"],
-                      "zone": data.get("zone", "safe"), "town_image": data.get("town_image")}
+                      "zone": data.get("zone", "safe"), "town_image": data.get("town_image"),
+                      "background_image": data.get("background_image")}
             existing = await db.get(MapModel, map_id)
             if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
                 upsert(existing, values)
