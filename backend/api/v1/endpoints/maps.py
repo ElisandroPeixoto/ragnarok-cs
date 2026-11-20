@@ -29,9 +29,7 @@ def to_response(map_model: MapModel) -> dict:
         "id": map_model.id,
         "name": map_model.name,
         "level_range": map_model.level_range,
-        "image": map_model.image,
         "town_image": map_model.town_image,
-        "art_position_y": map_model.art_position_y,
         "about": map_model.about,
         "zone": map_model.zone,
         "places": [place_to_dict(place) for place in map_model.places],
@@ -43,7 +41,6 @@ def to_response(map_model: MapModel) -> dict:
                       "base_exp": monster_spawn.monster.base_exp,
                      "spawn_rate": monster_spawn.spawn_rate} for monster_spawn in map_model.monster_spawns],
         "navigation":[{"name": connection.to_map.name,
-                       "image": connection.to_map.image,
                        "map_id": connection.to_map.id,
                        "level_range": connection.to_map.level_range} for connection in map_model.connections],
 

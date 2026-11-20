@@ -46,11 +46,9 @@ EXP_BAR_COLOR = "#52451C"
 
 
 # MAP SCREEN
-MAP_PANEL_BORDER = "#C8A532"        # gold frame around the map image
+MAP_PANEL_BORDER = "#6B5A24"        # dim gold frame of the map title card
 MAP_TITLE_TEXT = "#C8A532"
 MAP_LIGHT_TEXT = "#E0E0E0"
-# Dark wood-brown fill behind the map title: translucent, but dark enough to read over bright maps
-MAP_TITLE_OVERLAY = ft.Colors.with_opacity(0.72, "#2B2117")
 MAP_SECTION_BG = ft.Colors.with_opacity(0.85, "#0F1018")   # "In the area" / "Routes" / "Monsters nearby"
 MAP_SECTION_BORDER = "#3D3523"       # dim gold outline of sections and their cards
 MAP_DIVIDER = "#34343E"              # line under the header and under each section title

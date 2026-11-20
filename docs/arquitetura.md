@@ -46,7 +46,7 @@ flowchart LR
 
 - O **frontend não acessa o banco**. Tudo passa pela API.
 - O **backend não conhece telas**: só devolve dados no formato que o frontend consome.
-- Os **caminhos de imagem** guardados no banco (ex.: `maps/covers/training_field_1.jpg`) são relativos à pasta `assets/`. O Flet serve essa pasta porque `frontend/main.py` passa `assets_dir=ASSETS_DIR` para `ft.run`.
+- Os **caminhos de imagem** guardados no banco (ex.: `maps/towns/training_field_1.jpg`) são relativos à pasta `assets/`. O Flet serve essa pasta porque `frontend/main.py` passa `assets_dir=ASSETS_DIR` para `ft.run`.
 
 ## Como rodar
 
@@ -99,8 +99,7 @@ Observações:
 
 | Pasta em `assets/` | Conteúdo |
 |---|---|
-| `maps/covers/` | a **arte de capa** de cada mapa (o banner no topo da tela do mapa) |
-| `maps/towns/` | o **mapa da cidade** de cada mapa (a imagem 4:3 com os marcadores e o zoom) |
+| `maps/towns/` | o **mapa da cidade** de cada mapa (a imagem 4:3 com os marcadores e o zoom; também é a miniatura do mapa no perfil) |
 | `monsters/`, `npcs/`, `places/` | ícones dos cards da tela de mapa |
 | `characters_badges/` | avatares redondos por job |
 | `sprites/<nome>/` | sprite sheets geradas por `tools/ro_to_sheet.py` (`<nome>_sheet.png` + `<nome>.json`) |

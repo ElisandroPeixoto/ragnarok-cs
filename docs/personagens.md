@@ -74,7 +74,7 @@ Componente `profile_page()`. Lê o personagem com `get_current_character()`. Se 
 - `sidebar(...)` (`components/sidebar.py`), recolhida por padrão.
 - `zeny_badge(character["zeny"])` no topo.
 - `character_card(character)`: sprite grande (`job_sprite(..., height=190)`), nome, job, level e as barras de HP e EXP (`components/status_bars.status_bar`). A barra mostra `exp_progress`/`exp_needed`, a EXP dentro do nível atual (valores calculados pelo backend, ver [Progressão de level](progressao-de-level.md)), e `MAX` no nível 99.
-- `current_place_card(character, thumbnail)`: imagem e nome do mapa atual e o botão **Enter**, que chama `navigate_to_map(character["current_map_id"])`. A miniatura vem de `map_thumbnail_selector`, que faz `GET /maps/{id}` só para pegar a `image`.
+- `current_place_card(character, thumbnail)`: imagem e nome do mapa atual e o botão **Enter**, que chama `navigate_to_map(character["current_map_id"])`. A miniatura vem de `map_thumbnail_selector`, que faz `GET /maps/{id}` só para pegar a `town_image`.
 - `info_panel("ATTRIBUTES")`, `info_panel("STATUS")` e `skills_panel()`: **placeholders**, só exibem o título.
 
 ## Barra lateral: `components/sidebar.py`

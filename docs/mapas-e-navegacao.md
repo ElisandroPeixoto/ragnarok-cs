@@ -45,23 +45,24 @@ Helpers em `services/map_router_manager.py`:
 │         │ [avatar] Nome / zeny                          [Safe Zone]    │
 │         │ Novice - Lv: 1 / HP: 50/50                                   │
 │         │ ─────────────────────────────────────────────────────────── │
-│         │ ┌ art_banner (800 × 220) ─────┐ ┌ In the area ────────────┐ │
+│         │ ┌ title_card (800 × 64) ──────┐ ┌ In the area ────────────┐ │
 │         │ │ Título + "Recommended Level"│ │ [Main Square] [Port] .. │ │
 │         │ └─────────────────────────────┘ │ npc_card (Hostess·Talk) │ │
 │         │ ┌ town_frame (800 × 600) ─────┐ └─────────────────────────┘ │
 │         │ │          [👁 Hide Places]   │ ┌ Routes ─────────────────┐ │
 │         │ │  (Academy) (Main Square)    │ │ Training Field 1    [↗] │ │
 │         │ │     (Port) (House) ...      │ │ Academy (Building)      │ │
-│         │ └─────────────────────────────┘ └─────────────────────────┘ │
-│         │ ┌ Monsters nearby (só em mapas com monstros) ─────── [Hunt] ┐ │
-│         │ └────────────────────────────────────────────────────────────┘ │
+│         │ └─────────────────────────────┘ │                         │ │
+│         │ ┌ Monsters nearby (só em mapas│ │                         │ │
+│         │ │ com monstros) ──── [Hunt] ──┐ └─────────────────────────┘ │
+│         │ └─────────────────────────────┘                             │
 └─────────┴──────────────────────────────────────────────────────────────┘
 ```
 
 - **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado, com rolagem vertical.
 - **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, "Safe Zone" quando o mapa é seguro (`zone_tag`; em qualquer outra zona não aparece nada), e uma linha divisória embaixo.
-- **Duas colunas**: à esquerda, uma coluna de `LEFT_WIDTH = 800` px com a **arte do local em cima** e o **mapa da cidade embaixo**; à direita, "In the area" e "Routes" empilhados, com a **mesma altura da coluna da esquerda** (`MAIN_HEIGHT`) e cada card ocupando metade (`expand=1`). Um conteúdo maior que o card rola dentro dele (`section(..., scroll=True)`). Os cantos são arredondados (`FRAME_RADIUS = 8`) e o espaço entre os blocos é `GAP = 16`.
-- **`art_banner`**: a arte de capa do local (`maps.image`, em `assets/maps/covers/`) em `LEFT_WIDTH × ART_HEIGHT` (800 × 220, `BoxFit.COVER`), com borda dourada. Como o banner é bem mais largo que alto, ele **corta** a capa; `maps.art_position_y` escolhe a parte mostrada (`0` topo, `0.5` centro, `1` base), por exemplo `0.2` no Training Field 1 para o acampamento ficar no meio. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
+- **Duas colunas**: à esquerda, uma coluna de `LEFT_WIDTH = 800` px com o **card do título em cima**, o **mapa da cidade** e, nos mapas com monstros, o card **"Monsters nearby" embaixo do mapa**; à direita, "In the area" e "Routes" empilhados, com a **mesma altura da coluna da esquerda** (`TOP_HEIGHT`, mais `MONSTERS_HEIGHT` + `GAP` quando há monstros) e cada card ocupando metade (`expand=1`). Um conteúdo maior que o card rola dentro dele (`section(..., scroll=True)`). Os cantos são arredondados (`FRAME_RADIUS = 8`) e o espaço entre os blocos é `GAP = 16`.
+- **`title_card`**: o nome do mapa (dourado, `MAP_TITLE_TEXT`) e o "Recommended Level" num card escuro de `LEFT_WIDTH × TITLE_HEIGHT` (800 × 64) com borda dourada discreta (`MAP_PANEL_BORDER`). **Os mapas não têm mais arte de capa**: o mapa da cidade é a imagem do local.
 - **`town_frame`**: o mapa da cidade (`maps.town_image`) em `LEFT_WIDTH × TOWN_HEIGHT` (800 × 600, proporção 4:3, então a imagem inteira aparece sem cortar), com borda discreta (`MAP_SECTION_BORDER`). Os marcadores ficam por cima dele. **Mapa sem `town_image`** (hoje o Training Field 1) mostra um **quadrado vazio** do mesmo tamanho, sem marcadores nem botão; as áreas e as rotas continuam funcionando pelas abas e pelos cards.
 - **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações do **mapa da cidade**). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`). Ao posicionar, deixe o ponto um pouco **acima** da construção, para o rótulo não cobri-la.
 - **"View Places" / "Hide Places"** (`view_places_button`): pílula no canto superior direito do mapa da cidade; mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
@@ -71,7 +72,7 @@ Helpers em `services/map_router_manager.py`:
   - **Arrastar** com o mouse move a imagem; ela nunca sai da moldura (`clamp_view`).
   - Os **rótulos mantêm o tamanho** em qualquer zoom: só a imagem cresce, e cada marcador é reposicionado (`map_zoom.to_viewport`). Marcadores que saem da vista não são desenhados, e os que ficam continuam clicáveis.
   - A matemática é pura e fica em `services/map_zoom.py` (`zoom_at`, `pan`, `image_rect`, `to_viewport`); o estado `(zoom, cx, cy)` é um `use_state` de `map_screen`, e o `town_frame` usa um `ft.GestureDetector` (`on_scroll`, `on_pan_update`). Mapas sem `town_image` não têm zoom.
-- **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" têm a mesma altura (metade da coluna cada). "Monsters nearby" fica abaixo, na largura toda.
+- **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" têm a mesma altura (metade da coluna cada). "Monsters nearby" fica **sob o mapa da cidade**, na largura da coluna da esquerda, com altura fixa (`MONSTERS_HEIGHT = 176`) e rolagem interna se houver muitos monstros.
 - **Janela estreita**: a coluna da esquerda tem largura fixa e a da direita encolhe; com uma janela de uns 1500 px os cards da direita ficam com ~520 px; em janelas menores que uns 1300 px eles ficam apertados (o mapa não encolhe).
 
 ### Lugares, áreas e rotas
@@ -93,7 +94,7 @@ Os lugares vêm do backend (`map_places`) com um `kind`:
 
 ### "Monsters nearby" e o botão Hunt
 
-Só aparece em mapas com monstros. `monsters_nearby(map_id, monsters, character)` mostra um card por monstro (`item_card` + `monster_sprite`, com o `spawn_rate` como subtítulo, ex.: `"40%"`) e o botão **Hunt** à direita.
+Só aparece em mapas com monstros, embaixo do mapa da cidade. `monsters_nearby(map_id, monsters, character)` mostra um card por monstro (`item_card` + `monster_sprite`, com o `spawn_rate` como subtítulo, ex.: `"40%"`) e o botão **Hunt** à direita.
 
 `hunt_button(map_id, character)` → `handle_hunt` → `start()`:
 1. `BattleService.start_battle(character["id"], map_id)` → `POST /api/v1/battles/`.

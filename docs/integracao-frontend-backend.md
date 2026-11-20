@@ -34,7 +34,7 @@ pages/*.py  ──►  services/<domínio>_service.py  ──►  services/api_c
 
 `MapService.get_map_ids_sync()` é **síncrono de propósito**. Ele roda quando `routes.py` é importado, antes de o loop de eventos do Flet existir, e usa `httpx.get` direto. Em caso de erro devolve `[]` em silêncio.
 
-`services/map_thumbnail_selector.py` (`map_thumbnail_selector(map_id)`) é um atalho que chama `MapService.get_map` e devolve só o campo `image`, usado no card "Current Place" do perfil.
+`services/map_thumbnail_selector.py` (`map_thumbnail_selector(map_id)`) é um atalho que chama `MapService.get_map` e devolve só o campo `town_image` (o mapa da cidade), usado como miniatura no card "Current Place" do perfil.
 
 ### Padrão de chamada nas páginas
 

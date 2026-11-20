@@ -15,15 +15,17 @@ from services import map_zoom
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
-# Left column, fixed size in every map: the location's art (banner) on top, the town map below it.
-# The town map is 4:3 so the whole image fits without cropping and the markers' x/y (fractions) land right.
+# Left column, fixed size in every map: the title card on top, the town map below it and, in maps with monsters, the
+# "Monsters nearby" card under the map. The town map is 4:3 so the whole image fits without cropping and the
+# markers' x/y (fractions) land right.
 LEFT_WIDTH = 800
-ART_HEIGHT = 220
+TITLE_HEIGHT = 64
+MONSTERS_HEIGHT = 176
 TOWN_HEIGHT = LEFT_WIDTH * 3 // 4
 TOWN_BORDER = 1
 VIEW_WIDTH = LEFT_WIDTH - 2 * TOWN_BORDER      # the town map's viewport (inside its border)
 VIEW_HEIGHT = TOWN_HEIGHT - 2 * TOWN_BORDER
-MAIN_HEIGHT = ART_HEIGHT + 16 + TOWN_HEIGHT   # the right column (In the area / Routes) is as tall as the left one
+TOP_HEIGHT = TITLE_HEIGHT + 16 + TOWN_HEIGHT   # title + town map; the right column is as tall as the left one
 FRAME_RADIUS = 8
 MARKER_SLOT_WIDTH = 160   # markers are centered on their x/y inside a slot this wide
 MARKER_HEIGHT = 24
@@ -141,26 +143,14 @@ def place_marker(place: dict, selected: bool, on_click, view: map_zoom.View):
     )
 
 
-def art_banner(map_data: dict):
-    """The location's art on top, with the map's name and recommended level over its top-left corner."""
-    title_box = ft.Container(
-        left=0, top=0, bgcolor=t.MAP_TITLE_OVERLAY,
-        border_radius=ft.BorderRadius.only(bottom_right=10),
-        padding=ft.Padding(left=14, top=8, right=18, bottom=10),
-        content=ft.Column(spacing=2, controls=[
+def title_card(map_data: dict):
+    """The map's name and recommended level, in a card on top of the town map."""
+    return ft.Container(
+        width=LEFT_WIDTH, height=TITLE_HEIGHT, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_PANEL_BORDER),
+        border_radius=FRAME_RADIUS, padding=ft.Padding.symmetric(horizontal=18), alignment=ft.Alignment.CENTER_LEFT,
+        content=ft.Column(spacing=1, tight=True, controls=[
             cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
             cinzel(f"Recommended Level: {map_data.get('level_range', '-')}", 12, t.MAP_LIGHT_TEXT),
-        ]),
-    )
-    return ft.Container(
-        width=LEFT_WIDTH, height=ART_HEIGHT, border=ft.Border.all(2, t.MAP_PANEL_BORDER),
-        border_radius=FRAME_RADIUS, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
-        content=ft.Stack(expand=True, controls=[
-            ft.Container(  # the cover is cropped to the banner; art_position_y chooses which part of it is shown
-                left=0, top=0, right=0, bottom=0,
-                image=ft.DecorationImage(src=map_data.get("image", ""), fit=ft.BoxFit.COVER,
-                                         alignment=ft.Alignment(0, 2 * map_data.get("art_position_y", 0.5) - 1))),
-            title_box,
         ]),
     )
 
@@ -233,12 +223,13 @@ def view_places_button(show_places: bool, on_toggle):
 
 # ---------- sections ----------
 
-def section(title: str, icon, content: ft.Control, expand: int | None = None, scroll: bool = False):
+def section(title: str, icon, content: ft.Control, expand: int | None = None, scroll: bool = False,
+            height: int | None = None):
     """Dark card with an icon + title, a divider and the content below. With `expand` it fills its share of the
     parent's height, and `scroll` lets a long content scroll inside the card."""
     body = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, controls=[content]) if scroll else content
     return ft.Container(
-        expand=expand, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=FRAME_RADIUS,
+        expand=expand, height=height, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_SECTION_BORDER), border_radius=FRAME_RADIUS,
         padding=ft.Padding(left=20, top=14, right=20, bottom=18),
         content=ft.Column(spacing=10, controls=[
             ft.Row(spacing=8, controls=[ft.Icon(icon, size=22, color=t.NORMAL_TEXT), cinzel(title, 18)]),
@@ -354,13 +345,14 @@ def monster_card(monster: dict):
 
 
 def monsters_nearby(map_id: str, monsters: list, character: dict):
+    """The map's monsters and the Hunt button, in a card of fixed height under the town map."""
     return section("Monsters nearby", ft.Icons.PETS, ft.Row(
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             ft.Row(expand=True, wrap=True, spacing=10, run_spacing=10, controls=[monster_card(m) for m in monsters]),
             hunt_button(map_id, character),
         ],
-    ))
+    ), height=MONSTERS_HEIGHT, scroll=True)
 
 
 # ---------- page ----------
@@ -420,13 +412,20 @@ def map_screen(map_data: dict, character: dict):
                    lambda route: set_selected_route_key(route["key"]), travel)
         for route in routes]) if routes else cinzel("No routes available", 12, t.MAP_MUTED_TEXT))
 
-    # left: the location's art and, below it, the town map; right: "In the area" and "Routes", as tall as the left
-    left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=[
-        art_banner(map_data),
+    # left: the title card, the town map and (maps with monsters) "Monsters nearby" under it;
+    # right: "In the area" and "Routes", as tall as the left column
+    monsters = map_data.get("monsters", [])
+    left_controls = [
+        title_card(map_data),
         town_frame(map_data, show_places, is_selected, select_place, lambda e: set_show_places(not show_places),
                    view, zoom_map, pan_map, lambda: set_view(map_zoom.DEFAULT_VIEW)),
-    ])
-    right_column = ft.Container(expand=True, height=MAIN_HEIGHT, content=ft.Column(spacing=GAP, expand=True, controls=[
+    ]
+    main_height = TOP_HEIGHT
+    if monsters:
+        left_controls.append(monsters_nearby(map_data["id"], monsters, character))
+        main_height += GAP + MONSTERS_HEIGHT
+    left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=left_controls)
+    right_column = ft.Container(expand=True, height=main_height, content=ft.Column(spacing=GAP, expand=True, controls=[
         section("In the area", ft.Icons.EXPLORE_OUTLINED,
                 in_the_area_content(areas, npcs, selected_area_id, select_place), expand=1, scroll=True),
         section("Routes", ft.Icons.ROUTE, routes_content, expand=1, scroll=True),
@@ -434,9 +433,6 @@ def map_screen(map_data: dict, character: dict):
     main_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[left_column, right_column])
 
     body = [header(character, map_data.get("zone", "safe")), main_row]
-    monsters = map_data.get("monsters", [])
-    if monsters:
-        body.append(monsters_nearby(map_data["id"], monsters, character))
 
     return ft.Container(
         expand=True,

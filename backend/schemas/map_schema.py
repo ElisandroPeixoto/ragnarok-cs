@@ -5,7 +5,6 @@ from schemas.monster_schema import MonsterSchema
 
 class NavigationSchema(BaseModel):
     name: str
-    image: str
     map_id: str
     level_range: str
 
@@ -37,9 +36,7 @@ class MapSchemaResponse(BaseModel):
     id: str
     name: str
     level_range: str
-    image: str
     town_image: Optional[str] = None
-    art_position_y: float = 0.5
     about: str
     zone: str
     places: List[PlaceSchema]
