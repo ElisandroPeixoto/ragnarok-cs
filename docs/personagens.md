@@ -70,6 +70,8 @@ Componente `character_selection()`.
 
 Componente `profile_page()`. Lê o personagem com `get_current_character()`. Se não houver um, mostra "No character selected" e um botão para voltar à seleção.
 
+O conteúdo (saldo de zeny, card do personagem, lugar atual, atributos/status e skills) fica **centralizado**, com largura máxima de `BATTLE_CONTENT_WIDTH` (1446 px, a mesma da tela dos mapas) e rolagem vertical; em janelas mais estreitas ele encolhe junto.
+
 **Blocos da tela**
 - `sidebar(...)` (`components/sidebar.py`), recolhida por padrão.
 - `zeny_badge(character["zeny"])` no topo.
