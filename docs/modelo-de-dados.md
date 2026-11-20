@@ -109,7 +109,7 @@ Pontos de interesse desenhados como marcadores sobre o mapa da cidade (`maps.tow
 |---|---|---|
 | `id` | Integer PK | |
 | `map_id` | FK `maps.id` | mapa onde o lugar fica |
-| `name` | String(255) | pode repetir (ex.: três "House") |
+| `name` | String(255) | pode repetir (ex.: duas "House") |
 | `kind` | String(20) | `"area"` (tem NPCs), `"building"` (prédio; entrar vem depois) ou `"exit"` (leva a outro mapa) |
 | `icon` | String(50) | chave do ícone; o frontend traduz em `PLACE_ICONS` |
 | `x`, `y` | Float | centro do marcador, em fração (0–1) da largura/altura do mapa da cidade |
