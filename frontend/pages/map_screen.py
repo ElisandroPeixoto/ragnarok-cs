@@ -145,12 +145,13 @@ def place_marker(place: dict, selected: bool, on_click, view: map_zoom.View):
 
 def title_card(map_data: dict):
     """The map's name and recommended level, in a card on top of the town map."""
+    level_range = map_data.get("level_range")   # empty for buildings: no recommended level
     return ft.Container(
         width=LEFT_WIDTH, height=TITLE_HEIGHT, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_PANEL_BORDER),
         border_radius=FRAME_RADIUS, padding=ft.Padding.symmetric(horizontal=18), alignment=ft.Alignment.CENTER_LEFT,
         content=ft.Column(spacing=1, tight=True, controls=[
             cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
-            cinzel(f"Recommended Level: {map_data.get('level_range', '-')}", 12, t.MAP_LIGHT_TEXT),
+            *([cinzel(f"Recommended Level: {level_range}", 12, t.MAP_LIGHT_TEXT)] if level_range else []),
         ]),
     )
 

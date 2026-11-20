@@ -103,7 +103,7 @@ MAPS = {
         "navigation": ["novice_academy"],
     },
     "academy": {   # inside the Academy building: only the picture for now (no places, NPCs or monsters yet)
-        "name": "Academy", "level_range": "1 - 10", "zone": "safe",
+        "name": "Academy", "level_range": "", "zone": "safe",   # a building: no level range
         "about": "...",
         "town_image": "maps/academy.jpg",
         "background_image": "maps/backgrounds/forest.jpg",

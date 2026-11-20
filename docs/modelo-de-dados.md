@@ -93,7 +93,7 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 |---|---|---|
 | `id` | String PK | ex.: `"training_field_1"`; vira a rota `/map/training_field_1` |
 | `name` | String(255) | |
-| `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
+| `level_range` | String(30) | texto livre, ex.: `"1 - 10"`; vazio (`""`) em prédios: a tela não mostra o nível recomendado nem o "Lv" em Routes |
 | `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3), direto em `assets/maps/`; `NULL` = a tela mostra um quadrado vazio |
 | `background_image` | String, opcional | a imagem de fundo da tela do mapa (fica a 15% de opacidade atrás do conteúdo), em `assets/maps/backgrounds/`; `NULL` = só a cor de fundo |
 | `about` | Text | descrição, ainda não exibida |
