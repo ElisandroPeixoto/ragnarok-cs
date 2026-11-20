@@ -86,7 +86,7 @@ MAPS = {
         "town_image": "maps/towns/training_field_1.jpg",
         "places": [
             {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.45, "y": 0.36},
-            {"name": "Academy Road", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
+            {"name": "Novice Academy", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
              "target": "novice_academy", "direction": "Southeast"},
             # no map behind it yet: shows up in Routes without a link
             {"name": "Training Field 2", "kind": "exit", "icon": "exit", "x": 0.875, "y": 0.21,

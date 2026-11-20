@@ -104,7 +104,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "places": [
     { "id": 18, "name": "Training Grounds", "kind": "area", "icon": "training",
       "x": 0.3, "y": 0.66, "direction": null, "target": null },
-    { "id": 19, "name": "Academy Road", "kind": "exit", "icon": "exit",
+    { "id": 19, "name": "Novice Academy", "kind": "exit", "icon": "exit",
       "x": 0.63, "y": 0.9, "direction": "Southeast",
       "target": { "map_id": "novice_academy", "name": "Novice Academy",
                   "level_range": "1 - 10", "zone": "safe" } }
