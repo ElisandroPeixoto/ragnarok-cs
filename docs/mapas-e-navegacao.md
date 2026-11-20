@@ -65,6 +65,12 @@ Helpers em `services/map_router_manager.py`:
 - **`town_frame`**: o mapa da cidade (`maps.town_image`) em `LEFT_WIDTH × TOWN_HEIGHT` (800 × 600, proporção 4:3, então a imagem inteira aparece sem cortar), com borda discreta (`MAP_SECTION_BORDER`). Os marcadores ficam por cima dele. **Mapa sem `town_image`** (hoje o Training Field 1) mostra um **quadrado vazio** do mesmo tamanho, sem marcadores nem botão; as áreas e as rotas continuam funcionando pelas abas e pelos cards.
 - **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações do **mapa da cidade**). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`). Ao posicionar, deixe o ponto um pouco **acima** da construção, para o rótulo não cobri-la.
 - **"View Places" / "Hide Places"** (`view_places_button`): pílula no canto superior direito do mapa da cidade; mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
+- **Zoom do mapa da cidade**: de **1×** (imagem inteira, como antes) a **3×**, sempre dentro da mesma moldura de 800 × 600.
+  - **Roda do mouse** sobre o mapa: cada giro multiplica o zoom por 1,15 (`WHEEL_STEP`), mantendo parado o ponto que está sob o cursor.
+  - **Botões** abaixo do "Hide Places": **−**, **+** (fator 1,4, `BUTTON_STEP`, em volta do centro) e **Reset** (volta a 1×).
+  - **Arrastar** com o mouse move a imagem; ela nunca sai da moldura (`clamp_view`).
+  - Os **rótulos mantêm o tamanho** em qualquer zoom: só a imagem cresce, e cada marcador é reposicionado (`map_zoom.to_viewport`). Marcadores que saem da vista não são desenhados, e os que ficam continuam clicáveis.
+  - A matemática é pura e fica em `services/map_zoom.py` (`zoom_at`, `pan`, `image_rect`, `to_viewport`); o estado `(zoom, cx, cy)` é um `use_state` de `map_screen`, e o `town_frame` usa um `ft.GestureDetector` (`on_scroll`, `on_pan_update`). Mapas sem `town_image` não têm zoom.
 - **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" têm a mesma altura (metade da coluna cada). "Monsters nearby" fica abaixo, na largura toda.
 - **Janela estreita**: a coluna da esquerda tem largura fixa e a da direita encolhe; com uma janela de uns 1500 px os cards da direita ficam com ~520 px; em janelas menores que uns 1300 px eles ficam apertados (o mapa não encolhe).
 

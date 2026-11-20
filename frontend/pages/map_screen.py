@@ -11,6 +11,7 @@ from services.sprite_selector import badge_selector
 from typing import cast
 from services.map_router_manager import map_route, navigate_to_battle, change_place
 from services.battle_service import BattleService
+from services import map_zoom
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 
@@ -20,6 +21,8 @@ LEFT_WIDTH = 800
 ART_HEIGHT = 220
 TOWN_HEIGHT = LEFT_WIDTH * 3 // 4
 TOWN_BORDER = 1
+VIEW_WIDTH = LEFT_WIDTH - 2 * TOWN_BORDER      # the town map's viewport (inside its border)
+VIEW_HEIGHT = TOWN_HEIGHT - 2 * TOWN_BORDER
 MAIN_HEIGHT = ART_HEIGHT + 16 + TOWN_HEIGHT   # the right column (In the area / Routes) is as tall as the left one
 FRAME_RADIUS = 8
 MARKER_SLOT_WIDTH = 160   # markers are centered on their x/y inside a slot this wide
@@ -117,8 +120,8 @@ def header(character: dict, zone: str):
 
 # ---------- map image with place markers ----------
 
-def place_marker(place: dict, selected: bool, on_click):
-    """Pill with icon + name, centered on the place's x/y over the town map."""
+def place_marker(place: dict, selected: bool, on_click, view: map_zoom.View):
+    """Pill with icon + name, centered on the place's x/y over the (zoomed) town map. The pill never scales."""
     color = t.MAP_SELECTED if selected else t.NORMAL_TEXT
     pill = ft.Container(
         padding=ft.Padding.symmetric(horizontal=8), height=MARKER_HEIGHT, border_radius=MARKER_HEIGHT / 2,
@@ -128,9 +131,11 @@ def place_marker(place: dict, selected: bool, on_click):
             ft.Icon(place_icon(place), size=13, color=color), cinzel(place["name"], 11, color),
         ]),
     )
+    center_x, center_y = map_zoom.to_viewport(view, place["x"], place["y"], VIEW_WIDTH, VIEW_HEIGHT)
+    if not (-20 <= center_x <= VIEW_WIDTH + 20 and -20 <= center_y <= VIEW_HEIGHT + 20):
+        return None   # zoomed out of sight
     return ft.Container(
-        left=place["x"] * (LEFT_WIDTH - 2 * TOWN_BORDER) - MARKER_SLOT_WIDTH / 2,
-        top=place["y"] * (TOWN_HEIGHT - 2 * TOWN_BORDER) - MARKER_HEIGHT / 2,
+        left=center_x - MARKER_SLOT_WIDTH / 2, top=center_y - MARKER_HEIGHT / 2,
         width=MARKER_SLOT_WIDTH, height=MARKER_HEIGHT, alignment=ft.Alignment.CENTER,
         content=pill,
     )
@@ -157,23 +162,57 @@ def art_banner(map_data: dict):
     )
 
 
-def town_frame(map_data: dict, show_places: bool, is_selected, on_place_click, on_toggle_places):
-    """The town map with the clickable place markers. A map with no town image gets an empty square."""
+def zoom_button(icon, tooltip: str, on_click):
+    return ft.Container(
+        width=30, height=30, border_radius=15, bgcolor=t.MAP_MARKER_BG, border=ft.Border.all(1, t.MAP_MARKER_BORDER),
+        alignment=ft.Alignment.CENTER, tooltip=tooltip, on_click=on_click,
+        content=ft.Icon(icon, size=18, color=t.NORMAL_TEXT),
+    )
+
+
+def town_frame(map_data: dict, show_places: bool, is_selected, on_place_click, on_toggle_places,
+               view: map_zoom.View, on_zoom, on_pan, on_reset_view):
+    """The town map with the clickable place markers, which can be zoomed (wheel or +/-) and dragged. A map with no
+    town image gets an empty square. on_zoom(factor, x, y) zooms around a viewport pixel; on_pan(dx, dy) drags."""
     frame = dict(width=LEFT_WIDTH, height=TOWN_HEIGHT, border=ft.Border.all(TOWN_BORDER, t.MAP_SECTION_BORDER),
                  border_radius=FRAME_RADIUS)
     town_image = map_data.get("town_image")
     if not town_image:
         return ft.Container(bgcolor=t.MAP_SECTION_BG, **frame)
-    markers = [place_marker(place, is_selected(place), on_place_click)
+
+    left, top, width, height = map_zoom.image_rect(view, VIEW_WIDTH, VIEW_HEIGHT)
+    markers = [place_marker(place, is_selected(place), on_place_click, view)
                for place in map_data.get("places", [])] if show_places else []
-    return ft.Container(
-        clip_behavior=ft.ClipBehavior.ANTI_ALIAS, **frame,
-        content=ft.Stack(expand=True, controls=[
-            ft.Image(src=town_image, fit=ft.BoxFit.COVER, left=0, top=0, right=0, bottom=0),
-            *markers,
-            ft.Container(right=10, top=10, content=view_places_button(show_places, on_toggle_places)),
+    surface = ft.GestureDetector(
+        on_scroll=lambda e: on_zoom(map_zoom.WHEEL_STEP if scroll_amount(e) < 0 else 1 / map_zoom.WHEEL_STEP,
+                                    e.local_position.x, e.local_position.y),
+        on_pan_update=lambda e: on_pan(e.local_delta.x, e.local_delta.y),
+        content=ft.Stack(width=VIEW_WIDTH, height=VIEW_HEIGHT, controls=[
+            ft.Image(src=town_image, fit=ft.BoxFit.FILL, left=left, top=top, width=width, height=height,
+                     filter_quality=ft.FilterQuality.MEDIUM),
+            *[marker for marker in markers if marker is not None],
         ]),
     )
+    center = (VIEW_WIDTH / 2, VIEW_HEIGHT / 2)
+    controls_box = ft.Container(right=10, top=10, content=ft.Column(
+        spacing=6, horizontal_alignment=ft.CrossAxisAlignment.END, controls=[
+            view_places_button(show_places, on_toggle_places),
+            ft.Row(spacing=6, tight=True, controls=[
+                zoom_button(ft.Icons.REMOVE, "Zoom out", lambda e: on_zoom(1 / map_zoom.BUTTON_STEP, *center)),
+                zoom_button(ft.Icons.ADD, "Zoom in", lambda e: on_zoom(map_zoom.BUTTON_STEP, *center)),
+                zoom_button(ft.Icons.FIT_SCREEN, "Reset zoom", lambda e: on_reset_view()),
+            ]),
+        ]))
+    return ft.Container(
+        clip_behavior=ft.ClipBehavior.ANTI_ALIAS, **frame,
+        content=ft.Stack(expand=True, controls=[surface, controls_box]),
+    )
+
+
+def scroll_amount(event) -> float:
+    """Vertical amount of a mouse wheel event (negative = wheel up = zoom in)."""
+    delta = event.scroll_delta
+    return getattr(delta, "y", delta)
 
 
 def view_places_button(show_places: bool, on_toggle):
@@ -340,6 +379,7 @@ def map_screen(map_data: dict, character: dict):
     show_places, set_show_places = ft.use_state(True)
     selected_area_id, set_selected_area_id = ft.use_state(lambda: default_area_id(areas, npcs))
     selected_route_key, set_selected_route_key = ft.use_state(cast("int | str | None", None))
+    view, set_view = ft.use_state(map_zoom.DEFAULT_VIEW)   # town map zoom: (zoom, center x, center y)
 
     def show_battle_result():
         """Back from a battle: pop up with Victory!/Defeat and the damage report (shown once)."""
@@ -361,6 +401,12 @@ def map_screen(map_data: dict, character: dict):
             return place["id"] == selected_area_id
         return place["id"] == selected_route_key
 
+    def zoom_map(factor: float, x: float, y: float):
+        set_view(lambda current: map_zoom.zoom_at(current, factor, x, y, VIEW_WIDTH, VIEW_HEIGHT))
+
+    def pan_map(dx: float, dy: float):
+        set_view(lambda current: map_zoom.pan(current, dx, dy, VIEW_WIDTH, VIEW_HEIGHT))
+
     def travel(route: dict):
         change_place(character, route["map_id"])
 
@@ -372,7 +418,8 @@ def map_screen(map_data: dict, character: dict):
     # left: the location's art and, below it, the town map; right: "In the area" and "Routes", as tall as the left
     left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=[
         art_banner(map_data),
-        town_frame(map_data, show_places, is_selected, select_place, lambda e: set_show_places(not show_places)),
+        town_frame(map_data, show_places, is_selected, select_place, lambda e: set_show_places(not show_places),
+                   view, zoom_map, pan_map, lambda: set_view(map_zoom.DEFAULT_VIEW)),
     ])
     right_column = ft.Container(expand=True, height=MAIN_HEIGHT, content=ft.Column(spacing=GAP, expand=True, controls=[
         section("In the area", ft.Icons.EXPLORE_OUTLINED,
