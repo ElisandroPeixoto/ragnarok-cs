@@ -65,12 +65,12 @@ MAPS = {
         "about": "Lorem ipsum dolor sit amet...",
         "town_image": "maps/towns/novice_academy.jpg",   # provisional town map
         "places": [
-            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.55, "y": 0.54},
-            {"name": "Port", "kind": "area", "icon": "port", "x": 0.326, "y": 0.713},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.285, "y": 0.372},
-            {"name": "House", "kind": "area", "icon": "house", "x": 0.596, "y": 0.651},
-            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.560, "y": 0.411},
-            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.383, "y": 0.201,
+            {"name": "Main Square", "kind": "area", "icon": "square", "x": 0.55, "y": 0.595},
+            {"name": "Port", "kind": "area", "icon": "port", "x": 0.26, "y": 0.775},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.25, "y": 0.395},
+            {"name": "House", "kind": "area", "icon": "house", "x": 0.59, "y": 0.711},
+            {"name": "Academy", "kind": "building", "icon": "building", "x": 0.56, "y": 0.45},
+            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.36, "y": 0.115,
              "target": "training_field_1", "direction": "Northwest"},
         ],
         "npcs": [
