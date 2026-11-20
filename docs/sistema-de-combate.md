@@ -209,7 +209,7 @@ Quatro camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:
 
 ## Geometria: `services/battle_geometry.py`
 
-`BoardConfig`: palco fixo de 1100×700, grade 10×10, tiles de 96×48 (losango 2:1), origem do tile (0,0) em (540, 200), `blocked_tiles` vazio, `show_grid=True`.
+`BoardConfig`: palco fixo de 1100×700, grade 10×10, tiles de 96×48 (losango 2:1), origem do tile (0,0) em (580, 140), escolhida para a grade ficar dentro da clareira de terra da imagem de fundo (`forest_battlefield.jpg`), `blocked_tiles` vazio, `show_grid=True`.
 
 | Função | Faz |
 |---|---|
