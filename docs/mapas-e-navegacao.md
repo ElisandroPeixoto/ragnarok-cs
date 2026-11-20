@@ -45,10 +45,10 @@ Helpers em `services/map_router_manager.py`:
 │         │ [avatar] Nome / zeny                          [Safe Zone]    │
 │         │ Novice - Lv: 1 / HP: 50/50                                   │
 │         │ ─────────────────────────────────────────────────────────── │
-│         │ ┌ art_banner (720 × 216) ─────┐ ┌ In the area ────────────┐ │
+│         │ ┌ art_banner (800 × 220) ─────┐ ┌ In the area ────────────┐ │
 │         │ │ Título + "Recommended Level"│ │ [Main Square] [Port] .. │ │
 │         │ └─────────────────────────────┘ │ npc_card (Hostess·Talk) │ │
-│         │ ┌ town_frame (720 × 540) ─────┐ └─────────────────────────┘ │
+│         │ ┌ town_frame (800 × 600) ─────┐ └─────────────────────────┘ │
 │         │ │          [👁 Hide Places]   │ ┌ Routes ─────────────────┐ │
 │         │ │  (Academy) (Main Square)    │ │ Training Field 1    [↗] │ │
 │         │ │     (Port) (House) ...      │ │ Academy (Building)      │ │
@@ -60,13 +60,13 @@ Helpers em `services/map_router_manager.py`:
 
 - **Largura**: o conteúdo é limitado a `BATTLE_CONTENT_WIDTH` (importado de `pages/battle_page.py`, 1446 px), centralizado, com rolagem vertical.
 - **`header(character, zone)`**: avatar do job (`badge_selector`), nome, zeny, "Job - Lv" e HP; à direita, "Safe Zone" quando o mapa é seguro (`zone_tag`; em qualquer outra zona não aparece nada), e uma linha divisória embaixo.
-- **Duas colunas**: à esquerda, uma coluna de `LEFT_WIDTH = 720` px com a **arte do local em cima** e o **mapa da cidade embaixo**; à direita, "In the area" e "Routes" empilhados, com a **mesma altura da coluna da esquerda** (`MAIN_HEIGHT`) e cada card ocupando metade (`expand=1`). Um conteúdo maior que o card rola dentro dele (`section(..., scroll=True)`). Os cantos são arredondados (`FRAME_RADIUS = 8`) e o espaço entre os blocos é `GAP = 16`.
-- **`art_banner`**: a arte do local (`maps.image`) em `LEFT_WIDTH × ART_HEIGHT` (720 × 216, `BoxFit.COVER`), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
-- **`town_frame`**: o mapa da cidade (`maps.town_image`) em `LEFT_WIDTH × TOWN_HEIGHT` (720 × 540, proporção 4:3, então a imagem inteira aparece sem cortar), com borda discreta (`MAP_SECTION_BORDER`). Os marcadores ficam por cima dele. **Mapa sem `town_image`** (hoje o Training Field 1) mostra um **quadrado vazio** do mesmo tamanho, sem marcadores nem botão; as áreas e as rotas continuam funcionando pelas abas e pelos cards.
+- **Duas colunas**: à esquerda, uma coluna de `LEFT_WIDTH = 800` px com a **arte do local em cima** e o **mapa da cidade embaixo**; à direita, "In the area" e "Routes" empilhados, com a **mesma altura da coluna da esquerda** (`MAIN_HEIGHT`) e cada card ocupando metade (`expand=1`). Um conteúdo maior que o card rola dentro dele (`section(..., scroll=True)`). Os cantos são arredondados (`FRAME_RADIUS = 8`) e o espaço entre os blocos é `GAP = 16`.
+- **`art_banner`**: a arte do local (`maps.image`) em `LEFT_WIDTH × ART_HEIGHT` (800 × 220, `BoxFit.COVER`), com borda dourada. O título e "Recommended Level" ficam no canto superior esquerdo, sobre `MAP_TITLE_OVERLAY`.
+- **`town_frame`**: o mapa da cidade (`maps.town_image`) em `LEFT_WIDTH × TOWN_HEIGHT` (800 × 600, proporção 4:3, então a imagem inteira aparece sem cortar), com borda discreta (`MAP_SECTION_BORDER`). Os marcadores ficam por cima dele. **Mapa sem `town_image`** (hoje o Training Field 1) mostra um **quadrado vazio** do mesmo tamanho, sem marcadores nem botão; as áreas e as rotas continuam funcionando pelas abas e pelos cards.
 - **Marcadores (`place_marker`)**: um por lugar de `map_data["places"]`, centrado em `x`/`y` (frações do **mapa da cidade**). Ícone + nome numa pílula escura; o selecionado fica dourado (`MAP_SELECTED`). Ao posicionar, deixe o ponto um pouco **acima** da construção, para o rótulo não cobri-la.
 - **"View Places" / "Hide Places"** (`view_places_button`): pílula no canto superior direito do mapa da cidade; mostra ou esconde os marcadores. Eles começam visíveis, então o botão começa como "Hide Places".
 - **Seções (`section`)**: card escuro com ícone + título, divisor e conteúdo. "In the area" e "Routes" têm a mesma altura (metade da coluna cada). "Monsters nearby" fica abaixo, na largura toda.
-- **Janela estreita**: a coluna da esquerda tem largura fixa e a da direita encolhe; a partir de uns 1250 px de janela o layout fica como o mockup (cards de ~440 px à direita).
+- **Janela estreita**: a coluna da esquerda tem largura fixa e a da direita encolhe; com uma janela de uns 1500 px os cards da direita ficam com ~520 px; em janelas menores que uns 1300 px eles ficam apertados (o mapa não encolhe).
 
 ### Lugares, áreas e rotas
 

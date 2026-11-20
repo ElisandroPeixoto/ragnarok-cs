@@ -16,8 +16,8 @@ from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
 
 # Left column, fixed size in every map: the location's art (banner) on top, the town map below it.
 # The town map is 4:3 so the whole image fits without cropping and the markers' x/y (fractions) land right.
-LEFT_WIDTH = 720
-ART_HEIGHT = 216
+LEFT_WIDTH = 800
+ART_HEIGHT = 220
 TOWN_HEIGHT = LEFT_WIDTH * 3 // 4
 TOWN_BORDER = 1
 MAIN_HEIGHT = ART_HEIGHT + 16 + TOWN_HEIGHT   # the right column (In the area / Routes) is as tall as the left one
