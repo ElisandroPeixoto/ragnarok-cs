@@ -63,7 +63,7 @@ MONSTERS = {
 # npcs: (name, image, area name, greeting); the area must be a place of kind "area" with a unique name
 MAPS = {
     "novice_academy": {
-        "name": "Novice Academy", "level_range": "1 - 10", "zone": "safe",
+        "name": "Novice Island", "level_range": "1 - 10", "zone": "safe",
         "about": "Lorem ipsum dolor sit amet...",
         "town_image": "maps/novice_academy.jpg",   # provisional town map
         "background_image": "maps/backgrounds/forest.jpg",
@@ -74,7 +74,7 @@ MAPS = {
             {"name": "House", "kind": "area", "icon": "house", "x": 0.59, "y": 0.711},
             {"name": "Academy", "kind": "exit", "icon": "building", "x": 0.56, "y": 0.45,
              "target": "academy", "direction": "Building"},
-            {"name": "Training Camp", "kind": "exit", "icon": "exit", "x": 0.36, "y": 0.115,
+            {"name": "Training Field 1", "kind": "exit", "icon": "exit", "x": 0.36, "y": 0.115,
              "target": "training_field_1", "direction": "Northwest"},
         ],
         "npcs": [
@@ -91,7 +91,7 @@ MAPS = {
         "background_image": "maps/backgrounds/forest.jpg",
         "places": [
             {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.45, "y": 0.36},
-            {"name": "Novice Academy", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
+            {"name": "Novice Island", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
              "target": "novice_academy", "direction": "Southeast"},
             # no map behind it yet: shows up in Routes without a link
             {"name": "Training Field 2", "kind": "exit", "icon": "exit", "x": 0.875, "y": 0.21,
@@ -241,8 +241,11 @@ async def seed() -> None:
                 if await db.get(MapConnectionModel, (map_id, target)) is None:
                     db.add(MapConnectionModel(from_map_id=map_id, to_map_id=target))
 
-        # 7) characters: their level follows their total EXP (the level table may have changed)
+        # 7) characters: their level follows their total EXP (the level table may have changed) and the map name
+        #    they carry is kept in sync with the map's current name
+        map_names = {map_id: data["name"] for map_id, data in MAPS.items()}
         for character in (await db.execute(select(CharacterModel))).scalars().all():
+            character.current_map = map_names.get(character.current_map_id, character.current_map)
             character.exp = min(character.exp, MAX_EXP)
             character.level = level_for_exp(character.exp)
 

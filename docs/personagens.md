@@ -43,7 +43,7 @@ Componente `character_creation()`.
 | `hp` / `max_hp` | 50 / 50 |
 | `max_sp` | 10 |
 | `zeny` | 0.00 |
-| `current_map` / `current_map_id` | `Novice Academy` / `novice_academy` |
+| `current_map` / `current_map_id` | `Novice Island` / `novice_academy` |
 
 O job precisa existir na tabela `jobs` (FK `characters.job → jobs.name`), e o Novice é criado pelo `seed_data.py`. O SQLite não verifica chaves estrangeiras por padrão, mas `POST /battles/` devolve 404 se o job não existir.
 

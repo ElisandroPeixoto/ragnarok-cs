@@ -34,7 +34,7 @@ erDiagram
 | `hp` / `max_hp` | Integer | 50 / 50 | HP do herói na batalha |
 | `max_sp` | Integer | 10 | ainda não usado no jogo |
 | `zeny` | Numeric(10, 2) | 0.00 | |
-| `current_map` | String | `"Novice Academy"` | nome do mapa (texto duplicado) |
+| `current_map` | String | `"Novice Island"` | nome do mapa (texto duplicado) |
 | `current_map_id` | String | `"novice_academy"` | id do mapa; não é FK |
 
 ### `jobs`: `JobModel` (`models/jobs_model.py`)
