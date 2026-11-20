@@ -146,12 +146,14 @@ def place_marker(place: dict, selected: bool, on_click, view: map_zoom.View):
 def title_card(map_data: dict):
     """The map's name and recommended level, in a card on top of the town map."""
     level_range = map_data.get("level_range")   # empty for buildings: no recommended level
+    parent = map_data.get("parent_map")         # buildings: the map they stand in, right under the title
     return ft.Container(
         width=LEFT_WIDTH, height=TITLE_HEIGHT, bgcolor=t.MAP_SECTION_BG, border=ft.Border.all(1, t.MAP_PANEL_BORDER),
         border_radius=FRAME_RADIUS, padding=ft.Padding.symmetric(horizontal=18), alignment=ft.Alignment.CENTER_LEFT,
         content=ft.Column(spacing=1, tight=True, controls=[
             cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
             *([cinzel(f"Recommended Level: {level_range}", 12, t.MAP_LIGHT_TEXT)] if level_range else []),
+            *([cinzel(f"Located in {parent['name']}", 12, t.MAP_LIGHT_TEXT)] if parent else []),
         ]),
     )
 
@@ -297,7 +299,8 @@ def route_card(route: dict, selected: bool, on_select, on_travel):
     if zone_label:
         tags.append(zone_label)
     info = ft.Column(expand=True, spacing=4, controls=[
-        cinzel(route["name"], 16),
+        ft.Row(spacing=6, controls=[ft.Icon(route.get("icon", DEFAULT_PLACE_ICON), size=16, color=t.NORMAL_TEXT),
+                                    cinzel(route["name"], 16)]),
         ft.Row(spacing=14, controls=tags),
         ft.Container(height=4),
         cinzel(route.get("detail") or "", 11, t.MAP_MUTED_TEXT),
@@ -325,17 +328,21 @@ def build_routes(map_data: dict) -> list[dict]:
         target = place.get("target")
         if place["kind"] == "exit" and target:
             routes.append({"key": place["id"], "name": target["name"], "level_range": target["level_range"],
-                           "zone": target["zone"], "detail": place.get("direction"), "map_id": target["map_id"]})
+                           "zone": target["zone"], "detail": place.get("direction"), "map_id": target["map_id"],
+                           "icon": place_icon(place), "building": target.get("is_building", False)})
         elif place["kind"] == "exit":   # the map behind it does not exist yet: listed, without the travel arrow
-            routes.append({"key": place["id"], "name": place["name"], "detail": place.get("direction"), "map_id": None})
+            routes.append({"key": place["id"], "name": place["name"], "detail": place.get("direction"), "map_id": None,
+                           "icon": place_icon(place)})
     linked = {route["map_id"] for route in routes}
     for place in places:
         if place["kind"] == "building":   # buildings are safe; entering them comes later
-            routes.append({"key": place["id"], "name": place["name"], "zone": "safe", "detail": "Building"})
+            routes.append({"key": place["id"], "name": place["name"], "zone": "safe", "detail": "Building",
+                           "icon": place_icon(place)})
     for connection in map_data.get("navigation", []):
         if connection["map_id"] not in linked:
             routes.append({"key": f"map:{connection['map_id']}", "name": connection["name"],
-                           "level_range": connection.get("level_range"), "map_id": connection["map_id"]})
+                           "level_range": connection.get("level_range"), "map_id": connection["map_id"],
+                           "icon": PLACE_ICONS["exit"]})
     return routes
 
 
@@ -406,7 +413,7 @@ def map_screen(map_data: dict, character: dict):
         set_view(lambda current: map_zoom.pan(current, dx, dy, VIEW_WIDTH, VIEW_HEIGHT))
 
     def travel(route: dict):
-        change_place(character, route["map_id"])
+        change_place(character, route["map_id"], instant=route.get("building", False))
 
     routes_content = (ft.Column(spacing=10, controls=[
         route_card(route, route["key"] == selected_route_key,

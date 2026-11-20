@@ -98,6 +98,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "id": "training_field_1",
   "name": "Training Field 1",
   "level_range": "1 - 10",
+  "parent_map": null,   // prédios: { "map_id": "novice_academy", "name": "Novice Academy" }
   "town_image": "maps/training_field_1.jpg",
   "background_image": "maps/backgrounds/forest.jpg",
   "about": "...",

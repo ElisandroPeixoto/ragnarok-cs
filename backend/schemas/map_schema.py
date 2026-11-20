@@ -9,11 +9,17 @@ class NavigationSchema(BaseModel):
     level_range: str
 
 
+class ParentMapSchema(BaseModel):
+    map_id: str
+    name: str
+
+
 class PlaceTargetSchema(BaseModel):
     map_id: str
     name: str
     level_range: str
     zone: str
+    is_building: bool = False
 
 
 class PlaceSchema(BaseModel):
@@ -40,6 +46,7 @@ class MapSchemaResponse(BaseModel):
     background_image: Optional[str] = None
     about: str
     zone: str
+    parent_map: Optional[ParentMapSchema] = None
     places: List[PlaceSchema]
     npcs: List[NpcSchema]
     monsters: List[MonsterSchema]

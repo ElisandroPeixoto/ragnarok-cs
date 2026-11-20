@@ -55,6 +55,7 @@ MONSTERS = {
 
 # zone: "safe", "hostile_passive" or "hostile_aggressive" (only "safe" shows a label, "Safe Zone", on the map header and on routes to the map)
 # town_image: the town map the markers are drawn over (assets/maps; None = an empty square)
+# parent: set only for buildings, the map they stand in
 # background_image: the faded picture behind the map screen (assets/maps/backgrounds)
 # places: markers over the town map, in display order. x/y = marker center as a fraction of the town image size.
 #   kind "area" holds NPCs, "building" is a place to enter (link comes later), "exit" leads to the "target"
@@ -104,6 +105,7 @@ MAPS = {
     },
     "academy": {   # inside the Academy building: only the picture for now (no places, NPCs or monsters yet)
         "name": "Academy", "level_range": "", "zone": "safe",   # a building: no level range
+        "parent": "novice_academy",   # the map the building stands in (shown under the title; travelling there is instant)
         "about": "...",
         "town_image": "maps/academy.jpg",
         "background_image": "maps/backgrounds/forest.jpg",
@@ -138,6 +140,9 @@ async def seed() -> None:
         # maps gained "background_image" (the picture behind the map screen)
         if "background_image" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
             await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN background_image VARCHAR")
+        # maps gained "parent_map_id" (buildings point to the map they stand in)
+        if "parent_map_id" not in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
+            await conn.exec_driver_sql("ALTER TABLE maps ADD COLUMN parent_map_id VARCHAR REFERENCES maps(id)")
         # the map screen has no cover art any more: drop its columns from older databases
         for old_column in ("art_position_y", "image"):
             if old_column in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(maps)")).fetchall()]:
@@ -202,7 +207,8 @@ async def seed() -> None:
         for map_id, data in MAPS.items():
             values = {"name": data["name"], "level_range": data["level_range"], "about": data["about"],
                       "zone": data.get("zone", "safe"), "town_image": data.get("town_image"),
-                      "background_image": data.get("background_image")}
+                      "background_image": data.get("background_image"),
+                      "parent_map_id": data.get("parent")}
             existing = await db.get(MapModel, map_id)
             if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
                 upsert(existing, values)
