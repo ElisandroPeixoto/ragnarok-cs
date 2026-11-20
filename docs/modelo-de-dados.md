@@ -97,7 +97,7 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3), direto em `assets/maps/`; `NULL` = a tela mostra um quadrado vazio |
 | `background_image` | String, opcional | a imagem de fundo da tela do mapa (fica a 15% de opacidade atrás do conteúdo), em `assets/maps/backgrounds/`; `NULL` = só a cor de fundo |
 | `about` | Text | descrição, ainda não exibida |
-| `parent_map_id` | String, opcional (FK `maps.id`) | só em prédios: o mapa em que ele fica (ex.: `academy` → `novice_academy`). A tela mostra "Located in ..." sob o título e a viagem até ele é instantânea |
+| `parent_map_id` | String, opcional (FK `maps.id`) | só em prédios: o mapa em que ele fica (ex.: `academy` → `novice_academy`). A tela mostra o nome desse mapa (com ícone de localização) sob o título e a viagem de ida e volta é instantânea |
 | `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 
 Relações (todas `lazy="selectin"`): `npcs`, `places` (ordenados por `slot`), `monster_spawns`, `connections`.

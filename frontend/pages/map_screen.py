@@ -153,7 +153,9 @@ def title_card(map_data: dict):
         content=ft.Column(spacing=1, tight=True, controls=[
             cinzel(map_data["name"], 24, t.MAP_TITLE_TEXT, weight=ft.FontWeight.BOLD),
             *([cinzel(f"Recommended Level: {level_range}", 12, t.MAP_LIGHT_TEXT)] if level_range else []),
-            *([cinzel(f"Located in {parent['name']}", 12, t.MAP_LIGHT_TEXT)] if parent else []),
+            *([ft.Row(spacing=4, tight=True, controls=[
+                ft.Icon(PLACE_ICONS["building"], size=14, color=t.MAP_LIGHT_TEXT),
+                cinzel(parent["name"], 12, t.MAP_LIGHT_TEXT)])] if parent else []),
         ]),
     )
 
@@ -342,7 +344,9 @@ def build_routes(map_data: dict) -> list[dict]:
         if connection["map_id"] not in linked:
             routes.append({"key": f"map:{connection['map_id']}", "name": connection["name"],
                            "level_range": connection.get("level_range"), "map_id": connection["map_id"],
-                           "icon": PLACE_ICONS["exit"]})
+                           "icon": PLACE_ICONS["exit"],
+                           # leaving a building to the map it stands in is instant too
+                           "building": connection["map_id"] == (map_data.get("parent_map") or {}).get("map_id")})
     return routes
 
 
