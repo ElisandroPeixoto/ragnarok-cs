@@ -98,8 +98,9 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "id": "training_field_1",
   "name": "Training Field 1",
   "level_range": "1 - 10",
-  "image": "maps/training_field_1.jpg",
-  "town_image": null,
+  "image": "maps/covers/training_field_1.jpg",
+  "town_image": "maps/towns/training_field_1.jpg",
+  "art_position_y": 0.2,
   "about": "...",
   "zone": "hostile_passive",
   "places": [
@@ -118,7 +119,7 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
     { "name": "Wilow",   "sheet": "wilow",   "spawn_rate": 20 }
   ],
   "navigation": [
-    { "name": "Novice Academy", "image": "maps/novice_academy.jpg",
+    { "name": "Novice Academy", "image": "maps/covers/novice_academy.jpg",
       "map_id": "novice_academy", "level_range": "1 - 10" }
   ]
 }

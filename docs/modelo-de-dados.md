@@ -94,8 +94,9 @@ Relação: `skill_links` → `MonsterSkillModel`, ordenado por `slot`.
 | `id` | String PK | ex.: `"training_field_1"`; vira a rota `/map/training_field_1` |
 | `name` | String(255) | |
 | `level_range` | String(30) | texto livre, ex.: `"1 - 10"` |
-| `image` | String | a arte do local (banner no topo da tela do mapa) |
-| `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3); `NULL` = a tela mostra um quadrado vazio |
+| `image` | String | a arte de capa do local (banner no topo da tela do mapa), em `assets/maps/covers/` |
+| `art_position_y` | Float | que parte da capa o banner mostra: `0` = o topo, `0.5` = o centro (padrão), `1` = a base. O banner é bem mais largo que alto, então ele corta a capa |
+| `town_image` | String, opcional | o mapa da cidade onde ficam os marcadores (4:3), em `assets/maps/towns/`; `NULL` = a tela mostra um quadrado vazio |
 | `about` | Text | descrição, ainda não exibida |
 | `zone` | String(30) | `"safe"`, `"hostile_passive"` ou `"hostile_aggressive"`; só `"safe"` tem indicação ("Safe Zone" no topo da tela do mapa e nas rotas que levam a ele); as outras zonas não mostram nada |
 

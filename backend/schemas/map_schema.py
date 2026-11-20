@@ -39,6 +39,7 @@ class MapSchemaResponse(BaseModel):
     level_range: str
     image: str
     town_image: Optional[str] = None
+    art_position_y: float = 0.5
     about: str
     zone: str
     places: List[PlaceSchema]

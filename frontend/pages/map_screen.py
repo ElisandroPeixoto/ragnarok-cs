@@ -156,7 +156,10 @@ def art_banner(map_data: dict):
         width=LEFT_WIDTH, height=ART_HEIGHT, border=ft.Border.all(2, t.MAP_PANEL_BORDER),
         border_radius=FRAME_RADIUS, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
         content=ft.Stack(expand=True, controls=[
-            ft.Image(src=map_data.get("image", ""), fit=ft.BoxFit.COVER, left=0, top=0, right=0, bottom=0),
+            ft.Container(  # the cover is cropped to the banner; art_position_y chooses which part of it is shown
+                left=0, top=0, right=0, bottom=0,
+                image=ft.DecorationImage(src=map_data.get("image", ""), fit=ft.BoxFit.COVER,
+                                         alignment=ft.Alignment(0, 2 * map_data.get("art_position_y", 0.5) - 1))),
             title_box,
         ]),
     )
@@ -331,6 +334,8 @@ def build_routes(map_data: dict) -> list[dict]:
         if place["kind"] == "exit" and target:
             routes.append({"key": place["id"], "name": target["name"], "level_range": target["level_range"],
                            "zone": target["zone"], "detail": place.get("direction"), "map_id": target["map_id"]})
+        elif place["kind"] == "exit":   # the map behind it does not exist yet: listed, without the travel arrow
+            routes.append({"key": place["id"], "name": place["name"], "detail": place.get("direction"), "map_id": None})
     linked = {route["map_id"] for route in routes}
     for place in places:
         if place["kind"] == "building":   # buildings are safe; entering them comes later
