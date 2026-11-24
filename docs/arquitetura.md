@@ -41,7 +41,7 @@ flowchart LR
         Models --> DB[(ragnarokcs.db)]
     end
     ApiClient -- HTTP JSON :8001 --> Router
-    Pages -. assets relativos .-> Assets[assets/]
+    Pages -. assets relativos .-> Assets[assets]
 ```
 
 - O **frontend não acessa o banco**. Tudo passa pela API.
