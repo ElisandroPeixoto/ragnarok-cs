@@ -12,6 +12,12 @@ from typing import cast
 
 SLOT_SIZE = 64
 SLOT_GAP = 6
+PANEL_PADDING = 20
+PANEL_GAP = 16
+BAG_WIDTH = BAG_COLUMNS * SLOT_SIZE + (BAG_COLUMNS - 1) * SLOT_GAP + 2 * PANEL_PADDING
+# the equipment panel takes 80% of the width left beside the bag
+EQUIPMENT_WIDTH = round((CONTENT_WIDTH - BAG_WIDTH - PANEL_GAP) * 0.8)
+SPRITE_HEIGHT = 190   # same size as the character on the profile (profile_page.character_card)
 DRAG_GROUP = "inventory"
 
 # equipment slots around the sprite: (slot, label). The character faces the viewer, so the right hand is on the left
@@ -88,7 +94,7 @@ def equip_slot(slot: str, label: str, by_slot: dict, on_drop):
 
 
 def panel(content: ft.Control, **kwargs):
-    return ft.Container(bgcolor=t.CARD_BG, border=ft.Border.all(1, t.CARD_BORDER), border_radius=6, padding=20,
+    return ft.Container(bgcolor=t.CARD_BG, border=ft.Border.all(1, t.CARD_BORDER), border_radius=6, padding=PANEL_PADDING,
                         content=content, **kwargs)
 
 
@@ -106,14 +112,14 @@ def equipment_panel(character: dict, by_slot: dict, on_drop):
     def side(slots):
         return ft.Column(spacing=14, controls=[equip_slot(slot, label, by_slot, on_drop) for slot, label in slots])
 
-    return panel(expand=True,
+    return panel(width=EQUIPMENT_WIDTH,
                  content=ft.Column(horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=16, controls=[
                      ft.Text("Equipment", size=16, color=t.TITLE_TEXT, font_family="Cinzel"),
                      ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             controls=[side(EQUIP_LEFT),
                                       ft.Container(width=200, alignment=ft.Alignment.CENTER,
-                                                   content=job_sprite(character["job"], height=220)),
+                                                   content=job_sprite(character["job"], height=SPRITE_HEIGHT)),
                                       side(EQUIP_RIGHT)]),
                  ]))
 
@@ -172,7 +178,7 @@ def inventory_page():
     body: list[ft.Control] = [header]
     if error:
         body.append(ft.Text(error, color=t.DAMAGE_TEXT, font_family="Cinzel"))
-    body.append(ft.Row(spacing=16, vertical_alignment=ft.CrossAxisAlignment.START,
+    body.append(ft.Row(spacing=PANEL_GAP, vertical_alignment=ft.CrossAxisAlignment.START,
                        controls=[bag_panel(by_slot, drop), equipment_panel(character, by_slot, drop)]))
 
     # same frame as the profile: maximum width, centered; narrower windows shrink it
