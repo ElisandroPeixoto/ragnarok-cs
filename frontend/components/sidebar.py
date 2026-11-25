@@ -40,7 +40,8 @@ def sidebar(collapsed: bool, on_toggle):
                           controls=[
                               sidebar_item("icons/profile.png", "Profile", collapsed=collapsed, on_click=lambda e: ft.context.page.navigate("/profile_page")),
                               sidebar_item("icons/quests.png", "Quests", collapsed=collapsed),
-                              sidebar_item("icons/inventory.png", "Inventory", collapsed=collapsed),
+                              sidebar_item("icons/inventory.png", "Inventory", collapsed=collapsed,
+                                           on_click=lambda e: ft.context.page.navigate("/inventory")),
                               sidebar_item("icons/map.png", "World Map", collapsed=collapsed),
                               sidebar_item("icons/instances.png", "Instances", collapsed=collapsed),
                               sidebar_item("icons/wiki.png", "Wiki", collapsed=collapsed),

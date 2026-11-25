@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.character_model import CharacterModel
 from models.maps_model import MapModel
+from models.character_item_model import CharacterItemModel
+from core.inventory_rules import STARTER_ITEMS, bag_slot
+from sqlalchemy import delete
 from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaBattleResult, BattleResultResponse
 from models.monsters_model import MonsterModel
 from core.exp_rule import exp_gain, exp_after_death
@@ -24,6 +27,9 @@ async def post_character(character: CharacterSchemaCreate, db: AsyncSession = De
     )
 
     db.add(new_character)
+    await db.flush()
+    for index, (item_id, amount) in enumerate(STARTER_ITEMS):
+        db.add(CharacterItemModel(character_id=new_character.id, item_id=item_id, slot=bag_slot(index), amount=amount))
     await db.commit()
     await db.refresh(new_character)
 
@@ -67,6 +73,7 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
     if character is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
 
+    await db.execute(delete(CharacterItemModel).where(CharacterItemModel.character_id == character_id))
     await db.delete(character)
     await db.commit()
 

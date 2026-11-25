@@ -28,6 +28,8 @@ pages/*.py  ──►  services/<domínio>_service.py  ──►  services/api_c
 | | | `create_character(name)` | `POST /api/v1/characters/` |
 | | | `change_place(character_id, map_id)` | `PATCH /api/v1/characters/{character_id}/place` |
 | | | `delete_character(character_id)` | `DELETE /api/v1/characters/{character_id}` |
+| `InventoryService` | `services/inventory_service.py` | `get_inventory(character_id)` | `GET /api/v1/characters/{character_id}/inventory` |
+| | | `move_item(character_id, from_slot, to_slot)` | `POST /api/v1/characters/{character_id}/inventory/move` |
 | `MapService` | `services/map_service.py` | `get_map(map_id)` | `GET /api/v1/maps/{map_id}` |
 | | | `get_map_ids_sync()` | `GET /api/v1/maps/` (síncrono, ver abaixo) |
 | `BattleService` | `services/battle_service.py` | `start_battle(character_id, map_id)` | `POST /api/v1/battles/` |
@@ -110,6 +112,7 @@ sequenceDiagram
 | `/char_selection` | `character_selection` | `pages/char_selection.py` |
 | `/char_creation` | `character_creation` | `pages/char_creation.py` |
 | `/profile_page` | `profile_page` | `pages/profile_page.py` |
+| `/inventory` | `inventory_page` | `pages/inventory_page.py` (botão Inventory do sidebar, ver [Inventário](inventario.md)) |
 | `/battle` | `battle_page` | `pages/battle_page.py` |
 | `/map/<map_id>` | `build_map_page(map_id)` | `pages/map_screen.py` (uma rota por mapa) |
 

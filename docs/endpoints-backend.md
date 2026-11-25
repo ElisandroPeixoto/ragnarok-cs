@@ -31,7 +31,7 @@ Corpo (`CharacterSchemaCreate`):
 { "name": "Midrway" }
 ```
 
-Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Island` (`novice_academy`).
+Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Island` (`novice_academy`). O personagem também recebe os itens iniciais (`STARTER_ITEMS`, ver [Inventário](inventario.md)) nos primeiros slots da bolsa.
 
 Resposta (`CharacterSchemaResponse`):
 ```json
@@ -71,6 +71,32 @@ Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `
 Função: `patch_character_place`. Status: **200**, ou **404** (`Character not found` / `Map not found`).
 
 Corpo: `{ "map_id": "training_field_1" }`. Grava `current_map` (nome do mapa) e `current_map_id` do personagem e devolve o `CharacterSchemaResponse` atualizado. O frontend chama esta rota ao trocar de mapa pela seta de uma rota (seção "Routes").
+
+---
+
+## Inventário: `api/v1/endpoints/inventory.py`
+
+Montado com o prefixo `/characters`, ao lado das rotas de personagem. Regras dos slots em [Inventário](inventario.md).
+
+### `GET /api/v1/characters/{character_id}/inventory`: itens do personagem
+
+Função: `get_inventory`. Status: **200** ou **404** (`Character not found`).
+
+Resposta: lista de `InventoryEntrySchema`, um por item, na bolsa ou equipado:
+```json
+[ { "id": 1, "slot": "right_hand", "amount": 1,
+    "item": { "id": "knife", "name": "Knife", "kind": "equipment", "equip_type": "weapon", "icon": null, "description": "…" } },
+  { "id": 3, "slot": "bag_2", "amount": 5,
+    "item": { "id": "red_potion", "name": "Red Potion", "kind": "usable", "equip_type": null, "icon": null, "description": "…" } } ]
+```
+
+Slots vazios não aparecem. `slot` é `bag_0`…`bag_39` ou um slot de equipamento (`head`, `armor`, `right_hand`, `left_hand`, `garment`, `shoes`, `accessory_1`, `accessory_2`).
+
+### `POST /api/v1/characters/{character_id}/inventory/move`: mover um item
+
+Função: `move_item`. Status: **200**, **404** (`Character not found` / `No item in that slot`) ou **422** (`Invalid slot` / `Item does not fit that slot`).
+
+Corpo (`InventoryMoveSchema`): `{ "from_slot": "bag_0", "to_slot": "right_hand" }`. O item de `from_slot` vai para `to_slot`; se `to_slot` já tiver um item, os dois trocam. Um slot de equipamento só aceita o `equip_type` certo, e isso vale para os dois lados da troca. Resposta: o inventário inteiro, já salvo (mesmo formato do `GET`).
 
 ---
 
@@ -211,11 +237,13 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | DELETE | `/api/v1/characters/{character_id}` | `delete_character` | 204 | 404 |
 | POST | `/api/v1/characters/{character_id}/battle-result` | `post_battle_result` | 200 | 404, 422 |
 | PATCH | `/api/v1/characters/{character_id}/place` | `patch_character_place` | 200 | 404, 422 |
+| GET | `/api/v1/characters/{character_id}/inventory` | `get_inventory` | 200 | 404 |
+| POST | `/api/v1/characters/{character_id}/inventory/move` | `move_item` | 200 | 404, 422 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-A única rota de atualização de um personagem é `PATCH /api/v1/characters/{character_id}/place` (a EXP muda só pelo `battle-result`); a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo). Não existem outras.
+A única rota de atualização de um personagem é `PATCH /api/v1/characters/{character_id}/place` (a EXP muda só pelo `battle-result`); a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo; apaga também os itens do personagem). Os itens mudam de lugar só por `inventory/move`. Não existem outras.
 
 ## Como adicionar um endpoint
 

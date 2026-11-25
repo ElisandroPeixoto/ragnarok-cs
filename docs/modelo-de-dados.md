@@ -7,6 +7,8 @@ O banco é um SQLite (`backend/ragnarokcs.db`, ignorado pelo git) acessado com S
 ```mermaid
 erDiagram
     characters }o--|| jobs : "job → jobs.name"
+    characters ||--o{ character_items : ""
+    items ||--o{ character_items : ""
     jobs ||--o{ job_skills : ""
     skills ||--o{ job_skills : ""
     monsters ||--o{ monster_skills : ""
@@ -36,6 +38,31 @@ erDiagram
 | `zeny` | Numeric(10, 2) | 0.00 | |
 | `current_map` | String | `"Novice Island"` | nome do mapa (texto duplicado) |
 | `current_map_id` | String | `"novice_academy"` | id do mapa; não é FK |
+
+### `items`: `ItemModel` (`models/items_model.py`)
+
+Catálogo de itens do jogo (ver [Inventário](inventario.md)).
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | String(64) PK | ex.: `knife` |
+| `name` | String(255) | |
+| `kind` | String(30) | `equipment`, `usable` ou `etc` |
+| `equip_type` | String(30), nulo | `head`, `armor`, `weapon`, `shield`, `garment`, `shoes`, `accessory`; nulo = não equipável |
+| `icon` | String, nulo | caminho em `assets/`; nulo = a tela usa um ícone genérico do tipo |
+| `description` | String | aparece ao passar o mouse sobre o item |
+
+### `character_items`: `CharacterItemModel` (`models/character_item_model.py`)
+
+Itens que cada personagem carrega. Único por (`character_id`, `slot`).
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | Integer PK | |
+| `character_id` | Integer, FK `characters.id` | apagado junto com o personagem |
+| `item_id` | String(64), FK `items.id` | |
+| `slot` | String(30) | `bag_0`…`bag_39` ou um slot de equipamento (`head`, `armor`, `right_hand`, `left_hand`, `garment`, `shoes`, `accessory_1`, `accessory_2`) |
+| `amount` | Integer | quantidade da pilha (1 para equipamentos) |
 
 ### `jobs`: `JobModel` (`models/jobs_model.py`)
 
@@ -140,6 +167,7 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 
 | Dicionário | Conteúdo atual |
 |---|---|
+| `ITEMS` | `knife` (weapon), `cotton_shirt` (armor), `red_potion` (usable) |
 | `SKILLS` | `Basic Attack` (1 AP, 10 de dano, alcance 1) |
 | `JOBS` | `Novice` (sheet `novice`, 5 AP, skill `Basic Attack`) |
 | `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (50 HP, 2 AP, `Basic Attack`, IA `approach_and_attack`) |
@@ -148,12 +176,14 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 Ordem de execução de `seed()`:
 
 1. Cria as tabelas que não existem (`create_all`).
-2. **Skills**: cria ou atualiza por nome (upsert).
-3. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
-4. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
-5. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, `town_image`, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
-6. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
-7. **Conexões**: cria as que ainda não existem.
+2. **Itens**: cria ou atualiza por id (upsert).
+3. **Skills**: cria ou atualiza por nome (upsert).
+4. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
+5. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
+6. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, `town_image`, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
+7. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
+8. **Conexões**: cria as que ainda não existem.
+9. **Personagens**: o nível segue a EXP total, o nome do mapa atual é sincronizado, e quem ainda não tem nenhum item recebe os itens iniciais (`STARTER_ITEMS`).
 
 O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 

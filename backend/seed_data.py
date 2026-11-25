@@ -14,6 +14,9 @@ from models.jobs_model import JobModel
 from models.job_skill_model import JobSkillModel
 from models.monster_skill_model import MonsterSkillModel
 from models.character_model import CharacterModel
+from models.items_model import ItemModel
+from models.character_item_model import CharacterItemModel
+from core.inventory_rules import STARTER_ITEMS, bag_slot
 from core.level_progression import MAX_EXP, level_for_exp
 
 
@@ -32,6 +35,16 @@ JOBS = {
         "max_ap": 5, "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
+}
+
+# item catalogue; "icon" is a path under assets/ (None = the inventory draws a generic icon for the kind)
+ITEMS = {
+    "knife": {"name": "Knife", "kind": "equipment", "equip_type": "weapon", "icon": None,
+              "description": "A small, sharp knife. Every Novice starts with one."},
+    "cotton_shirt": {"name": "Cotton Shirt", "kind": "equipment", "equip_type": "armor", "icon": None,
+                     "description": "A plain shirt made of cotton."},
+    "red_potion": {"name": "Red Potion", "kind": "usable", "equip_type": None, "icon": None,
+                   "description": "A potion made from red herbs. Restores a little HP."},
 }
 
 # "sheet" is the folder in assets/sprites: used in battle and as the monster's picture on maps
@@ -161,6 +174,15 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE npcs ADD COLUMN greeting TEXT NOT NULL DEFAULT ''")
 
     async with Session() as db:
+        # 0) items
+        for item_id, data in ITEMS.items():
+            item = await db.get(ItemModel, item_id)
+            if item is None:
+                item = ItemModel(id=item_id)
+                db.add(item)
+            upsert(item, data)
+        await db.flush()
+
         # 1) skills
         skill_ids = {}
         for name, data in SKILLS.items():
@@ -248,9 +270,16 @@ async def seed() -> None:
             character.current_map = map_names.get(character.current_map_id, character.current_map)
             character.exp = min(character.exp, MAX_EXP)
             character.level = level_for_exp(character.exp)
+            # characters created before the inventory existed get the starter items once (empty inventory only)
+            has_items = (await db.execute(select(CharacterItemModel.id)
+                                          .where(CharacterItemModel.character_id == character.id).limit(1))).first()
+            if has_items is None:
+                for index, (item_id, amount) in enumerate(STARTER_ITEMS):
+                    db.add(CharacterItemModel(character_id=character.id, item_id=item_id, slot=bag_slot(index),
+                                              amount=amount))
 
         await db.commit()
-    print("Skills, jobs, monsters and maps seeded.")
+    print("Items, skills, jobs, monsters and maps seeded.")
 
 
 if __name__ == "__main__":

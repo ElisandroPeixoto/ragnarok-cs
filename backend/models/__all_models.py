@@ -9,3 +9,5 @@ from models.skills_model import SkillModel
 from models.jobs_model import JobModel
 from models.job_skill_model import JobSkillModel
 from models.monster_skill_model import MonsterSkillModel
+from models.items_model import ItemModel
+from models.character_item_model import CharacterItemModel

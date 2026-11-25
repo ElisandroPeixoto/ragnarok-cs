@@ -14,6 +14,7 @@ Ragnarok Chaos Saga é um RPG de desktop com tema de Ragnarok Online. O projeto 
 | [Endpoints do backend](endpoints-backend.md) | Cada rota da API, parâmetros, respostas e erros |
 | [Modelo de dados](modelo-de-dados.md) | Tabelas, relacionamentos, `seed_data.py`, como mudar o schema |
 | [Criação e seleção de personagens](personagens.md) | Criar, listar e escolher personagens; perfil; o que ainda falta |
+| [Inventário](inventario.md) | Tela Inventory: bolsa 8×5, slots de equipamento, arrastar itens, itens iniciais |
 | [Mapas e navegação](mapas-e-navegacao.md) | Rotas de mapa, tela de mapa, botão Hunt, navegação entre mapas |
 | [Sistema de combate](sistema-de-combate.md) | Como a batalha funciona hoje: estado, turnos, ações, IA, tabuleiro |
 | [Progressão de level](progressao-de-level.md) | EXP necessária por nível (1 a 99), barra de EXP e como o nível sobe |
@@ -24,6 +25,6 @@ Ragnarok Chaos Saga é um RPG de desktop com tema de Ragnarok Online. O projeto 
 ## Resumo em uma frase por camada
 
 - **Dados**: definidos em `backend/seed_data.py` e gravados em `backend/ragnarokcs.db`. Não há painel de administração nem migrações.
-- **API**: `/api/v1/characters`, `/api/v1/maps` e `/api/v1/battles` na porta **8001**.
+- **API**: `/api/v1/characters` (inclui o inventário), `/api/v1/maps` e `/api/v1/battles` na porta **8001**.
 - **App**: telas em `frontend/pages/`, peças visuais em `frontend/components/`, lógica e chamadas HTTP em `frontend/services/`.
 - **Batalha**: o backend monta o encontro (herói + monstro), e o frontend roda o combate inteiro localmente.
