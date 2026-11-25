@@ -4,8 +4,8 @@ A tela **Inventory** (`/inventory`) mostra o que o personagem carrega. Abre pelo
 
 ## Layout
 
-- No topo, à esquerda, o título "Inventory"; à direita, o zeny.
-- **Esquerda: a bolsa.** 8 linhas × 5 colunas = 40 slots, numerados da esquerda para a direita, de cima para baixo (`bag_0` é o canto superior esquerdo, `bag_39` o inferior direito).
+- No topo, à esquerda, o título "Inventory".
+- **Esquerda: a bolsa.** 8 linhas × 5 colunas = 40 slots, numerados da esquerda para a direita, de cima para baixo (`bag_0` é o canto superior esquerdo, `bag_39` o inferior direito). Abaixo dos slots, no canto inferior direito, o zeny do personagem: só o ícone e o valor, sem a moldura do badge (`zeny_amount`).
 - **Direita: os equipamentos.** O sprite do personagem de pé, de frente (clip `stand_s`, o mesmo do perfil), com 4 slots de cada lado:
 
 | Lado esquerdo | Lado direito |

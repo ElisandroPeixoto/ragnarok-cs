@@ -1,7 +1,7 @@
 import flet as ft
 import themes as t
 from components.sidebar import sidebar
-from components.zeny_badge import zeny_badge
+from components.zeny_badge import zeny_amount
 from components.job_sprite import job_sprite
 from services.session_state import get_current_character
 from services.api_client import ApiError
@@ -98,13 +98,17 @@ def panel(content: ft.Control, **kwargs):
                         content=content, **kwargs)
 
 
-def bag_panel(by_slot: dict, on_drop):
-    """The bag: BAG_ROWS x BAG_COLUMNS slots, numbered left to right, top to bottom (bag_0 is the top left)"""
+def bag_panel(by_slot: dict, on_drop, zeny):
+    """The bag: BAG_ROWS x BAG_COLUMNS slots, numbered left to right, top to bottom (bag_0 is the top left),
+    with the character's zeny under its bottom right corner"""
     rows = []
     for row in range(BAG_ROWS):
         slots = [bag_slot(row * BAG_COLUMNS + column) for column in range(BAG_COLUMNS)]
         rows.append(ft.Row(spacing=SLOT_GAP, tight=True,
                            controls=[item_slot(slot, by_slot.get(slot), on_drop) for slot in slots]))
+    # fixed width (the grid's): the bag sits in a Row, so it has no width of its own to align against
+    rows.append(ft.Container(width=BAG_WIDTH - 2 * PANEL_PADDING, alignment=ft.Alignment.CENTER_RIGHT,
+                             padding=ft.Padding.only(top=6), content=zeny_amount(zeny)))
     return panel(ft.Column(spacing=SLOT_GAP, tight=True, controls=rows))
 
 
@@ -170,16 +174,13 @@ def inventory_page():
 
     by_slot = {entry["slot"]: entry for entry in entries}
 
-    header = ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[ft.Text("Inventory", size=28, font_family="Cinzel", color=t.TITLE_TEXT,
-                                      weight=ft.FontWeight.BOLD),
-                              zeny_badge(character["zeny"])])
+    header = ft.Text("Inventory", size=28, font_family="Cinzel", color=t.TITLE_TEXT, weight=ft.FontWeight.BOLD)
 
     body: list[ft.Control] = [header]
     if error:
         body.append(ft.Text(error, color=t.DAMAGE_TEXT, font_family="Cinzel"))
     body.append(ft.Row(spacing=PANEL_GAP, vertical_alignment=ft.CrossAxisAlignment.START,
-                       controls=[bag_panel(by_slot, drop), equipment_panel(character, by_slot, drop)]))
+                       controls=[bag_panel(by_slot, drop, character["zeny"]), equipment_panel(character, by_slot, drop)]))
 
     # same frame as the profile: maximum width, centered; narrower windows shrink it
     main_content = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO,
