@@ -196,6 +196,26 @@ O tile sob o mouse fica num dict global do módulo, `_hover_state`, em `battle_b
 - Os três painéis de baixo usam o mesmo cabeçalho (`components/panel_header.py`: ícone + título + uma nota à direita), inspirado na barra de opções de referência; ficaram de fora do que não existe no projeto (ex.: a skill "Fingir Morto", o cronômetro com horário e o painel de cura).
 - `CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH` (1446 px) também limita a largura das telas de mapa.
 
+#### Celular na vertical
+
+Quando a página tem menos de `MOBILE_MAX_WIDTH` (760 px) de largura, como no navegador de um celular em pé, a batalha troca para uma coluna só, sem o sidebar e com rolagem vertical:
+
+```
+┌──────────────────────────┐
+│ battle_board (escalado)  │  largura da tela; altura proporcional (1100 × 700)
+│ turn_panel               │  Round, Time, Turn End, Leave
+│ skills_panel             │
+│ units_panel              │  rolagem própria
+│ battle_log_panel         │
+└──────────────────────────┘
+```
+
+- O tabuleiro continua com 1100 × 700 por dentro; `battle_board(..., scale)` só o encolhe com uma transformação (`ft.Scale`, a partir do canto superior esquerdo). O Flutter converte o toque de volta para as coordenadas do tabuleiro, então tocar num tile anda até ele e, com uma skill selecionada, tocar num monstro ataca, como no clique. Num celular de 375 px a escala fica em torno de 0,33.
+- No celular não existe hover: a prévia do caminho não aparece antes do toque.
+- A largura vem de `page.width` e é observada por `page.on_resize` (registrado ao montar a batalha e removido ao sair). Girar o celular ou redimensionar a janela troca o layout na hora.
+- Os painéis recebem a largura da tela e alturas próprias (`MOBILE_TURN_HEIGHT`, `MOBILE_SKILLS_HEIGHT`, `MOBILE_UNITS_HEIGHT`, `MOBILE_LOG_HEIGHT`, em `pages/battle_page.py`).
+- Só a tela de batalha tem esse layout; as outras telas continuam pensadas para desktop.
+
 ### Desenho do tabuleiro (`components/battle_board.py`)
 
 Quatro camadas num `ft.Stack`, dentro de um `ft.GestureDetector`:

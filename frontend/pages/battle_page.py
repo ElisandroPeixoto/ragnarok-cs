@@ -28,6 +28,15 @@ BOTTOM_HEIGHT = 200
 GAP = 16
 CONTENT_WIDTH = LEFT_WIDTH + GAP + BOARD_WIDTH
 
+# phone in portrait: below this page width the battle uses one column, with the board scaled to the screen width
+MOBILE_MAX_WIDTH = 760
+MOBILE_PADDING = 8
+MOBILE_GAP = 8
+MOBILE_TURN_HEIGHT = 160
+MOBILE_SKILLS_HEIGHT = 150
+MOBILE_UNITS_HEIGHT = 260
+MOBILE_LOG_HEIGHT = 180
+
 END_DELAY = 2.0               # seconds between the last hit and going back to the map
 ENEMY_ACTION_DELAY = 0.7      # seconds between the monster's actions (so the player can follow them)
 TICK_INTERVAL = 0.25          # the loop wakes up 4x per second; the turn clock ticks once per second
@@ -53,6 +62,24 @@ def battle_screen(setup: dict):
     _, set_tick = ft.use_state(0)
     selected_skill, set_selected_skill = ft.use_state(None)
     collapsed, set_collapsed = ft.use_state(True)
+    page_width, set_page_width = ft.use_state(ft.context.page.width or 0)
+
+    def watch_page_width():
+        """Re-renders when the window (or the phone's browser) changes size or turns, to pick the layout."""
+        page = ft.context.page
+
+        def on_resize(e):
+            set_page_width(e.width)
+
+        page.on_resize = on_resize
+        set_page_width(page.width or 0)
+
+        def cleanup():
+            if page.on_resize is on_resize:
+                page.on_resize = None
+        return cleanup
+
+    ft.use_effect(watch_page_width, [])
 
     def refresh(clear_skill: bool = False):
         """Call after ANY state change: re-renders the page."""
@@ -177,7 +204,35 @@ def battle_screen(setup: dict):
         state.closed = True   # leaving costs and pays nothing: no result is reported
         navigate_back_from_battle()
 
+    def mobile_layout(width: float):
+        """Portrait phone: no sidebar; the board fills the width, then Turn, Skills, Units and Log stacked."""
+        content_width = width - 2 * MOBILE_PADDING
+        scale = min(1.0, content_width / BOARD_WIDTH)
+        return ft.Container(
+            expand=True,
+            bgcolor=t.PAGE_BACKGROUND_COLOR,
+            content=ft.Column(
+                expand=True,
+                scroll=ft.ScrollMode.AUTO,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[ft.Container(
+                    width=content_width,
+                    padding=ft.Padding.symmetric(vertical=MOBILE_PADDING),
+                    content=ft.Column(spacing=MOBILE_GAP, controls=[
+                        battle_board(state, state.version, selected_skill, refresh, scale),
+                        turn_panel(state, handle_end_turn, handle_leave, content_width, MOBILE_TURN_HEIGHT),
+                        skills_panel(state, selected_skill, handle_select_skill, content_width, MOBILE_SKILLS_HEIGHT),
+                        units_panel(state, content_width, MOBILE_UNITS_HEIGHT),
+                        battle_log_panel(state.log.entries, content_width, MOBILE_LOG_HEIGHT),
+                    ]),
+                )],
+            ),
+        )
+
     # ---------- layout ----------
+    if page_width and page_width < MOBILE_MAX_WIDTH:
+        return mobile_layout(page_width)
+
     log_width = CONTENT_WIDTH - LEFT_WIDTH - RIGHT_PANEL_WIDTH - 2 * GAP
 
     top_row = ft.Row(

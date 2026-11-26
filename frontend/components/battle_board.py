@@ -61,7 +61,9 @@ def get_pointer_position(event) -> tuple[float, float]:
 # `version` only exists so the page can force this component to re-render.
 # ============================================================
 @ft.component
-def battle_board(state: BattleState, version: int, selected_skill: str | None, on_change):
+def battle_board(state: BattleState, version: int, selected_skill: str | None, on_change, scale: float = 1.0):
+    """scale < 1 shrinks the whole stage to fit narrow screens (phones in portrait). The stage keeps its fixed
+    pixel size inside: the scale is a transform, and Flutter maps taps back to stage coordinates."""
     board = state.board
     units = state.units
     _, set_render_tick = ft.use_state(0)
@@ -189,6 +191,19 @@ def battle_board(state: BattleState, version: int, selected_skill: str | None, o
         on_hover=handle_hover,
         on_exit=handle_exit,
     )
+
+    if scale != 1.0:
+        # the layout size shrinks with the scale; the stage inside keeps its own size, scaled from its top left
+        scaled = ft.Container(left=0, top=0, width=board.width, height=board.height,
+                              scale=ft.Scale(scale=scale, alignment=ft.Alignment.TOP_LEFT),
+                              content=gesture_detector)
+        return ft.Container(
+            width=board.width * scale, height=board.height * scale,
+            border=ft.Border.all(1, t.BOARD_BORDER_COLOR),
+            border_radius=6,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+            content=ft.Stack(width=board.width * scale, height=board.height * scale, controls=[scaled]),
+        )
 
     return ft.Container(
         border=ft.Border.all(1, t.BOARD_BORDER_COLOR),
