@@ -37,12 +37,12 @@ Resposta (`CharacterSchemaResponse`):
 ```json
 {
   "id": 1, "name": "Midrway", "job": "Novice", "level": 1, "exp": 0, "exp_progress": 0, "exp_needed": 100,
-  "hp": 50, "max_hp": 50, "max_sp": 10, "zeny": "0.00",
+  "hp": 50, "max_hp": 50, "max_sp": 10, "zeny": 0,
   "current_map": "Novice Island", "current_map_id": "novice_academy"
 }
 ```
 
-> `zeny` é `Numeric(10, 2)` no banco e `Decimal` no schema, então chega como texto (`"0.00"`).
+> `zeny` é um número inteiro (`Integer` no banco, `int` no schema), sem casas decimais. Nas telas aparece com ponto como separador de milhar (`1.234.567z`).
 
 Não há validação de nome vazio, tamanho ou duplicidade no backend. O frontend só impede nome em branco.
 

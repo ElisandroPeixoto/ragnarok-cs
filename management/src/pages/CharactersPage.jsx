@@ -4,15 +4,11 @@ import { UsersIcon } from "../components/Icons.jsx";
 import { scrollToDetails } from "../components/scrollToDetails.js";
 import SpritePreview, { defaultClip } from "../components/SpritePreview.jsx";
 import { NumberField, SaveBar, SelectField, StatRow, TextField, changedFields } from "../components/Fields.jsx";
-import { api } from "../api.js";
+import { api, formatZeny } from "../api.js";
 
 const EDITABLE = ["name", "job", "level", "zeny", "hp", "max_hp", "max_sp", "current_map_id"];
 
-function draftOf(character) {
-  const draft = Object.fromEntries(EDITABLE.map((key) => [key, character[key]]));
-  draft.zeny = Number(character.zeny);   // the API sends zeny as a decimal string
-  return draft;
-}
+const draftOf = (character) => Object.fromEntries(EDITABLE.map((key) => [key, character[key]]));
 
 // Characters: the list on the left, the selected character's sheet on the right
 export default function CharactersPage({ characters, setCharacters, options, sheets, jobs, notify }) {
@@ -44,7 +40,7 @@ export default function CharactersPage({ characters, setCharacters, options, she
                 <td><strong>{character.name}</strong><span className="muted"> #{character.id}</span></td>
                 <td>{character.job}</td>
                 <td>{character.level}</td>
-                <td>{Number(character.zeny).toLocaleString()}z</td>
+                <td>{formatZeny(character.zeny)}</td>
                 <td>{character.current_map}</td>
               </tr>
             ))}
@@ -100,6 +96,7 @@ function CharacterDetails({ character, options, sheets, jobs, notify, onSaved })
           <StatRow label="Level" value={character.level} />
           <StatRow label="EXP in level" value={`${character.exp_progress} / ${character.exp_needed || "MAX"}`} />
           <StatRow label="HP" value={`${character.hp} / ${character.max_hp}`} />
+          <StatRow label="Zeny" value={formatZeny(character.zeny)} />
           <StatRow label="Map" value={character.current_map} />
         </div>
       </div>
@@ -115,7 +112,8 @@ function CharacterDetails({ character, options, sheets, jobs, notify, onSaved })
       <Section title="Progress">
         <NumberField label="Level" hint="sets the EXP to the start of the level" min={1} max={99}
                      value={draft.level} onChange={set("level")} />
-        <NumberField label="Zeny" value={draft.zeny} onChange={set("zeny")} />
+        <NumberField label="Zeny" hint="whole number" value={draft.zeny}
+                     onChange={(value) => set("zeny")(value === "" ? "" : Math.trunc(value))} />
       </Section>
 
       <Section title="Status">

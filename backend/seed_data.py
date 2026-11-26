@@ -187,6 +187,9 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE npcs ADD COLUMN place_id INTEGER REFERENCES map_places(id)")
         if "greeting" not in npc_columns:
             await conn.exec_driver_sql("ALTER TABLE npcs ADD COLUMN greeting TEXT NOT NULL DEFAULT ''")
+        # zeny used to be Numeric(10, 2): round any value with decimals to a whole number
+        await conn.exec_driver_sql("UPDATE characters SET zeny = CAST(ROUND(zeny) AS INTEGER) "
+                                   "WHERE typeof(zeny) != 'integer'")
 
     async with Session() as db:
         # 0) items (the ones no longer in ITEMS are removed, from the bags too)

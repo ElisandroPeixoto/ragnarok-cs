@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, computed_field
 from core.level_progression import exp_progress, exp_to_next
 from core.battle_rules import MAX_MONSTERS
-from decimal import Decimal
 
 
 class CharacterSchemaBase(BaseModel):
@@ -30,7 +29,7 @@ class CharacterSchemaResponse(CharacterSchemaBase):
     hp: int
     current_map: str
     current_map_id: str
-    zeny: Decimal
+    zeny: int
     max_hp: int
     max_sp: int
 

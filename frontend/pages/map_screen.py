@@ -13,6 +13,7 @@ from services.map_router_manager import map_route, navigate_to_battle, change_pl
 from services.battle_service import BattleService
 from services import map_zoom
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
+from components.zeny_badge import format_zeny
 
 
 # Left column, fixed size in every map: the title card on top, the town map below it and, in maps with monsters, the
@@ -90,7 +91,7 @@ def hunt_button(map_id: str, character: dict):
 
 def header(character: dict, zone: str):
     """Character avatar, name and zeny, job/level and HP on the left; the map's zone on the right.
-    The API sends zeny as a decimal string (e.g. "0.00"), shown here as a whole number."""
+    Zeny is a whole number, shown with a dot as the thousands separator (format_zeny)."""
     badge = badge_selector(character["job"])
     avatar = ft.Container(
         width=40, height=40, border_radius=4, bgcolor=t.PLACEHOLDER_BACKGROUND_COLOR,
@@ -102,7 +103,7 @@ def header(character: dict, zone: str):
         ft.Column(spacing=0, controls=[
             cinzel(character["name"], 15),
             ft.Row(spacing=4, controls=[ft.Image(src="icons/zeny.png", width=11, height=12),
-                                        cinzel(f"{int(float(character.get('zeny') or 0))} z", 11, t.MAP_LEVEL_TEXT)]),
+                                        cinzel(format_zeny(character.get("zeny")), 11, t.MAP_LEVEL_TEXT)]),
         ]),
     ])
     stats = [cinzel(f"{character['job']} - Lv: {character.get('level', 1)}", 11),

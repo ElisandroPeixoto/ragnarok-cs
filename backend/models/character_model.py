@@ -1,6 +1,5 @@
 from core.config import DBBaseModel
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
-from decimal import Decimal
+from sqlalchemy import Column, Integer, String, ForeignKey
 
 
 class CharacterModel(DBBaseModel):
@@ -15,6 +14,6 @@ class CharacterModel(DBBaseModel):
     hp: int = Column(Integer, nullable=False, default=50)
     current_map: str = Column(String, default="Novice Island", nullable=False)
     current_map_id: str = Column(String, default="novice_academy", nullable=False)
-    zeny: int = Column(Numeric(10, 2), nullable=False, default=Decimal("0.00"))
+    zeny: int = Column(Integer, nullable=False, default=0)   # whole zeny, no decimals
     max_hp: int = Column(Integer, nullable=False, default=50)
     max_sp: int = Column(Integer, nullable=False, default=10)

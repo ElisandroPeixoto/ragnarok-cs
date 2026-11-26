@@ -38,5 +38,8 @@ export const api = {
     request("POST", `/sprites/${group}/${name}`, { sheet_png_base64: pngBase64, sheet_json: json }),
 };
 
+// Whole zeny with a dot as the thousands separator, like the game: 1234567 -> "1.234.567z"
+export const formatZeny = (zeny) => `${String(Math.trunc(Number(zeny) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}z`;
+
 // Paths stored in the database are relative to the game's assets/ folder
 export const assetUrl = (path) => (path ? `/assets/${path}` : null);

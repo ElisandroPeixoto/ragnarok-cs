@@ -37,7 +37,7 @@ erDiagram
 | `exp` | Integer | 0 | EXP **total** acumulada; o nível sai dela (ver [Progressão de level](progressao-de-level.md)) |
 | `hp` / `max_hp` | Integer | 50 / 50 | HP do herói na batalha |
 | `max_sp` | Integer | 10 | ainda não usado no jogo |
-| `zeny` | Numeric(10, 2) | 0.00 | |
+| `zeny` | Integer | 0 | inteiro, sem casas decimais; bancos antigos (`Numeric(10, 2)`) são arredondados pelo seed |
 | `current_map` | String | `"Novice Island"` | nome do mapa (texto duplicado) |
 | `current_map_id` | String | `"novice_academy"` | id do mapa; não é FK |
 

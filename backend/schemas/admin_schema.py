@@ -1,5 +1,4 @@
 """Schemas of the management (admin) API, see docs/gerenciamento.md"""
-from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, Field
 
@@ -10,7 +9,7 @@ class AdminCharacterUpdate(BaseModel):
     job: Optional[str] = None
     level: Optional[int] = Field(default=None, ge=1)
     exp: Optional[int] = Field(default=None, ge=0)
-    zeny: Optional[Decimal] = Field(default=None, ge=0)
+    zeny: Optional[int] = Field(default=None, ge=0)
     hp: Optional[int] = Field(default=None, ge=0)
     max_hp: Optional[int] = Field(default=None, ge=1)
     max_sp: Optional[int] = Field(default=None, ge=0)
