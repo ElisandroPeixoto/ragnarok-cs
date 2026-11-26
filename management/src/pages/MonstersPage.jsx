@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Window, { EmptyState, Section } from "../components/Window.jsx";
+import { MonsterIcon } from "../components/Icons.jsx";
+import { scrollToDetails } from "../components/scrollToDetails.js";
 import SpritePreview, { defaultClip } from "../components/SpritePreview.jsx";
 import { NumberField, SaveBar, SelectField, changedFields } from "../components/Fields.jsx";
 import { api, assetUrl } from "../api.js";
@@ -15,13 +17,13 @@ export default function MonstersPage({ monsters, setMonsters, items, setItems, o
 
   return (
     <div className="page-grid">
-      <Window icon="/assets/icons/instances.png" title="Monsters" subtitle="Battle data, combat mode and drops"
+      <Window icon={<MonsterIcon />} title="Monsters" subtitle="Battle data, combat mode and drops"
               actions={<span className="counter">{monsters.length}</span>}>
         <div className="card-grid">
           {monsters.map((monster) => (
             <button key={monster.id} type="button"
                     className={`card ${monster.id === selectedId ? "selected" : ""}`}
-                    onClick={() => setSelectedId(monster.id)}>
+                    onClick={() => { setSelectedId(monster.id); scrollToDetails(); }}>
               <div className="card-sprite">
                 <SpritePreview sheet={sheets[`monsters/${monster.sheet}`]} clip="idle_sw" />
               </div>
@@ -85,7 +87,7 @@ function MonsterDetails({ monster, items, options, sheets, notify, onSaved }) {
   }
 
   return (
-    <Window className="details" title="Monster Details" subtitle={monster.name}
+    <Window id="details" className="details" title="Monster Details" subtitle={monster.name}
             footer={<><span>Monster ID {monster.id}</span><span>RAGNAROK CHAOS SAGA</span></>}>
       <div className="details-hero">
         <div className="portrait large">

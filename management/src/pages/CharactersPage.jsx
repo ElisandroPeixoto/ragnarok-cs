@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Window, { EmptyState, Section } from "../components/Window.jsx";
+import { UsersIcon } from "../components/Icons.jsx";
+import { scrollToDetails } from "../components/scrollToDetails.js";
 import SpritePreview, { defaultClip } from "../components/SpritePreview.jsx";
 import { NumberField, SaveBar, SelectField, StatRow, TextField, changedFields } from "../components/Fields.jsx";
 import { api } from "../api.js";
@@ -25,7 +27,7 @@ export default function CharactersPage({ characters, setCharacters, options, she
 
   return (
     <div className="page-grid">
-      <Window icon="/assets/icons/profile.png" title="Characters" subtitle="Every character in the game"
+      <Window icon={<UsersIcon />} title="Characters" subtitle="Every character in the game"
               actions={<span className="counter">{characters.length}</span>}>
         <div className="search">
           <input placeholder="Search by name or class…" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -38,7 +40,7 @@ export default function CharactersPage({ characters, setCharacters, options, she
           <tbody>
             {visible.map((character) => (
               <tr key={character.id} className={character.id === selectedId ? "selected" : ""}
-                  onClick={() => setSelectedId(character.id)}>
+                  onClick={() => { setSelectedId(character.id); scrollToDetails(); }}>
                 <td><strong>{character.name}</strong><span className="muted"> #{character.id}</span></td>
                 <td>{character.job}</td>
                 <td>{character.level}</td>
@@ -88,7 +90,7 @@ function CharacterDetails({ character, options, sheets, jobs, notify, onSaved })
   }
 
   return (
-    <Window className="details" title="Character Details" subtitle={`Character #${character.id}`}
+    <Window id="details" className="details" title="Character Details" subtitle={`Character #${character.id}`}
             footer={<><span>Total EXP {character.exp.toLocaleString()}</span><span>RAGNAROK CHAOS SAGA</span></>}>
       <div className="details-hero">
         <div className="portrait">

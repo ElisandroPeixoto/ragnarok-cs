@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api.js";
 import Window from "./components/Window.jsx";
+import { BoxIcon, GearIcon, ImageIcon, MonsterIcon, ReloadIcon, ShieldIcon, UsersIcon } from "./components/Icons.jsx";
 import CharactersPage from "./pages/CharactersPage.jsx";
 import MonstersPage from "./pages/MonstersPage.jsx";
 import ClassesPage from "./pages/ClassesPage.jsx";
@@ -8,11 +9,11 @@ import ItemsPage from "./pages/ItemsPage.jsx";
 import SpritesPage from "./pages/SpritesPage.jsx";
 
 const PAGES = [
-  { id: "characters", label: "Characters", icon: "/assets/icons/profile.png" },
-  { id: "monsters", label: "Monsters", icon: "/assets/icons/instances.png" },
-  { id: "classes", label: "Classes", icon: "/assets/icons/change_char.png" },
-  { id: "items", label: "Items & Drops", icon: "/assets/icons/inventory.png" },
-  { id: "sprites", label: "Sprite Sheets", icon: "/assets/icons/wiki.png" },
+  { id: "characters", label: "Characters", Icon: UsersIcon },
+  { id: "monsters", label: "Monsters", Icon: MonsterIcon },
+  { id: "classes", label: "Classes", Icon: ShieldIcon },
+  { id: "items", label: "Items & Drops", Icon: BoxIcon },
+  { id: "sprites", label: "Sprite Sheets", Icon: ImageIcon },
 ];
 
 export default function App() {
@@ -76,18 +77,18 @@ export default function App() {
           <span>Game Management</span>
         </div>
         <button type="button" className="button ghost topbar-reload" onClick={load} title="Reload everything from the backend">
-          ↻ Reload
+          <ReloadIcon size={15} /> Reload
         </button>
       </header>
 
       <div className="layout">
         <aside>
-          <Window icon="/assets/icons/map.png" title="Management" subtitle="Game data">
+          <Window icon={<GearIcon />} title="Management" subtitle="Game data">
             <nav className="categories">
               {PAGES.map((entry) => (
                 <button key={entry.id} type="button" className={`category ${page === entry.id ? "active" : ""}`}
                         onClick={() => setPage(entry.id)}>
-                  <img src={entry.icon} alt="" />
+                  <entry.Icon />
                   <span>{entry.label}</span>
                   <span className="count">{counts ? counts[entry.id] : "–"}</span>
                 </button>

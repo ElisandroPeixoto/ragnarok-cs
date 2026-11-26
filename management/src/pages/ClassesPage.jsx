@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Window, { EmptyState, Section } from "../components/Window.jsx";
+import { ShieldIcon } from "../components/Icons.jsx";
+import { scrollToDetails } from "../components/scrollToDetails.js";
 import SpritePreview, { defaultClip } from "../components/SpritePreview.jsx";
 import { NumberField, SaveBar, SelectField, TextField, changedFields } from "../components/Fields.jsx";
 import { api, assetUrl } from "../api.js";
@@ -14,12 +16,12 @@ export default function ClassesPage({ jobs, setJobs, characters, options, sheets
 
   return (
     <div className="page-grid">
-      <Window icon="/assets/icons/change_char.png" title="Classes" subtitle="Jobs the characters can have"
+      <Window icon={<ShieldIcon />} title="Classes" subtitle="Jobs the characters can have"
               actions={<span className="counter">{jobs.length}</span>}>
         <div className="card-grid">
           {jobs.map((job) => (
             <button key={job.name} type="button" className={`card ${job.name === selectedName ? "selected" : ""}`}
-                    onClick={() => setSelectedName(job.name)}>
+                    onClick={() => { setSelectedName(job.name); scrollToDetails(); }}>
               <div className="card-sprite tall">
                 <SpritePreview sheet={sheets[`characters/${job.sheet}`]} clip="stand_s" />
               </div>
@@ -68,7 +70,7 @@ function ClassDetails({ job, options, sheets, notify, onSaved }) {
   }
 
   return (
-    <Window className="details" title="Class Details" subtitle={job.name}
+    <Window id="details" className="details" title="Class Details" subtitle={job.name}
             footer={<><span>Class {job.name}</span><span>RAGNAROK CHAOS SAGA</span></>}>
       <div className="details-hero">
         <div className="portrait large">

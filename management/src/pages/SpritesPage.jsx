@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Window, { EmptyState, Section } from "../components/Window.jsx";
+import { ImageIcon } from "../components/Icons.jsx";
+import { scrollToDetails } from "../components/scrollToDetails.js";
 import SpritePreview, { defaultClip } from "../components/SpritePreview.jsx";
 import { FieldRow, SelectField, StatRow } from "../components/Fields.jsx";
 import { api, assetUrl } from "../api.js";
@@ -18,7 +20,7 @@ export default function SpritesPage({ spriteList, onUploaded, monsters, jobs, no
 
   return (
     <div className="page-grid">
-      <Window icon="/assets/icons/wiki.png" title="Sprite Sheets" subtitle="assets/sprites"
+      <Window icon={<ImageIcon />} title="Sprite Sheets" subtitle="assets/sprites"
               actions={<span className="counter">{spriteList.length}</span>}>
         {Object.entries(GROUP_LABELS).map(([group, label]) => (
           <div key={group} className="group">
@@ -28,7 +30,7 @@ export default function SpritesPage({ spriteList, onUploaded, monsters, jobs, no
                 const key = `${entry.group}/${entry.name}`;
                 return (
                   <button key={key} type="button" className={`card ${key === selectedKey ? "selected" : ""}`}
-                          onClick={() => setSelectedKey(key)}>
+                          onClick={() => { setSelectedKey(key); scrollToDetails(); }}>
                     <div className={`card-sprite ${group === "characters" ? "tall" : ""}`}>
                       <SpritePreview sheet={entry.json} clip={defaultClip(entry.json)} />
                     </div>
@@ -57,7 +59,7 @@ function SheetDetails({ entry, usedBy }) {
   const [clip, setClip] = useState(defaultClip(sheet));
   const clipData = sheet.clips[clip];
   return (
-    <Window className="details" title="Sheet Details" subtitle={`${GROUP_LABELS[entry.group]} · ${entry.name}`}
+    <Window id="details" className="details" title="Sheet Details" subtitle={`${GROUP_LABELS[entry.group]} · ${entry.name}`}
             footer={<><span>{sheet.src}</span><span>RAGNAROK CHAOS SAGA</span></>}>
       <div className="details-hero">
         <div className="portrait large">

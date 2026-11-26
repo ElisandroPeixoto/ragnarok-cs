@@ -22,7 +22,7 @@ Sem o script: suba o backend (`cd backend && python main.py`) e, em `management/
 
 ## O que dá para fazer
 
-O menu à esquerda tem cinco páginas. Cada uma tem uma lista e, à direita, um painel de detalhes. Os campos alterados só são gravados no **Save**, e o **Discard** desfaz as mudanças. Um aviso no canto da tela confirma o salvamento ou mostra o erro do backend.
+A tela tem duas colunas: à esquerda, o menu principal, com um ícone simples e a contagem de cada página; à direita, maior, o conteúdo da página escolhida. Nesse conteúdo, a lista vem em cima e o painel de detalhes do que foi selecionado vem embaixo, com as seções lado a lado quando há espaço. Selecionar algo na lista rola a tela até os detalhes, se eles estiverem fora da vista. Os campos alterados só são gravados no **Save**, e o **Discard** desfaz as mudanças. Um aviso no canto da tela confirma o salvamento ou mostra o erro do backend.
 
 | Página | Lista | O que se edita |
 |---|---|---|
@@ -73,6 +73,7 @@ O backend também serve a pasta `assets/` em `/assets/...`. É assim que o paine
 | `management/src/App.jsx` | carrega tudo, menu lateral com as contagens, avisos de salvamento |
 | `management/src/pages/` | uma página por seção (Characters, Monsters, Classes, Items, Sprites) |
 | `management/src/components/Window.jsx` | a "janela" no estilo do jogo: cabeçalho com ícone, título e subtítulo, corpo e rodapé |
+| `management/src/components/Icons.jsx` | ícones de linha em SVG do menu e das janelas (pessoas, monstro, escudo, caixa, imagem, engrenagem) |
 | `management/src/components/SpritePreview.jsx` | toca um clip da sheet com CSS (`background-position`) no fps do clip |
 | `management/src/components/Fields.jsx` | campos em linhas "rótulo … valor", barra Save/Discard e `changedFields` (o PATCH leva só o que mudou) |
 | `management/src/styles.css` | tema claro, inspirado na janela de inventário e de detalhes do item do cliente do jogo |

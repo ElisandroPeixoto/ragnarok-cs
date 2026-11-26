@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Window, { EmptyState, Section } from "../components/Window.jsx";
+import { BoxIcon } from "../components/Icons.jsx";
+import { scrollToDetails } from "../components/scrollToDetails.js";
 import { NumberField, SaveBar, SelectField, StatRow, TextField, changedFields } from "../components/Fields.jsx";
 import { api, assetUrl } from "../api.js";
 
@@ -21,7 +23,7 @@ export default function ItemsPage({ items, setItems, options, notify }) {
 
   return (
     <div className="page-grid">
-      <Window icon="/assets/icons/inventory.png" title="Items" subtitle="Item catalogue and drop rates"
+      <Window icon={<BoxIcon />} title="Items" subtitle="Item catalogue and drop rates"
               actions={<span className="counter">{items.length}</span>}>
         <div className="search">
           <input placeholder="Search items…" value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -30,7 +32,7 @@ export default function ItemsPage({ items, setItems, options, notify }) {
           {visible.map((item) => (
             <button key={item.id} type="button" title={`${item.name} (${item.drop_rate}%)`}
                     className={`slot ${item.id === selectedId ? "selected" : ""}`}
-                    onClick={() => setSelectedId(item.id)}>
+                    onClick={() => { setSelectedId(item.id); scrollToDetails(); }}>
               {item.icon ? <img className="pixel" src={assetUrl(item.icon)} alt={item.name} /> : <span>?</span>}
               <span className="slot-badge">{item.drop_rate}%</span>
             </button>
@@ -73,7 +75,7 @@ function ItemDetails({ item, itemTypes, notify, onSaved }) {
   }
 
   return (
-    <Window className="details" icon={assetUrl(item.icon)} title="Item Details" subtitle={item.name}
+    <Window id="details" className="details" icon={assetUrl(item.icon)} title="Item Details" subtitle={item.name}
             footer={<><span>Item ID {item.id}</span><span>RAGNAROK CHAOS SAGA</span></>}>
       <div className="details-hero">
         <div className="portrait collection">
