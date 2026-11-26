@@ -31,7 +31,7 @@ Corpo (`CharacterSchemaCreate`):
 { "name": "Midrway" }
 ```
 
-Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Island` (`novice_academy`). O personagem também recebe os itens iniciais (`STARTER_ITEMS`, ver [Inventário](inventario.md)) nos primeiros slots da bolsa.
+Só o nome é enviado. Todo o resto vem dos `default` de `CharacterModel`: job `Novice`, level 1, exp 0, hp/max_hp 50, max_sp 10, zeny 0, mapa atual `Novice Island` (`novice_academy`). A bolsa começa vazia.
 
 Resposta (`CharacterSchemaResponse`):
 ```json
@@ -64,7 +64,9 @@ Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Wilow"] }`. `victory`
 - **Vitória**: o backend calcula o ganho de cada monstro pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem e recalcula o `level` (`core/level_progression.py`, pode subir vários).
 - **Derrota**: os nomes são ignorados; o backend tira 20% da EXP acumulada no nível atual (nunca perde nível).
 
-Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 24, "exp_lost": 0 }`. O frontend chama esta rota **uma vez**, quando a batalha termina por vitória ou derrota (o botão Leave não chama). Veja [Regra de experiência](regra-de-experiencia.md).
+Na vitória, o backend também sorteia os drops de cada monstro morto e coloca os itens na bolsa (ver [Inventário](inventario.md#drops)).
+
+Resposta: `{ "character": {…CharacterSchemaResponse…, com `exp_progress` e `exp_needed`…}, "exp_gained": 24, "exp_lost": 0, "drops": [{ "item_id": "jellopy", "name": "Jellopy", "icon": "items/jellopy/icon.png", "amount": 2 }], "drops_lost": [] }`. `drops` são os itens que foram para a bolsa; `drops_lost`, os que não couberam (bolsa cheia). Na derrota os dois vêm vazios. O frontend chama esta rota **uma vez**, quando a batalha termina por vitória ou derrota (o botão Leave não chama). Veja [Regra de experiência](regra-de-experiencia.md).
 
 ### `PATCH /api/v1/characters/{character_id}/place`: registrar mudança de local
 
@@ -84,10 +86,12 @@ Função: `get_inventory`. Status: **200** ou **404** (`Character not found`).
 
 Resposta: lista de `InventoryEntrySchema`, um por item, na bolsa ou equipado:
 ```json
-[ { "id": 1, "slot": "right_hand", "amount": 1,
-    "item": { "id": "knife", "name": "Knife", "kind": "equipment", "equip_type": "weapon", "icon": null, "description": "…" } },
-  { "id": 3, "slot": "bag_2", "amount": 5,
-    "item": { "id": "red_potion", "name": "Red Potion", "kind": "usable", "equip_type": null, "icon": null, "description": "…" } } ]
+[ { "id": 1, "slot": "bag_0", "amount": 8,
+    "item": { "id": "jellopy", "name": "Jellopy", "type": "Misc", "description": "…", "drop_rate": 70.0,
+              "icon": "items/jellopy/icon.png", "collection": "items/jellopy/collection.png" } },
+  { "id": 3, "slot": "bag_1", "amount": 2,
+    "item": { "id": "apple", "name": "Apple", "type": "Misc", "description": "…", "drop_rate": 2.0,
+              "icon": "items/apple/icon.png", "collection": "items/apple/collection.png" } } ]
 ```
 
 Slots vazios não aparecem. `slot` é `bag_0`…`bag_39` ou um slot de equipamento (`head`, `armor`, `right_hand`, `left_hand`, `garment`, `shoes`, `accessory_1`, `accessory_2`).
@@ -96,7 +100,7 @@ Slots vazios não aparecem. `slot` é `bag_0`…`bag_39` ou um slot de equipamen
 
 Função: `move_item`. Status: **200**, **404** (`Character not found` / `No item in that slot`) ou **422** (`Invalid slot` / `Item does not fit that slot`).
 
-Corpo (`InventoryMoveSchema`): `{ "from_slot": "bag_0", "to_slot": "right_hand" }`. O item de `from_slot` vai para `to_slot`; se `to_slot` já tiver um item, os dois trocam. Um slot de equipamento só aceita o `equip_type` certo, e isso vale para os dois lados da troca. Resposta: o inventário inteiro, já salvo (mesmo formato do `GET`).
+Corpo (`InventoryMoveSchema`): `{ "from_slot": "bag_0", "to_slot": "right_hand" }`. O item de `from_slot` vai para `to_slot`; se `to_slot` já tiver um item, os dois trocam. Um slot de equipamento só aceita o `type` certo (hoje, nenhum: só existem itens Misc), e isso vale para os dois lados da troca. Resposta: o inventário inteiro, já salvo (mesmo formato do `GET`).
 
 ---
 

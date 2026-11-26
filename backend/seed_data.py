@@ -16,7 +16,8 @@ from models.monster_skill_model import MonsterSkillModel
 from models.character_model import CharacterModel
 from models.items_model import ItemModel
 from models.character_item_model import CharacterItemModel
-from core.inventory_rules import STARTER_ITEMS, bag_slot
+from models.monster_drop_model import MonsterDropModel
+from core.drop_rules import CARD_DROP_RATE
 from core.level_progression import MAX_EXP, level_for_exp
 
 
@@ -37,15 +38,23 @@ JOBS = {
     },
 }
 
-# item catalogue; "icon" is a path under assets/ (None = the inventory draws a generic icon for the kind)
+# item catalogue. "type" is Misc for now (later Helmet, Armor, Cape, Boots, Sword, Rod, Axe...); "drop_rate" is the
+# chance in percent that a monster which drops the item (MONSTERS[...]["drops"]) leaves it when killed; every card
+# uses CARD_DROP_RATE. Images live in assets/items/<id>/: icon.png (inventory) and collection.png (details pop up)
 ITEMS = {
-    "knife": {"name": "Knife", "kind": "equipment", "equip_type": "weapon", "icon": None,
-              "description": "A small, sharp knife. Every Novice starts with one."},
-    "cotton_shirt": {"name": "Cotton Shirt", "kind": "equipment", "equip_type": "armor", "icon": None,
-                     "description": "A plain shirt made of cotton."},
-    "red_potion": {"name": "Red Potion", "kind": "usable", "equip_type": None, "icon": None,
-                   "description": "A potion made from red herbs. Restores a little HP."},
+    "jellopy": {"name": "Jellopy", "type": "Misc", "drop_rate": 70,
+                "description": "A small, glossy crystal formed inside the bodies of soft monsters. "
+                               "Merchants buy it in bulk."},
+    "empty_bottle": {"name": "Empty Bottle", "type": "Misc", "drop_rate": 15,
+                     "description": "A clean glass bottle. Alchemists fill it with potions."},
+    "apple": {"name": "Apple", "type": "Misc", "drop_rate": 2,
+              "description": "A crisp, juicy red apple, sweet enough to tempt any Poring."},
+    "poring_card": {"name": "Poring Card", "type": "Misc", "drop_rate": CARD_DROP_RATE,
+                    "description": "A card holding the essence of a Poring. Very few adventurers ever find one."},
 }
+for _item_id, _item in ITEMS.items():
+    _item["icon"] = f"items/{_item_id}/icon.png"
+    _item["collection"] = f"items/{_item_id}/collection.png"
 
 # "sheet" is the folder in assets/sprites: used in battle and as the monster's picture on maps
 MONSTERS = {
@@ -53,6 +62,7 @@ MONSTERS = {
         "sheet": "poring", "level": 1, "base_exp": 6, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
+        "drops": ["jellopy", "empty_bottle", "apple", "poring_card"],
     },
     "Lunatic": {
         "sheet": "lunatic", "level": 1, "base_exp": 8, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
@@ -138,6 +148,11 @@ def upsert(instance, values: dict) -> None:
 async def seed() -> None:
     import models.__all_models
     async with engine.begin() as conn:
+        # the first items table (kind/equip_type, placeholder starter items) is replaced by the typed catalogue:
+        # drop it and the items characters carried, create_all below builds the new one
+        if "kind" in [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(items)")).fetchall()]:
+            await conn.exec_driver_sql("DELETE FROM character_items")
+            await conn.exec_driver_sql("DROP TABLE items")
         await conn.run_sync(DBBaseModel.metadata.create_all)
         # monsters used to store a GIF in "image"; drop it from older databases (keeps characters)
         columns = [row[1] for row in (await conn.exec_driver_sql("PRAGMA table_info(monsters)")).fetchall()]
@@ -174,13 +189,19 @@ async def seed() -> None:
             await conn.exec_driver_sql("ALTER TABLE npcs ADD COLUMN greeting TEXT NOT NULL DEFAULT ''")
 
     async with Session() as db:
-        # 0) items
+        # 0) items (the ones no longer in ITEMS are removed, from the bags too)
         for item_id, data in ITEMS.items():
             item = await db.get(ItemModel, item_id)
             if item is None:
                 item = ItemModel(id=item_id)
                 db.add(item)
             upsert(item, data)
+        await db.flush()
+        # items taken out of the catalogue leave the game: from the bags too
+        old_items = select(ItemModel.id).where(ItemModel.id.not_in(ITEMS))
+        await db.execute(delete(MonsterDropModel).where(MonsterDropModel.item_id.in_(old_items)))
+        await db.execute(delete(CharacterItemModel).where(CharacterItemModel.item_id.in_(old_items)))
+        await db.execute(delete(ItemModel).where(ItemModel.id.not_in(ITEMS)))
         await db.flush()
 
         # 1) skills
@@ -213,6 +234,7 @@ async def seed() -> None:
         for name, data in MONSTERS.items():
             data = dict(data)
             skills = data.pop("skills", [])
+            drops = data.pop("drops", [])
             monster = (await db.execute(select(MonsterModel).where(MonsterModel.name == name))).scalar_one_or_none()
             if monster is None:
                 monster = MonsterModel(name=name)
@@ -223,6 +245,9 @@ async def seed() -> None:
             await db.execute(delete(MonsterSkillModel).where(MonsterSkillModel.monster_id == monster.id))
             for slot, skill_name in enumerate(skills):
                 db.add(MonsterSkillModel(monster_id=monster.id, skill_id=skill_ids[skill_name], slot=slot))
+            await db.execute(delete(MonsterDropModel).where(MonsterDropModel.monster_id == monster.id))
+            for item_id in drops:
+                db.add(MonsterDropModel(monster_id=monster.id, item_id=item_id))
         await db.flush()
 
         # 4) maps and monster spawns
@@ -270,14 +295,6 @@ async def seed() -> None:
             character.current_map = map_names.get(character.current_map_id, character.current_map)
             character.exp = min(character.exp, MAX_EXP)
             character.level = level_for_exp(character.exp)
-            # characters created before the inventory existed get the starter items once (empty inventory only)
-            has_items = (await db.execute(select(CharacterItemModel.id)
-                                          .where(CharacterItemModel.character_id == character.id).limit(1))).first()
-            if has_items is None:
-                for index, (item_id, amount) in enumerate(STARTER_ITEMS):
-                    db.add(CharacterItemModel(character_id=character.id, item_id=item_id, slot=bag_slot(index),
-                                              amount=amount))
-
         await db.commit()
     print("Items, skills, jobs, monsters and maps seeded.")
 

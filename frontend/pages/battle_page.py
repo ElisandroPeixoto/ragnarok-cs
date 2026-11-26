@@ -67,7 +67,7 @@ def battle_screen(setup: dict):
         await asyncio.sleep(END_DELAY)   # let the last hit and the death animation play
         character, victory = get_current_character(), state.winner == "victory"
         level_before = character["level"] if character else None
-        outcome = {"exp_gained": 0, "exp_lost": 0}
+        outcome = {"exp_gained": 0, "exp_lost": 0, "drops": [], "drops_lost": []}
         if character is not None:
             try:
                 outcome = await CharacterService.send_battle_result(character["id"], victory, state.kills)
@@ -83,6 +83,8 @@ def battle_screen(setup: dict):
             "damage_taken": state.damage_taken,
             "exp_gained": outcome["exp_gained"],
             "exp_lost": outcome["exp_lost"],
+            "drops": outcome.get("drops", []),
+            "drops_lost": outcome.get("drops_lost", []),
             "level_up": new_level if level_before and new_level > level_before else None,
         })
         state.closed = True

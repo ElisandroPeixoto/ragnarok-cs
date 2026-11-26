@@ -5,10 +5,11 @@ from pydantic import BaseModel
 class ItemSchema(BaseModel):
     id: str
     name: str
-    kind: str
-    equip_type: Optional[str] = None
-    icon: Optional[str] = None
+    type: str
     description: str = ""
+    drop_rate: float = 0.0
+    icon: Optional[str] = None
+    collection: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -7,16 +7,18 @@ BAG_ROWS = 8
 BAG_COLUMNS = 5
 BAG_SIZE = BAG_ROWS * BAG_COLUMNS
 
-# equipment slot -> item equip types it accepts (mirror of backend/core/inventory_rules.py EQUIP_SLOTS)
+# equipment slot -> item types it accepts (mirror of backend/core/inventory_rules.py EQUIP_SLOTS).
+# Only Misc items exist for now, and they go in the bag only
+WEAPON_TYPES = {"Sword", "Rod", "Axe", "Dagger", "Mace", "Spear", "Bow"}
 EQUIP_SLOTS = {
-    "head": {"head"},
-    "armor": {"armor"},
-    "right_hand": {"weapon"},
-    "left_hand": {"weapon", "shield"},
-    "garment": {"garment"},
-    "shoes": {"shoes"},
-    "accessory_1": {"accessory"},
-    "accessory_2": {"accessory"},
+    "head": {"Helmet"},
+    "armor": {"Armor"},
+    "right_hand": WEAPON_TYPES,
+    "left_hand": WEAPON_TYPES | {"Shield"},
+    "garment": {"Cape"},
+    "shoes": {"Boots"},
+    "accessory_1": {"Accessory"},
+    "accessory_2": {"Accessory"},
 }
 
 
@@ -28,7 +30,7 @@ def can_hold(slot: str, item: dict | None) -> bool:
     """Whether the item may sit in the slot (None = nothing, always fine); bag slots take anything"""
     if item is None or slot not in EQUIP_SLOTS:
         return True
-    return item.get("equip_type") in EQUIP_SLOTS[slot]
+    return item.get("type") in EQUIP_SLOTS[slot]
 
 
 def move_entries(entries: list[dict], from_slot: str, to_slot: str) -> list[dict] | None:

@@ -41,8 +41,8 @@ async def move_item(character_id: int, move: InventoryMoveSchema, db: AsyncSessi
     if move.from_slot == move.to_slot:
         return entries
     other = by_slot.get(move.to_slot)
-    if not can_hold(move.to_slot, moving.item.equip_type) or \
-            (other is not None and not can_hold(move.from_slot, other.item.equip_type)):
+    if not can_hold(move.to_slot, moving.item.type) or \
+            (other is not None and not can_hold(move.from_slot, other.item.type)):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Item does not fit that slot")
 
     if other is None:

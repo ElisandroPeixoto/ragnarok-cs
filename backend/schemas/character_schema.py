@@ -50,7 +50,17 @@ class CharacterSchemaResponse(CharacterSchemaBase):
         return exp_to_next(self.level) or 0
 
 
+class DropSchema(BaseModel):
+    """An item a won hunt dropped, with how many units"""
+    item_id: str
+    name: str
+    icon: str | None = None
+    amount: int
+
+
 class BattleResultResponse(BaseModel):
     character: CharacterSchemaResponse
     exp_gained: int
     exp_lost: int
+    drops: list[DropSchema] = Field(default_factory=list)        # went into the bag
+    drops_lost: list[DropSchema] = Field(default_factory=list)   # did not fit: the bag was full

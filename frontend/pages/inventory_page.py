@@ -3,6 +3,7 @@ import themes as t
 from components.sidebar import sidebar
 from components.zeny_badge import zeny_amount
 from components.job_sprite import job_sprite
+from components.item_details_dialog import item_details_dialog
 from services.session_state import get_current_character
 from services.api_client import ApiError
 from services.inventory_service import InventoryService, BAG_ROWS, BAG_COLUMNS, bag_slot, move_entries
@@ -24,25 +25,20 @@ DRAG_GROUP = "inventory"
 EQUIP_LEFT = [("head", "Head"), ("armor", "Armor"), ("right_hand", "Right Hand"), ("accessory_1", "Accessory 1")]
 EQUIP_RIGHT = [("garment", "Garment"), ("shoes", "Shoes"), ("left_hand", "Left Hand"), ("accessory_2", "Accessory 2")]
 
-# generic icon for items without art (ItemModel.icon is NULL)
-EQUIP_TYPE_ICONS = {
-    "head": ft.Icons.FACE, "armor": ft.Icons.CHECKROOM, "weapon": ft.Icons.HARDWARE, "shield": ft.Icons.SHIELD,
-    "garment": ft.Icons.DRY_CLEANING, "shoes": ft.Icons.DIRECTIONS_WALK, "accessory": ft.Icons.DIAMOND,
-}
-KIND_ICONS = {"usable": ft.Icons.LOCAL_DRINK, "etc": ft.Icons.INVENTORY_2}
+ICON_SIZE = 48   # item icons are 24x24 pixel art, drawn at 2x
 
 
 def item_icon(item: dict, size: int):
     if item.get("icon"):
-        return ft.Image(src=item["icon"], width=size, height=size, fit=ft.BoxFit.CONTAIN)
-    icon = EQUIP_TYPE_ICONS.get(item.get("equip_type")) or KIND_ICONS.get(item.get("kind"), ft.Icons.INVENTORY_2)
-    return ft.Icon(icon, size=size, color=t.TITLE_TEXT)
+        return ft.Image(src=item["icon"], width=size, height=size, fit=ft.BoxFit.CONTAIN,
+                        filter_quality=ft.FilterQuality.NONE)
+    return ft.Icon(ft.Icons.INVENTORY_2, size=size, color=t.TITLE_TEXT)
 
 
 def item_tile(entry: dict, opacity: float = 1.0):
     """The item drawn inside a slot: its icon and, for stacks, the amount in the corner"""
     controls = [ft.Container(width=SLOT_SIZE, height=SLOT_SIZE, alignment=ft.Alignment.CENTER,
-                             content=item_icon(entry["item"], 36))]
+                             content=item_icon(entry["item"], ICON_SIZE))]
     if entry["amount"] > 1:
         controls.append(ft.Container(right=5, bottom=3,
                                      content=ft.Text(str(entry["amount"]), size=12, color=t.NORMAL_TEXT,
@@ -50,33 +46,36 @@ def item_tile(entry: dict, opacity: float = 1.0):
     return ft.Container(width=SLOT_SIZE, height=SLOT_SIZE, opacity=opacity, content=ft.Stack(controls=controls))
 
 
-def slot_box(content: ft.Control | None = None):
+def slot_box(content: ft.Control | None = None, selected: bool = False):
     return ft.Container(width=SLOT_SIZE, height=SLOT_SIZE,
                         bgcolor=t.PANEL_INNER_BG,
-                        border=ft.Border.all(1, t.MAP_SECTION_BORDER),
+                        border=ft.Border.all(2, t.MAP_SELECTED) if selected else ft.Border.all(1, t.MAP_SECTION_BORDER),
                         border_radius=6,
                         content=content)
 
 
 def item_tooltip(entry: dict) -> str:
-    item = entry["item"]
-    text = item["name"] + (f" x{entry['amount']}" if entry["amount"] > 1 else "")
-    if item.get("description"):
-        text += "\n" + item["description"]
-    return text
+    return entry["item"]["name"] + (f" x{entry['amount']}" if entry["amount"] > 1 else "")
 
 
-def item_slot(slot: str, entry: dict | None, on_drop):
-    """A slot that accepts drops; when it holds an item, the item can be dragged to another slot"""
+def item_slot(slot: str, entry: dict | None, actions: dict):
+    """A slot that accepts drops. When it holds an item, the item can be dragged to another slot, a click selects it
+    and a right click opens its details. actions = {"drop", "select", "details", "selected_id"}"""
+    on_drop = actions["drop"]
     if entry is None:
         inner = slot_box()
     else:
-        inner = ft.Draggable(group=DRAG_GROUP,
-                             data=slot,
-                             content=slot_box(item_tile(entry)),
-                             content_when_dragging=slot_box(item_tile(entry, opacity=0.3)),
-                             content_feedback=item_tile(entry, opacity=0.85),
-                             tooltip=item_tooltip(entry))
+        selected = entry["id"] == actions["selected_id"]
+        inner = ft.GestureDetector(
+            mouse_cursor=ft.MouseCursor.CLICK,
+            on_tap=lambda e: actions["select"](entry["id"]),
+            on_secondary_tap=lambda e: actions["details"](entry),
+            content=ft.Draggable(group=DRAG_GROUP,
+                                 data=slot,
+                                 content=slot_box(item_tile(entry), selected),
+                                 content_when_dragging=slot_box(item_tile(entry, opacity=0.3)),
+                                 content_feedback=item_tile(entry, opacity=0.85),
+                                 tooltip=item_tooltip(entry)))
 
     def accept(e: ft.DragTargetEvent):
         from_slot = e.src.data if e.src is not None else None
@@ -86,10 +85,10 @@ def item_slot(slot: str, entry: dict | None, on_drop):
     return ft.DragTarget(group=DRAG_GROUP, data=slot, on_accept=accept, content=inner)
 
 
-def equip_slot(slot: str, label: str, by_slot: dict, on_drop):
+def equip_slot(slot: str, label: str, by_slot: dict, actions: dict):
     # fixed width: labels of different lengths would otherwise shift the slots of a column out of line
     return ft.Column(spacing=4, width=110, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                     controls=[item_slot(slot, by_slot.get(slot), on_drop),
+                     controls=[item_slot(slot, by_slot.get(slot), actions),
                                ft.Text(label, size=12, color=t.MUTED_TEXT, font_family="Cinzel")])
 
 
@@ -98,23 +97,28 @@ def panel(content: ft.Control, **kwargs):
                         content=content, **kwargs)
 
 
-def bag_panel(by_slot: dict, on_drop, zeny):
-    """The bag: BAG_ROWS x BAG_COLUMNS slots, numbered left to right, top to bottom (bag_0 is the top left),
-    with the character's zeny under its bottom right corner"""
+def bag_panel(by_slot: dict, actions: dict, zeny, on_details):
+    """The bag: BAG_ROWS x BAG_COLUMNS slots, numbered left to right, top to bottom (bag_0 is the top left).
+    Under it: the Details button (icon only, bottom left; opens the selected item) and the zeny (bottom right)"""
     rows = []
     for row in range(BAG_ROWS):
         slots = [bag_slot(row * BAG_COLUMNS + column) for column in range(BAG_COLUMNS)]
         rows.append(ft.Row(spacing=SLOT_GAP, tight=True,
-                           controls=[item_slot(slot, by_slot.get(slot), on_drop) for slot in slots]))
+                           controls=[item_slot(slot, by_slot.get(slot), actions) for slot in slots]))
     # fixed width (the grid's): the bag sits in a Row, so it has no width of its own to align against
-    rows.append(ft.Container(width=BAG_WIDTH - 2 * PANEL_PADDING, alignment=ft.Alignment.CENTER_RIGHT,
-                             padding=ft.Padding.only(top=6), content=zeny_amount(zeny)))
+    # always enabled with a handler: it does nothing until an item is selected
+    details_button = ft.IconButton(icon=ft.Icons.MENU_BOOK, icon_color=t.TITLE_TEXT, icon_size=22,
+                                   tooltip="Details", on_click=on_details)
+    rows.append(ft.Container(width=BAG_WIDTH - 2 * PANEL_PADDING, padding=ft.Padding.only(top=6),
+                             content=ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                            controls=[details_button, zeny_amount(zeny)])))
     return panel(ft.Column(spacing=SLOT_GAP, tight=True, controls=rows))
 
 
-def equipment_panel(character: dict, by_slot: dict, on_drop):
+def equipment_panel(character: dict, by_slot: dict, actions: dict):
     def side(slots):
-        return ft.Column(spacing=14, controls=[equip_slot(slot, label, by_slot, on_drop) for slot, label in slots])
+        return ft.Column(spacing=14, controls=[equip_slot(slot, label, by_slot, actions) for slot, label in slots])
 
     return panel(width=EQUIPMENT_WIDTH,
                  content=ft.Column(horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=16, controls=[
@@ -134,6 +138,7 @@ def inventory_page():
     collapsed, set_collapsed = ft.use_state(True)
     entries, set_entries = ft.use_state(cast("list[dict]", []))
     error, set_error = ft.use_state(cast("str | None", None))
+    selected_id, set_selected_id = ft.use_state(cast("int | None", None))   # entry id: it follows the item when moved
 
     async def load():
         if character is None:
@@ -172,7 +177,20 @@ def inventory_page():
 
         ft.context.page.run_task(save)
 
+    def show_details(entry: dict):
+        page = ft.context.page
+        page.show_dialog(item_details_dialog(entry["item"], entry["amount"], lambda e: page.pop_dialog()))
+
+    def select(entry_id: int):
+        set_selected_id(None if entry_id == selected_id else entry_id)
+
     by_slot = {entry["slot"]: entry for entry in entries}
+    selected_entry = next((entry for entry in entries if entry["id"] == selected_id), None)
+    actions = {"drop": drop, "select": select, "details": show_details, "selected_id": selected_id}
+
+    def on_details(e):
+        if selected_entry is not None:
+            show_details(selected_entry)
 
     header = ft.Text("Inventory", size=28, font_family="Cinzel", color=t.TITLE_TEXT, weight=ft.FontWeight.BOLD)
 
@@ -180,7 +198,8 @@ def inventory_page():
     if error:
         body.append(ft.Text(error, color=t.DAMAGE_TEXT, font_family="Cinzel"))
     body.append(ft.Row(spacing=PANEL_GAP, vertical_alignment=ft.CrossAxisAlignment.START,
-                       controls=[bag_panel(by_slot, drop, character["zeny"]), equipment_panel(character, by_slot, drop)]))
+                       controls=[bag_panel(by_slot, actions, character["zeny"], on_details),
+                                 equipment_panel(character, by_slot, actions)]))
 
     # same frame as the profile: maximum width, centered; narrower windows shrink it
     main_content = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO,

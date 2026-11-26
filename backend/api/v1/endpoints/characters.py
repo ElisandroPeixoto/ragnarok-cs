@@ -4,7 +4,10 @@ from sqlalchemy.future import select
 from models.character_model import CharacterModel
 from models.maps_model import MapModel
 from models.character_item_model import CharacterItemModel
-from core.inventory_rules import STARTER_ITEMS, bag_slot
+from models.items_model import ItemModel
+from models.monster_drop_model import MonsterDropModel
+from core.drop_rules import roll_drops
+from core.inventory import give_item
 from sqlalchemy import delete
 from schemas.character_schema import CharacterSchemaCreate, CharacterSchemaResponse, CharacterSchemaPlaceUpdate, CharacterSchemaBattleResult, BattleResultResponse
 from models.monsters_model import MonsterModel
@@ -27,9 +30,6 @@ async def post_character(character: CharacterSchemaCreate, db: AsyncSession = De
     )
 
     db.add(new_character)
-    await db.flush()
-    for index, (item_id, amount) in enumerate(STARTER_ITEMS):
-        db.add(CharacterItemModel(character_id=new_character.id, item_id=item_id, slot=bag_slot(index), amount=amount))
     await db.commit()
     await db.refresh(new_character)
 
@@ -81,7 +81,8 @@ async def delete_character(character_id: int, db: AsyncSession = Depends(get_ses
 # POST Character battle result
 """Settle a finished hunt (docs/regra-de-experiencia.md). Victory (every monster killed): the EXP of all the monsters
 by level difference, plus level-ups (docs/progressao-de-level.md). Defeat: -20% of the EXP accumulated in the current
-level and no EXP for the kills. Leaving a hunt is never reported: it costs nothing and pays nothing"""
+level and no EXP for the kills. Leaving a hunt is never reported: it costs nothing and pays nothing.
+Victory also rolls the drops of every monster killed (core/drop_rules.py) and puts them in the bag"""
 @router.post("/{character_id}/battle-result", status_code=status.HTTP_200_OK, response_model=BattleResultResponse)
 async def post_battle_result(character_id: int, result: CharacterSchemaBattleResult,
                              db: AsyncSession = Depends(get_session)):
@@ -90,6 +91,7 @@ async def post_battle_result(character_id: int, result: CharacterSchemaBattleRes
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Character not found")
 
     gained = 0
+    drops, drops_lost = [], []
     if result.victory:
         if not MIN_MONSTERS <= len(result.kills) <= MAX_MONSTERS:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -101,6 +103,7 @@ async def post_battle_result(character_id: int, result: CharacterSchemaBattleRes
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Monster '{name}' not found")
             monsters[name] = monster
         gained = sum(exp_gain(character.level, monsters[name].level, monsters[name].base_exp) for name in result.kills)
+        drops, drops_lost = await drop_items(db, character.id, [monsters[name] for name in result.kills])
     total = min(character.exp + gained, MAX_EXP)
     level = level_for_exp(total)
     lost = 0
@@ -112,7 +115,29 @@ async def post_battle_result(character_id: int, result: CharacterSchemaBattleRes
     await db.commit()
     await db.refresh(character)
 
-    return {"character": character, "exp_gained": gained, "exp_lost": lost}
+    return {"character": character, "exp_gained": gained, "exp_lost": lost, "drops": drops, "drops_lost": drops_lost}
+
+
+async def drop_items(db: AsyncSession, character_id: int, killed: list[MonsterModel]) -> tuple[list, list]:
+    """Rolls the drops of the monsters killed and gives them to the character. Returns (dropped, did not fit)"""
+    rows = (await db.execute(select(MonsterDropModel.monster_id, ItemModel)
+                             .join(ItemModel, ItemModel.id == MonsterDropModel.item_id)
+                             .where(MonsterDropModel.monster_id.in_({monster.id for monster in killed})))).all()
+    tables: dict[int, list[tuple[str, float]]] = {}
+    items = {}
+    for monster_id, item in rows:
+        tables.setdefault(monster_id, []).append((item.id, item.drop_rate))
+        items[item.id] = item
+    dropped = roll_drops([tables.get(monster.id, []) for monster in killed])
+    drops, drops_lost = [], []
+    for item_id, amount in dropped.items():
+        item = items[item_id]
+        left_out = await give_item(db, character_id, item, amount)
+        if amount - left_out:
+            drops.append({"item_id": item.id, "name": item.name, "icon": item.icon, "amount": amount - left_out})
+        if left_out:
+            drops_lost.append({"item_id": item.id, "name": item.name, "icon": item.icon, "amount": left_out})
+    return drops, drops_lost
 
 
 # PATCH Character place

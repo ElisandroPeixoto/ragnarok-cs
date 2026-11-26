@@ -9,6 +9,8 @@ erDiagram
     characters }o--|| jobs : "job → jobs.name"
     characters ||--o{ character_items : ""
     items ||--o{ character_items : ""
+    monsters ||--o{ monster_drops : ""
+    items ||--o{ monster_drops : ""
     jobs ||--o{ job_skills : ""
     skills ||--o{ job_skills : ""
     monsters ||--o{ monster_skills : ""
@@ -45,12 +47,13 @@ Catálogo de itens do jogo (ver [Inventário](inventario.md)).
 
 | Coluna | Tipo | Observação |
 |---|---|---|
-| `id` | String(64) PK | ex.: `knife` |
+| `id` | String(64) PK | ex.: `jellopy` |
 | `name` | String(255) | |
-| `kind` | String(30) | `equipment`, `usable` ou `etc` |
-| `equip_type` | String(30), nulo | `head`, `armor`, `weapon`, `shield`, `garment`, `shoes`, `accessory`; nulo = não equipável |
-| `icon` | String, nulo | caminho em `assets/`; nulo = a tela usa um ícone genérico do tipo |
-| `description` | String | aparece ao passar o mouse sobre o item |
+| `type` | String(30) | `Misc` por enquanto; depois Helmet, Armor, Cape, Boots, Sword, Rod, Axe… |
+| `description` | String | aparece no pop up de detalhes |
+| `drop_rate` | Float | chance de drop em porcentagem (70 = 70%); cartas usam 0,2 |
+| `icon` | String, nulo | ícone da bolsa, `items/<id>/icon.png` |
+| `collection` | String, nulo | imagem dos detalhes, `items/<id>/collection.png` |
 
 ### `character_items`: `CharacterItemModel` (`models/character_item_model.py`)
 
@@ -62,7 +65,11 @@ Itens que cada personagem carrega. Único por (`character_id`, `slot`).
 | `character_id` | Integer, FK `characters.id` | apagado junto com o personagem |
 | `item_id` | String(64), FK `items.id` | |
 | `slot` | String(30) | `bag_0`…`bag_39` ou um slot de equipamento (`head`, `armor`, `right_hand`, `left_hand`, `garment`, `shoes`, `accessory_1`, `accessory_2`) |
-| `amount` | Integer | quantidade da pilha (1 para equipamentos) |
+| `amount` | Integer | quantidade da pilha (itens Misc se empilham; equipamentos ficam 1 por slot) |
+
+### `monster_drops`: `MonsterDropModel` (`models/monster_drop_model.py`)
+
+Quais itens cada monstro dropa. PK (`monster_id`, `item_id`). A chance é a `drop_rate` do item. Ver [Inventário](inventario.md#drops).
 
 ### `jobs`: `JobModel` (`models/jobs_model.py`)
 
@@ -167,7 +174,7 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 
 | Dicionário | Conteúdo atual |
 |---|---|
-| `ITEMS` | `knife` (weapon), `cotton_shirt` (armor), `red_potion` (usable) |
+| `ITEMS` | `jellopy` (70%), `empty_bottle` (15%), `apple` (2%), `poring_card` (0,2%), todos Misc |
 | `SKILLS` | `Basic Attack` (1 AP, 10 de dano, alcance 1) |
 | `JOBS` | `Novice` (sheet `novice`, 5 AP, skill `Basic Attack`) |
 | `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (50 HP, 2 AP, `Basic Attack`, IA `approach_and_attack`) |
@@ -176,14 +183,14 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 Ordem de execução de `seed()`:
 
 1. Cria as tabelas que não existem (`create_all`).
-2. **Itens**: cria ou atualiza por id (upsert).
+2. **Itens**: cria ou atualiza por id (upsert); os que saíram de `ITEMS` são apagados, inclusive das bolsas. Um banco com a tabela `items` antiga (colunas `kind`/`equip_type`) tem essa tabela e os itens dos personagens apagados antes do `create_all`.
 3. **Skills**: cria ou atualiza por nome (upsert).
 4. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
-5. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills`.
+5. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills` e os drops em `monster_drops` (lista `drops` do monstro).
 6. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, `town_image`, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
 7. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
 8. **Conexões**: cria as que ainda não existem.
-9. **Personagens**: o nível segue a EXP total, o nome do mapa atual é sincronizado, e quem ainda não tem nenhum item recebe os itens iniciais (`STARTER_ITEMS`).
+9. **Personagens**: o nível segue a EXP total, o nome do mapa atual é sincronizado.
 
 O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 

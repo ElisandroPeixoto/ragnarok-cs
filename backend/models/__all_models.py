@@ -11,3 +11,4 @@ from models.job_skill_model import JobSkillModel
 from models.monster_skill_model import MonsterSkillModel
 from models.items_model import ItemModel
 from models.character_item_model import CharacterItemModel
+from models.monster_drop_model import MonsterDropModel

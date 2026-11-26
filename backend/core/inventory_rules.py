@@ -1,23 +1,28 @@
-"""Inventory rules (docs/inventario.md): the bag's size, the equipment slots and which items each slot takes"""
+"""Inventory rules (docs/inventario.md): the bag's size, the equipment slots and which item types each slot takes"""
 
 BAG_ROWS = 8
 BAG_COLUMNS = 5
 BAG_SIZE = BAG_ROWS * BAG_COLUMNS
 
-# equipment slot of the character -> item equip types it accepts (ItemModel.equip_type)
+# item types (ItemModel.type). Only Misc exists in the game for now; the others are here so the equipment slots
+# already know what they will take
+MISC = "Misc"
+WEAPON_TYPES = {"Sword", "Rod", "Axe", "Dagger", "Mace", "Spear", "Bow"}
+
+# equipment slot of the character -> item types it accepts
 EQUIP_SLOTS = {
-    "head": {"head"},
-    "armor": {"armor"},
-    "right_hand": {"weapon"},
-    "left_hand": {"weapon", "shield"},
-    "garment": {"garment"},
-    "shoes": {"shoes"},
-    "accessory_1": {"accessory"},
-    "accessory_2": {"accessory"},
+    "head": {"Helmet"},
+    "armor": {"Armor"},
+    "right_hand": WEAPON_TYPES,
+    "left_hand": WEAPON_TYPES | {"Shield"},
+    "garment": {"Cape"},
+    "shoes": {"Boots"},
+    "accessory_1": {"Accessory"},
+    "accessory_2": {"Accessory"},
 }
 
-# items every new character starts with: (item id, amount)
-STARTER_ITEMS = [("knife", 1), ("cotton_shirt", 1), ("red_potion", 5)]
+# types whose units pile up in a single slot (equipment takes one slot per piece)
+STACKABLE_TYPES = {MISC}
 
 
 def bag_slot(index: int) -> str:
@@ -32,8 +37,16 @@ def is_valid_slot(slot: str) -> bool:
     return False
 
 
-def can_hold(slot: str, equip_type: str | None) -> bool:
-    """Whether an item with this equip type (None = not equippable) may sit in the slot; bag slots take anything"""
+def can_hold(slot: str, item_type: str) -> bool:
+    """Whether an item of this type may sit in the slot; bag slots take anything"""
     if slot in EQUIP_SLOTS:
-        return equip_type in EQUIP_SLOTS[slot]
+        return item_type in EQUIP_SLOTS[slot]
     return is_valid_slot(slot)
+
+
+def free_bag_slot(occupied: set[str]) -> str | None:
+    """First empty bag slot, left to right and top to bottom; None when the bag is full"""
+    for index in range(BAG_SIZE):
+        if bag_slot(index) not in occupied:
+            return bag_slot(index)
+    return None
