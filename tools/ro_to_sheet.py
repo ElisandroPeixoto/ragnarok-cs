@@ -18,7 +18,8 @@ For players, besides the combat clips (idle/walk/attack/hurt/dead on the 4 diago
 the "stand_s" clip: the out-of-combat Idle pose, standing and facing front, with the head turning
 like the RO character selection GIF. That's what the character/profile screens show.
 
-Default output: assets/sprites/<name>/<name>_sheet.png and <name>.json
+Default output: assets/sprites/<group>/<name>/<name>_sheet.png and <name>.json,
+where <group> is "characters" for players and "monsters" for monsters.
 Use --preview preview.png to generate an image with the frame grid for checking.
 """
 import argparse
@@ -172,7 +173,10 @@ def render_parts(parts: dict, action: int, motion: int, order: tuple, snap: bool
     return [item for name in order for item in placed.get(name, [])]
 
 
-def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, attack=None, preview=None, snap=True):
+SHEET_GROUPS = {"player": "characters", "monster": "monsters"}   # assets/sprites/<group>/<name>/
+
+
+def build(body, name, out_dir=None, head=None, weapon=None, kind="auto", idle=None, attack=None, preview=None, snap=True):
     parts = {"body": Part(body)}
     if head:
         parts["head"] = Part(head)
@@ -181,6 +185,8 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     n_actions = len(parts["body"].actions)
     if kind == "auto":                                        # a player ACT has ~100 actions; a monster ~40
         kind = "monster" if n_actions <= 48 else "player"
+    group = SHEET_GROUPS[kind]
+    out_dir = out_dir or f"assets/sprites/{group}/{name}"
     print(f"{n_actions} ações no .act do corpo -> tratado como {kind} | partes: {', '.join(parts)}")
 
     clip_types = dict(CLIP_TYPES[kind])
@@ -245,7 +251,7 @@ def build(body, name, out_dir, head=None, weapon=None, kind="auto", idle=None, a
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
     sheet.save(out / f"{name}_sheet.png")
     meta = {
-        "src": f"sprites/{name}/{name}_sheet.png",
+        "src": f"sprites/{group}/{name}/{name}_sheet.png",
         "frame_w": frame_w, "frame_h": frame_h, "cols": cols, "rows": len(rows),
         "anchor_x": anchor_x, "anchor_y": anchor_y,           # character's feet inside the frame
         "clips": clips,
@@ -272,7 +278,7 @@ if __name__ == "__main__":
     ap.add_argument("name", help="nome da sheet (ex.: novice, poring)")
     ap.add_argument("--head", help="cabeça (.spr/.act, com ou sem extensão)")
     ap.add_argument("--weapon", help="arma (.spr/.act, com ou sem extensão)")
-    ap.add_argument("--out", help="pasta de saída (padrão: assets/sprites/<name>)")
+    ap.add_argument("--out", help="pasta de saída (padrão: assets/sprites/characters|monsters/<name>)")
     ap.add_argument("--kind", choices=["auto", "player", "monster"], default="auto")
     ap.add_argument("--idle", type=int, help="força o tipo de ação do clip idle")
     ap.add_argument("--attack", type=int, help="força o tipo de ação do clip attack")
@@ -282,5 +288,5 @@ if __name__ == "__main__":
                     help="ignora layers com alpha menor que isso (0 a 1; 0 mantém tudo)")
     a = ap.parse_args()
     MIN_ALPHA = a.min_alpha
-    build(a.body, a.name, a.out or f"assets/sprites/{a.name}", a.head, a.weapon,
+    build(a.body, a.name, a.out, a.head, a.weapon,
           a.kind, a.idle, a.attack, a.preview, not a.no_snap)

@@ -56,7 +56,7 @@ for _item_id, _item in ITEMS.items():
     _item["icon"] = f"items/{_item_id}/icon.png"
     _item["collection"] = f"items/{_item_id}/collection.png"
 
-# "sheet" is the folder in assets/sprites: used in battle and as the monster's picture on maps
+# "sheet" is the folder in assets/sprites/monsters: used in battle and as the monster's picture on maps
 MONSTERS = {
     "Poring": {
         "sheet": "poring", "level": 1, "base_exp": 6, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",

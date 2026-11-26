@@ -5,8 +5,8 @@ Os personagens e monstros são desenhados a partir de **sprite sheets**: uma ima
 ## Pipeline de conversão
 
 ```
-art_source/<nome>.spr + .act   ──tools/ro_to_sheet.py──►   assets/sprites/<nome>/<nome>_sheet.png
-(corpo, cabeça, arma)                                       assets/sprites/<nome>/<nome>.json
+art_source/<nome>.spr + .act   ──tools/ro_to_sheet.py──►   assets/sprites/<grupo>/<nome>/<nome>_sheet.png
+(corpo, cabeça, arma)                                       assets/sprites/<grupo>/<nome>/<nome>.json
 ```
 
 `art_source/` é ignorado pelo git; os arquivos originais ficam só na máquina de quem gera as sheets. Os scripts precisam de **Pillow** e **numpy**.
@@ -55,11 +55,11 @@ Outras opções úteis: `--kind auto|player|monster` (o padrão `auto` trata com
 
 ## Formato do JSON
 
-Exemplo (`assets/sprites/novice/novice.json`, resumido):
+Exemplo (`assets/sprites/characters/novice/novice.json`, resumido):
 
 ```json
 {
-  "src": "sprites/novice/novice_sheet.png",
+  "src": "sprites/characters/novice/novice_sheet.png",
   "frame_w": 110, "frame_h": 106,
   "cols": 9, "rows": 21,
   "anchor_x": 55, "anchor_y": 81,
@@ -90,7 +90,7 @@ Sheets existentes: `novice` (21 clips, inclui `stand_s`), `poring`, `lunatic` e 
 ### Carregamento: `services/battle_animation.py`
 
 - `Clip` e `SpriteSheet` são dataclasses imutáveis que espelham o JSON.
-- `get_sheet(name)` lê `assets/sprites/<name>/<name>.json` e fica em cache (`lru_cache`), então cada sheet é lida do disco uma vez só.
+- `get_sheet(name)` lê `assets/sprites/characters/<name>/<name>.json` ou `assets/sprites/monsters/<name>/<name>.json` e fica em cache (`lru_cache`), então cada sheet é lida do disco uma vez só.
 
 ### Animação na batalha
 
@@ -120,6 +120,6 @@ Como o cálculo depende só do relógio, basta re-renderizar periodicamente, que
 
 1. Coloque os `.spr`/`.act` em `art_source/`.
 2. Rode `tools/ro_to_sheet.py` (com `--preview` para conferir a grade).
-3. Confira o resultado em `assets/sprites/<nome>/`.
+3. Confira o resultado em `assets/sprites/characters/<nome>/` ou `assets/sprites/monsters/<nome>/`.
 4. Monstro: preencha `sheet` e os dados de batalha em `MONSTERS` no `backend/seed_data.py`. Job: preencha `JOBS` e também `JOBS_SHEETS`/`JOBS_BADGES` em `frontend/services/sprite_selector.py`.
 5. Se o sprite parecer deslocado no tile, ajuste `offset_x`/`offset_y` no seed.

@@ -45,9 +45,16 @@ class SpriteSheet:
     clips: dict
 
 
+SHEET_GROUPS = ("characters", "monsters")   # assets/sprites/<group>/<name>/
+
+
 @lru_cache(maxsize=None)
 def get_sheet(name: str) -> SpriteSheet:
-    path = Path(ASSETS_DIR) / "sprites" / name / f"{name}.json"
+    sprites = Path(ASSETS_DIR) / "sprites"
+    candidates = [sprites / group / name / f"{name}.json" for group in SHEET_GROUPS]
+    path = next((p for p in candidates if p.exists()), None)
+    if path is None:
+        raise FileNotFoundError(f"sprite sheet '{name}' not found in assets/sprites/{{{','.join(SHEET_GROUPS)}}}/")
     data = json.loads(path.read_text(encoding="utf-8"))
     clips = {key: Clip(**value) for key, value in data.pop("clips").items()}
     return SpriteSheet(**data, clips=clips)

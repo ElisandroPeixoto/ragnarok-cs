@@ -78,7 +78,7 @@ Dados de batalha comuns a todos os personagens de um job.
 | Coluna | Tipo | Observação |
 |---|---|---|
 | `name` | String PK | ex.: `"Novice"`; é o valor de `characters.job` |
-| `sheet` | String | pasta em `assets/sprites/<sheet>/` |
+| `sheet` | String | pasta em `assets/sprites/characters/<sheet>/` |
 | `avatar` | String | imagem do card da unidade na batalha |
 | `max_ap` | Integer | pontos de ação por turno |
 | `offset_x`, `offset_y` | Integer | ajuste fino da posição do sprite no tile |
@@ -111,7 +111,7 @@ Ambas têm `skill = relationship("SkillModel", lazy="selectin")`.
 |---|---|---|---|
 | `id` | Integer PK | | |
 | `name` | String(255), único | | |
-| `sheet` | String, obrigatório | | pasta em `assets/sprites/`: sprite da batalha e figura do monstro no mapa e no card da batalha (clip `idle_sw`) |
+| `sheet` | String, obrigatório | | pasta em `assets/sprites/monsters/`: sprite da batalha e figura do monstro no mapa e no card da batalha (clip `idle_sw`) |
 | `level` | Integer | 1 | nível do monstro |
 | `base_exp` | Integer | 0 | EXP base por abate (ver [Regra de experiência](regra-de-experiencia.md)) |
 | `max_hp` | Integer | 50 | |

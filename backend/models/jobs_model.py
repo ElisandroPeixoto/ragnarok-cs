@@ -8,7 +8,7 @@ class JobModel(DBBaseModel):
     __tablename__ = "jobs"
 
     name: str = Column(String(255), primary_key=True)
-    sheet: str = Column(String, nullable=False)       # assets/sprites/<sheet>/
+    sheet: str = Column(String, nullable=False)       # assets/sprites/characters/<sheet>/
     avatar: str = Column(String, nullable=False, default="")
     max_ap: int = Column(Integer, nullable=False, default=5)
     offset_x: int = Column(Integer, nullable=False, default=0)

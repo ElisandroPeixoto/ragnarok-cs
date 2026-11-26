@@ -103,7 +103,7 @@ Observações:
 | `maps/backgrounds/` | as imagens de **fundo da tela do mapa** (escurecidas atrás do conteúdo), como `forest.jpg` |
 | `monsters/`, `npcs/`, `places/` | ícones dos cards da tela de mapa |
 | `characters_badges/` | avatares redondos por job |
-| `sprites/<nome>/` | sprite sheets geradas por `tools/ro_to_sheet.py` (`<nome>_sheet.png` + `<nome>.json`) |
+| `sprites/characters/<nome>/`, `sprites/monsters/<nome>/` | sprite sheets de personagens e de monstros, geradas por `tools/ro_to_sheet.py` (`<nome>_sheet.png` + `<nome>.json`) |
 | `skills/` | ícones das skills |
 | `battle_boards/` | fundo do tabuleiro de batalha |
 | `icons/` | ícones da barra lateral |
