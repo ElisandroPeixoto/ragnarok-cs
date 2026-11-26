@@ -6,3 +6,4 @@ art_source/
 .claude/
 dev.ps1
 docs/.obsidian
+run-management.ps1
