@@ -17,7 +17,7 @@ A tela **Inventory** (`/inventory`) mostra o que o personagem carrega. Abre pelo
 
 O personagem está de frente para o jogador, por isso a mão direita fica do lado esquerdo da tela.
 
-Cada item aparece com o ícone (`icon`, 24×24 desenhado em 2×) e, em pilhas, a quantidade no canto. Passar o mouse mostra o nome e a quantidade.
+Cada item aparece com o ícone (`icon`, 24×24 desenhado em cerca de 1,6×, 38 px) e, em pilhas, a quantidade no canto. Passar o mouse mostra o nome e a quantidade.
 
 ## Detalhes do item
 

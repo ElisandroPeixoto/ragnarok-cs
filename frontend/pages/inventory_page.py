@@ -19,13 +19,17 @@ BAG_WIDTH = BAG_COLUMNS * SLOT_SIZE + (BAG_COLUMNS - 1) * SLOT_GAP + 2 * PANEL_P
 # the equipment panel takes 80% of the width left beside the bag
 EQUIPMENT_WIDTH = round((CONTENT_WIDTH - BAG_WIDTH - PANEL_GAP) * 0.8)
 SPRITE_HEIGHT = 190   # same size as the character on the profile (profile_page.character_card)
+EQUIP_COLUMN_WIDTH = 110   # each column of equipment slots (slot + label)
+SPRITE_BOX_WIDTH = 200
+# gap between each column of equipment slots and the sprite: 70% of what an even spread over the panel would give
+EQUIP_SPRITE_GAP = round((EQUIPMENT_WIDTH - 2 * PANEL_PADDING - 2 * EQUIP_COLUMN_WIDTH - SPRITE_BOX_WIDTH) / 4 * 0.7)
 DRAG_GROUP = "inventory"
 
 # equipment slots around the sprite: (slot, label). The character faces the viewer, so the right hand is on the left
 EQUIP_LEFT = [("head", "Head"), ("armor", "Armor"), ("right_hand", "Right Hand"), ("accessory_1", "Accessory 1")]
 EQUIP_RIGHT = [("garment", "Garment"), ("shoes", "Shoes"), ("left_hand", "Left Hand"), ("accessory_2", "Accessory 2")]
 
-ICON_SIZE = 48   # item icons are 24x24 pixel art, drawn at 2x
+ICON_SIZE = 38   # item icons are 24x24 pixel art, drawn at ~1.6x
 
 
 def item_icon(item: dict, size: int):
@@ -87,7 +91,7 @@ def item_slot(slot: str, entry: dict | None, actions: dict):
 
 def equip_slot(slot: str, label: str, by_slot: dict, actions: dict):
     # fixed width: labels of different lengths would otherwise shift the slots of a column out of line
-    return ft.Column(spacing=4, width=110, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    return ft.Column(spacing=4, width=EQUIP_COLUMN_WIDTH, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                      controls=[item_slot(slot, by_slot.get(slot), actions),
                                ft.Text(label, size=12, color=t.MUTED_TEXT, font_family="Cinzel")])
 
@@ -123,10 +127,10 @@ def equipment_panel(character: dict, by_slot: dict, actions: dict):
     return panel(width=EQUIPMENT_WIDTH,
                  content=ft.Column(horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=16, controls=[
                      ft.Text("Equipment", size=16, color=t.TITLE_TEXT, font_family="Cinzel"),
-                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+                     ft.Row(alignment=ft.MainAxisAlignment.CENTER, spacing=EQUIP_SPRITE_GAP,
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             controls=[side(EQUIP_LEFT),
-                                      ft.Container(width=200, alignment=ft.Alignment.CENTER,
+                                      ft.Container(width=SPRITE_BOX_WIDTH, alignment=ft.Alignment.CENTER,
                                                    content=job_sprite(character["job"], height=SPRITE_HEIGHT)),
                                       side(EQUIP_RIGHT)]),
                  ]))
