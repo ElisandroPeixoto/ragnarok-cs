@@ -65,3 +65,8 @@ class InventoryService:
         """Moves (or swaps) an item between slots; returns the whole inventory as saved"""
         return await api.post(f"{API_PREFIX}/{character_id}/inventory/move",
                               json={"from_slot": from_slot, "to_slot": to_slot})
+
+    @staticmethod
+    async def destroy_item(character_id: int, entry_id: int) -> list[dict]:
+        """Destroys an inventory entry (the whole pile); returns the whole inventory as saved"""
+        return await api.delete_json(f"{API_PREFIX}/{character_id}/inventory/{entry_id}")

@@ -26,6 +26,17 @@ A descrição do item abre num pop up (`components/item_details_dialog.py`) com 
 - **Botão direito** sobre o item.
 - **Clicar** no item para selecioná-lo (o slot ganha borda dourada; clicar de novo desmarca) e apertar o botão **Details**: só um ícone de livro, sem texto, no canto inferior esquerdo, abaixo da bolsa. Sem item selecionado, o botão não faz nada. A seleção acompanha o item quando ele é arrastado.
 
+## Destruir um item
+
+Ao lado do Details fica o botão **Destroy**: só um ícone de lixeira, sem texto. Ele descarta o item selecionado, na bolsa ou equipado, e destrói a **pilha inteira**.
+
+Antes, abre um pop up de confirmação (`components/destroy_item_dialog.py`) com o ícone e a pergunta "Are you sure you want to destroy Jellopy x8? This cannot be undone.":
+
+- **Cancel**: fecha o pop up e o item fica.
+- **Destroy**: o item some da tela na hora e o backend o apaga (`DELETE /characters/{id}/inventory/{entry_id}`). Não há como desfazer.
+
+Sem item selecionado, o botão não faz nada.
+
 ## Arrastar itens
 
 Todo item, na bolsa ou equipado, pode ser arrastado para outro slot:
@@ -92,7 +103,10 @@ O pop up de resultado da vitória lista os itens em **Items** (ícone, nome e qu
 ## Rotas
 
 - `GET /api/v1/characters/{id}/inventory`: lista os itens com seus slots.
-- `POST /api/v1/characters/{id}/inventory/move`: `{ "from_slot": "bag_0", "to_slot": "right_hand" }`. Veja [Endpoints do backend](endpoints-backend.md#inventário-apiv1endpointsinventorypy).
+- `POST /api/v1/characters/{id}/inventory/move`: `{ "from_slot": "bag_0", "to_slot": "right_hand" }`.
+- `DELETE /api/v1/characters/{id}/inventory/{entry_id}`: destrói um item (a pilha inteira).
+
+Veja [Endpoints do backend](endpoints-backend.md#inventário-apiv1endpointsinventorypy).
 
 ## Arquivos
 
@@ -100,6 +114,7 @@ O pop up de resultado da vitória lista os itens em **Items** (ícone, nome e qu
 |---|---|
 | `frontend/pages/inventory_page.py` | A tela: bolsa, equipamentos, arrastar e soltar (`ft.Draggable` / `ft.DragTarget`), seleção, botão Details e botão direito (`ft.GestureDetector`) |
 | `frontend/components/item_details_dialog.py` | Pop up de detalhes do item |
+| `frontend/components/destroy_item_dialog.py` | Pop up de confirmação do Destroy |
 | `frontend/services/inventory_service.py` | Chamadas à API, cópia da regra dos slots, movimento local |
 | `backend/api/v1/endpoints/inventory.py` | Rotas de leitura e de movimento |
 | `backend/core/inventory_rules.py` | Tamanho da bolsa, slots de equipamento, tipos que empilham, primeiro slot livre |

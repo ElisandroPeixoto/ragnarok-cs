@@ -55,3 +55,17 @@ async def move_item(character_id: int, move: InventoryMoveSchema, db: AsyncSessi
         other.slot = move.from_slot
     await db.commit()
     return await load_inventory(db, character_id)
+
+
+# DELETE Character inventory entry
+"""Destroys an item the character carries (the whole pile, in the bag or equipped). There is no undo"""
+@router.delete("/{character_id}/inventory/{entry_id}", status_code=status.HTTP_200_OK,
+               response_model=List[InventoryEntrySchema])
+async def destroy_item(character_id: int, entry_id: int, db: AsyncSession = Depends(get_session)):
+    entries = await load_inventory(db, character_id)
+    entry = next((entry for entry in entries if entry.id == entry_id), None)
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    await db.delete(entry)
+    await db.commit()
+    return await load_inventory(db, character_id)

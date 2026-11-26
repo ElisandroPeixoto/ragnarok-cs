@@ -4,6 +4,7 @@ from components.sidebar import sidebar
 from components.zeny_badge import zeny_amount
 from components.job_sprite import job_sprite
 from components.item_details_dialog import item_details_dialog
+from components.destroy_item_dialog import destroy_item_dialog
 from services.session_state import get_current_character
 from services.api_client import ApiError
 from services.inventory_service import InventoryService, BAG_ROWS, BAG_COLUMNS, bag_slot, move_entries
@@ -101,9 +102,9 @@ def panel(content: ft.Control, **kwargs):
                         content=content, **kwargs)
 
 
-def bag_panel(by_slot: dict, actions: dict, zeny, on_details):
+def bag_panel(by_slot: dict, actions: dict, zeny, on_details, on_destroy):
     """The bag: BAG_ROWS x BAG_COLUMNS slots, numbered left to right, top to bottom (bag_0 is the top left).
-    Under it: the Details button (icon only, bottom left; opens the selected item) and the zeny (bottom right)"""
+    Under it: the Details and Destroy buttons (icons only, bottom left; act on the selected item) and the zeny (bottom right)"""
     rows = []
     for row in range(BAG_ROWS):
         slots = [bag_slot(row * BAG_COLUMNS + column) for column in range(BAG_COLUMNS)]
@@ -113,10 +114,14 @@ def bag_panel(by_slot: dict, actions: dict, zeny, on_details):
     # always enabled with a handler: it does nothing until an item is selected
     details_button = ft.IconButton(icon=ft.Icons.MENU_BOOK, icon_color=t.TITLE_TEXT, icon_size=22,
                                    tooltip="Details", on_click=on_details)
+    destroy_button = ft.IconButton(icon=ft.Icons.DELETE_OUTLINE, icon_color=t.TITLE_TEXT, icon_size=22,
+                                   tooltip="Destroy", on_click=on_destroy)
     rows.append(ft.Container(width=BAG_WIDTH - 2 * PANEL_PADDING, padding=ft.Padding.only(top=6),
                              content=ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                            controls=[details_button, zeny_amount(zeny)])))
+                                            controls=[ft.Row(spacing=0, tight=True,
+                                                             controls=[details_button, destroy_button]),
+                                                      zeny_amount(zeny)])))
     return panel(ft.Column(spacing=SLOT_GAP, tight=True, controls=rows))
 
 
@@ -196,13 +201,34 @@ def inventory_page():
         if selected_entry is not None:
             show_details(selected_entry)
 
+    def on_destroy(e):
+        """Asks first; on confirm the item (the whole pile) is removed at once and then deleted in the backend"""
+        if selected_entry is None:
+            return
+        page = ft.context.page
+        entry = selected_entry
+
+        async def destroy():
+            try:
+                set_entries(await InventoryService.destroy_item(character["id"], entry["id"]))
+            except ApiError:
+                await load()
+
+        def confirm(e):
+            page.pop_dialog()
+            set_entries([other for other in entries if other["id"] != entry["id"]])
+            set_selected_id(None)
+            page.run_task(destroy)
+
+        page.show_dialog(destroy_item_dialog(entry["item"], entry["amount"], confirm, lambda e: page.pop_dialog()))
+
     header = ft.Text("Inventory", size=28, font_family="Cinzel", color=t.TITLE_TEXT, weight=ft.FontWeight.BOLD)
 
     body: list[ft.Control] = [header]
     if error:
         body.append(ft.Text(error, color=t.DAMAGE_TEXT, font_family="Cinzel"))
     body.append(ft.Row(spacing=PANEL_GAP, vertical_alignment=ft.CrossAxisAlignment.START,
-                       controls=[bag_panel(by_slot, actions, character["zeny"], on_details),
+                       controls=[bag_panel(by_slot, actions, character["zeny"], on_details, on_destroy),
                                  equipment_panel(character, by_slot, actions)]))
 
     # same frame as the profile: maximum width, centered; narrower windows shrink it

@@ -102,6 +102,12 @@ Função: `move_item`. Status: **200**, **404** (`Character not found` / `No ite
 
 Corpo (`InventoryMoveSchema`): `{ "from_slot": "bag_0", "to_slot": "right_hand" }`. O item de `from_slot` vai para `to_slot`; se `to_slot` já tiver um item, os dois trocam. Um slot de equipamento só aceita o `type` certo (hoje, nenhum: só existem itens Misc), e isso vale para os dois lados da troca. Resposta: o inventário inteiro, já salvo (mesmo formato do `GET`).
 
+### `DELETE /api/v1/characters/{character_id}/inventory/{entry_id}`: destruir um item
+
+Função: `destroy_item`. Status: **200** ou **404** (`Character not found` / `Item not found`, inclusive quando a entrada é de outro personagem).
+
+`entry_id` é o `id` da entrada do inventário (não o id do item). Apaga a entrada inteira, ou seja, a pilha toda, esteja ela na bolsa ou num slot de equipamento. Não há como desfazer. Resposta: o inventário inteiro, já salvo (mesmo formato do `GET`). O frontend chama esta rota pelo botão Destroy do inventário, depois do pop up de confirmação.
+
 ---
 
 ## Mapas: `api/v1/endpoints/maps.py`
@@ -243,11 +249,12 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 | PATCH | `/api/v1/characters/{character_id}/place` | `patch_character_place` | 200 | 404, 422 |
 | GET | `/api/v1/characters/{character_id}/inventory` | `get_inventory` | 200 | 404 |
 | POST | `/api/v1/characters/{character_id}/inventory/move` | `move_item` | 200 | 404, 422 |
+| DELETE | `/api/v1/characters/{character_id}/inventory/{entry_id}` | `destroy_item` | 200 | 404 |
 | GET | `/api/v1/maps/` | `get_maps` | 200 | n/a |
 | GET | `/api/v1/maps/{map_id}` | `get_map_by_id` | 200 | 404 |
 | POST | `/api/v1/battles/` | `start_battle` | 201 | 400, 404, 422 |
 
-A única rota de atualização de um personagem é `PATCH /api/v1/characters/{character_id}/place` (a EXP muda só pelo `battle-result`); a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo; apaga também os itens do personagem). Os itens mudam de lugar só por `inventory/move`. Não existem outras.
+A única rota de atualização de um personagem é `PATCH /api/v1/characters/{character_id}/place` (a EXP muda só pelo `battle-result`); a única de exclusão é `DELETE /api/v1/characters/{character_id}` (204, sem corpo; apaga também os itens do personagem). Os itens mudam de lugar só por `inventory/move` e são destruídos só por `DELETE /api/v1/characters/{character_id}/inventory/{entry_id}`. Não existem outras.
 
 ## Como adicionar um endpoint
 

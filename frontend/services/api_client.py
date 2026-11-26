@@ -43,5 +43,10 @@ class ApiClient:
         response = await self._client.delete(path)
         await self._handle(response)
 
+    async def delete_json(self, path: str):
+        """DELETE for routes that answer with a body (e.g. the inventory after destroying an item)"""
+        response = await self._client.delete(path)
+        return await self._handle(response)
+
 
 api = ApiClient()
