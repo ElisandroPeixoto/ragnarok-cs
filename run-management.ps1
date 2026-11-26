@@ -30,6 +30,17 @@ function Test-Port([int]$port) {
     } catch { $false } finally { $client.Dispose() }
 }
 
+# The panel needs port 5173 (management/vite.config.js, strictPort): say who holds it instead of Vite's raw error
+$panelPort = 5173
+$holder = Get-NetTCPConnection -LocalPort $panelPort -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($holder) {
+    $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($holder.OwningProcess)"
+    Write-Host "Port $panelPort is already in use by process $($holder.OwningProcess) ($($process.Name))." -ForegroundColor Red
+    Write-Host "  $($process.CommandLine)" -ForegroundColor DarkGray
+    Write-Host "If it is an old panel, open http://localhost:$panelPort or stop it with: Stop-Process -Id $($holder.OwningProcess)" -ForegroundColor Yellow
+    exit 1
+}
+
 $backend = $null
 if (Test-Port $Port) {
     Write-Host "Backend already running on port $Port, reusing it." -ForegroundColor Yellow
