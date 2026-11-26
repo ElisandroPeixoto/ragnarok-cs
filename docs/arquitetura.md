@@ -20,7 +20,8 @@ ragnarok-cs/
 │   ├── pages/               telas completas (uma por rota)
 │   ├── components/          peças reutilizáveis (cards, painéis, tabuleiro…)
 │   └── services/            chamadas HTTP, estado da sessão, lógica da batalha
-├── assets/                  imagens, fontes, sprite sheets (servidos pelo Flet)
+├── management/              painel de gerenciamento em React (Vite), ver gerenciamento.md
+├── assets/                  imagens, fontes, sprite sheets (servidos pelo Flet e, em /assets, pelo backend)
 ├── tools/                   scripts de conversão de sprites do Ragnarok Online
 ├── art_source/              arquivos .spr/.act originais (ignorado pelo git)
 └── docs/                    esta documentação
@@ -74,6 +75,7 @@ Observações:
 - `requirements.txt` está em UTF-16 (o pip lê normalmente).
 - Os scripts de `tools/` precisam também de Pillow e numpy, que não estão no `requirements.txt`.
 - Com o backend no ar, a documentação interativa do FastAPI fica em `http://localhost:8001/docs`.
+- O painel de gerenciamento roda com `.\run-management.ps1` na raiz: sobe o backend se preciso, instala os pacotes na primeira vez e abre `http://localhost:5173` (ver [Painel de gerenciamento](gerenciamento.md)).
 
 ## Configuração do backend
 

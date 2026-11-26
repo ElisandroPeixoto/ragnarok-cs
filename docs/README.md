@@ -15,6 +15,7 @@ Ragnarok Chaos Saga é um RPG de desktop com tema de Ragnarok Online. O projeto 
 | [Modelo de dados](modelo-de-dados.md) | Tabelas, relacionamentos, `seed_data.py`, como mudar o schema |
 | [Criação e seleção de personagens](personagens.md) | Criar, listar e escolher personagens; perfil; o que ainda falta |
 | [Inventário](inventario.md) | Tela Inventory: bolsa 8×5, slots de equipamento, arrastar itens, detalhes do item; itens (tipo, taxa de drop) e drops de monstros |
+| [Painel de gerenciamento](gerenciamento.md) | App React em `management/` para editar personagens, monstros, classes, itens, drops e sprite sheets; `run-management.ps1`; API `/api/v1/admin` |
 | [Mapas e navegação](mapas-e-navegacao.md) | Rotas de mapa, tela de mapa, botão Hunt, navegação entre mapas |
 | [Sistema de combate](sistema-de-combate.md) | Como a batalha funciona hoje: estado, turnos, ações, IA, tabuleiro |
 | [Progressão de level](progressao-de-level.md) | EXP necessária por nível (1 a 99), barra de EXP e como o nível sobe |

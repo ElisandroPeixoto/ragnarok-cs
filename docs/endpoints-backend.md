@@ -237,6 +237,12 @@ Esta rota **não grava nada no banco**. Não existe registro de batalha, nem rot
 
 ---
 
+## Administração: `api/v1/endpoints/admin.py`
+
+Rotas do painel de gerenciamento, com o prefixo `/api/v1/admin` e sem login: opções dos formulários, personagens, monstros (com drops), classes, itens e sprite sheets. Estão descritas em [Painel de gerenciamento](gerenciamento.md#api-de-administração). O backend também serve a pasta `assets/` em `/assets/...`.
+
+---
+
 ## Resumo
 
 | Método | Rota | Função | Sucesso | Erros |

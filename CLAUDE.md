@@ -8,10 +8,17 @@ Ragnarok Chaos Saga: a Ragnarok Online–themed desktop RPG. Two Python processe
 
 - `backend/` — FastAPI + async SQLAlchemy (SQLite via aiosqlite), serves `/api/v1/characters` and `/api/v1/maps` on port **8001**.
 - `frontend/` — Flet 0.86 desktop app (declarative `@ft.component` / `ft.use_state` style with `ft.Router`), talks to the backend over httpx.
+- `management/` — React 18 + Vite admin panel (port 5173, light theme) that edits the game data through `/api/v1/admin` (`backend/api/v1/endpoints/admin.py`, no auth): characters, monsters (sprite sheet, combat mode from `AI_MODES` — keep it in sync with `frontend/services/battle_ai.py` `BEHAVIORS` —, stats, drops), classes, items (drop rate) and sprite sheets (preview + base64 upload into `assets/sprites/<group>/<name>/`). Vite proxies `/api` and `/assets` to the backend, which serves `assets/` as static files. `seed_data.py` overwrites monsters/jobs/items/drops on every run, undoing panel edits. See `docs/gerenciamento.md`.
 
 There is no test suite, linter config, or build step. Comments and docstrings are written in English. Detailed, human-oriented docs (in Portuguese) live in `docs/`; keep them in sync when changing behavior they describe.
 
 ## Commands
+
+Management panel (from the repo root; starts the backend if needed, runs `npm install` the first time, opens http://localhost:5173):
+
+```powershell
+.\run-management.ps1
+```
 
 `requirements.txt` is UTF-16 encoded (pip handles it). The `tools/` scripts additionally need Pillow and numpy, which are not listed.
 
