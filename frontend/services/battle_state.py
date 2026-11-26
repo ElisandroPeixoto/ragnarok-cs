@@ -27,7 +27,7 @@ def place_unit(unit: dict, taken: set, board: BoardConfig) -> bool:
 class BattleState:
     def __init__(self, units: dict, skills: dict, board: BoardConfig, monsters: list[dict] | None = None,
                  turn_duration: int = TURN_DURATION):
-        """units (the hero), skills and monsters (3 to 6, already rolled) come from the backend
+        """units (the hero), skills and monsters (1 to 6, already rolled) come from the backend
         (BattleService.start_battle); positions are rolled here. The battle ends when the hero kills
         every monster (victory) or dies (defeat)."""
         self.units = copy.deepcopy(units)

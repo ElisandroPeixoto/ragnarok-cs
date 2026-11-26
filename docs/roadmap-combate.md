@@ -8,7 +8,7 @@ Detalhes do funcionamento atual estão em [Sistema de combate](sistema-de-combat
 
 | Área | Situação |
 |---|---|
-| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o backend sorteia 3 a 6 monstros (peso por monstro) e a caçada acaba quando todos morrem |
+| Montagem do encontro | ✅ `POST /api/v1/battles/` traz o herói e o pool de monstros do mapa; o backend sorteia 1 a 6 monstros (peso por monstro) e a caçada acaba quando todos morrem |
 | Dados de herói e monstro | ✅ vêm do banco (`JobModel`, `MonsterModel`, `SkillModel`); o antigo `mockup.py` foi removido |
 | Posições iniciais | ✅ sorteadas em `spawn_units` (jogador na coluna 0, inimigos nas colunas 7–9) |
 | Turnos | ✅ ordem fixa (herói, depois os monstros), 30 s por turno, AP recarregado a cada turno |

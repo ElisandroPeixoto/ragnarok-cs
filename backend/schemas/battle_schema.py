@@ -36,4 +36,4 @@ class UnitSchema(BaseModel):
 class BattleSchemaResponse(BaseModel):
     units: Dict[str, UnitSchema]        # only the hero
     skills: Dict[str, SkillSchema]
-    monsters: List[UnitSchema]          # the hunt's monsters (3 to 6, rolled by the map's spawn chances)
+    monsters: List[UnitSchema]          # the hunt's monsters (1 to 6, rolled by the map's spawn chances)

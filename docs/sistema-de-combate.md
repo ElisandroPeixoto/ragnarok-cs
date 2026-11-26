@@ -61,7 +61,7 @@ BattleState(units: dict, skills: dict, board: BoardConfig, monsters: list | None
 
 ### Os monstros da caçada
 
-A caçada **não é infinita**: ela começa com uma quantidade aleatória de **3 a 6 monstros** (`MIN_MONSTERS` e `MAX_MONSTERS`, `backend/core/battle_rules.py`) e termina quando o herói mata todos (**vitória**) ou morre (**derrota**).
+A caçada **não é infinita**: ela começa com uma quantidade aleatória de **1 a 6 monstros** (`MIN_MONSTERS` e `MAX_MONSTERS`, `backend/core/battle_rules.py`) e termina quando o herói mata todos (**vitória**) ou morre (**derrota**).
 
 - O **backend** sorteia os monstros em `POST /api/v1/battles/` (`random.choices`, usando o `spawn_rate` de cada monstro no mapa como peso; o mesmo monstro pode se repetir) e devolve a lista pronta em `monsters`. Não há mais `spawn_pool` nem novos monstros no meio da luta.
 - `BattleState.spawn_monsters(monsters)` coloca cada monstro num tile livre das colunas 7–9 (`place_unit`), com os ids `monster_1`, `monster_2`… na ordem recebida.

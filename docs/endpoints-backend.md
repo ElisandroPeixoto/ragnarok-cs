@@ -58,9 +58,9 @@ O frontend ainda não usa esta rota.
 
 ### `POST /api/v1/characters/{character_id}/battle-result`: fechar uma caçada
 
-Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422** (corpo inválido, ou vitória com menos de 3 ou mais de 6 monstros).
+Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422** (corpo inválido, ou vitória sem nenhum monstro ou com mais de 6).
 
-Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Wilow"] }`. `victory` diz como a caçada acabou; `kills` são os nomes dos monstros da caçada (3 a 6) e só importam na vitória. O cliente **não envia EXP**:
+Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Wilow"] }`. `victory` diz como a caçada acabou; `kills` são os nomes dos monstros da caçada (1 a 6) e só importam na vitória. O cliente **não envia EXP**:
 - **Vitória**: o backend calcula o ganho de cada monstro pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem e recalcula o `level` (`core/level_progression.py`, pode subir vários).
 - **Derrota**: os nomes são ignorados; o backend tira 20% da EXP acumulada no nível atual (nunca perde nível).
 
@@ -183,7 +183,7 @@ O que acontece:
 2. Busca o job do personagem (`JobModel`, pela chave `character.job`); se não existir, **404** `Job '<nome>' not found`.
 3. Busca o mapa (`MapModel`); se não existir, **404** `Map not found`.
 4. Lista os monstros do mapa (`MapMonsterModel`, ordenados por `monster_id`) com `spawn_rate > 0`. Se não houver nenhum, **400** `No monsters to hunt on this map`. Isso acontece, por exemplo, na Novice Island.
-5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), e `monsters`: de `MIN_MONSTERS` a `MAX_MONSTERS` (3 a 6, `core/battle_rules.py`) monstros sorteados com `random.choices` entre os do mapa, tendo `MapMonsterModel.spawn_rate` como peso (o mesmo monstro pode se repetir), cada um montado por `monster_unit(monster, nível do herói)`. A caçada termina quando o herói mata todos (vitória) ou morre (derrota): não há mais ondas.
+5. Monta a resposta: `units` só com o `hero` (`hero_unit(character, job)`), e `monsters`: de `MIN_MONSTERS` a `MAX_MONSTERS` (1 a 6, `core/battle_rules.py`) monstros sorteados com `random.choices` entre os do mapa, tendo `MapMonsterModel.spawn_rate` como peso (o mesmo monstro pode se repetir), cada um montado por `monster_unit(monster, nível do herói)`. A caçada termina quando o herói mata todos (vitória) ou morre (derrota): não há mais ondas.
 6. Junta as skills do herói e de todos os monstros do pool com `skill_to_dict`.
 
 Resposta (`BattleSchemaResponse`):
@@ -214,7 +214,7 @@ Resposta (`BattleSchemaResponse`):
 }
 ```
 
-(`monsters` traz de 3 a 6 entradas, uma por monstro da caçada; o exemplo mostra só o primeiro.)
+(`monsters` traz de 1 a 6 entradas, uma por monstro da caçada; o exemplo mostra só o primeiro.)
 
 Origem de cada campo:
 

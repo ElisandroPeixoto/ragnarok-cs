@@ -60,14 +60,14 @@ O salvamento é `POST /api/v1/characters/{id}/battle-result` (ver [Endpoints](en
 
 ### O que o backend valida
 
-O cliente não envia valores de EXP, então não dá para gravar um número arbitrário. Ele ainda pode mentir sobre **quais monstros matou** (a batalha roda no cliente); o backend só confere que a vitória traz de 3 a 6 nomes (422 se não) e que cada nome existe (404 se não). Numa derrota os nomes são ignorados.
+O cliente não envia valores de EXP, então não dá para gravar um número arbitrário. Ele ainda pode mentir sobre **quais monstros matou** (a batalha roda no cliente); o backend só confere que a vitória traz de 1 a 6 nomes (422 se não) e que cada nome existe (404 se não). Numa derrota os nomes são ignorados.
 
 ## No código
 
 - `backend/core/exp_rule.py`: `exp_percentage(hero_level, monster_level)` devolve a porcentagem; `exp_gain(hero_level, monster_level, base_exp)` devolve o EXP; `exp_after_death(exp)` aplica `DEATH_EXP_PENALTY` (20%).
 - As faixas ficam nas listas `HERO_HIGHER_TIERS` e `HERO_LOWER_TIERS` (limite da diferença, porcentagem); a última faixa não tem limite. Para mudar a regra, edite só esse arquivo.
 - `endpoints/battles.py`: `monster_unit` preenche `exp_reward` com `exp_gain` para o nível do herói (só para o log). O nível não muda durante a caçada, então o valor do log é o mesmo que o backend vai pagar.
-- `endpoints/characters.py`: `post_battle_result`. Vitória: valida 3 a 6 nomes, soma o EXP de cada um com o nível atual do personagem, recalcula o nível e grava. Derrota: ignora os nomes e aplica a perda de 20% do progresso do nível. Devolve `{character, exp_gained, exp_lost}`.
+- `endpoints/characters.py`: `post_battle_result`. Vitória: valida 1 a 6 nomes, soma o EXP de cada um com o nível atual do personagem, recalcula o nível e grava. Derrota: ignora os nomes e aplica a perda de 20% do progresso do nível. Devolve `{character, exp_gained, exp_lost}`.
 - Frontend: quando o herói mata um monstro, `perform_attack` anota o nome em `state.kills`, soma `exp_reward` em `state.exp_pending` e registra `LogEntry(kind="exp")`. Só o herói ganha; monstros não geram EXP.
 - `battle_page.finish_battle` envia `CharacterService.send_battle_result(id, victory, kills)` (uma vez, quando surge o vencedor), atualiza o personagem em `session_state` e guarda o relatório para o pop up de resultado.
 
