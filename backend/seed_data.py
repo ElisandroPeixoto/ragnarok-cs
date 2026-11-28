@@ -136,7 +136,7 @@ MAPS = {
         "town_image": "maps/training_field_2.jpg",
         "background_image": "maps/backgrounds/forest.jpg",
         "places": [
-            {"name": "Camp", "kind": "area", "icon": "square", "x": 0.57, "y": 0.30},
+            {"name": "Training Grounds", "kind": "area", "icon": "square", "x": 0.57, "y": 0.30},
             {"name": "Training Field 1", "kind": "exit", "icon": "exit", "x": 0.1, "y": 0.87,
              "target": "training_field_1", "direction": "Southwest"},
         ],

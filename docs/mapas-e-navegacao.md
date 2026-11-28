@@ -109,7 +109,7 @@ Só aparece em mapas com monstros, embaixo do mapa da cidade. `monsters_nearby(m
 |---|---|---|---|---|---|---|---|
 | `novice_academy` | Novice Island | 1 - 10 | `safe` | Main Square, Port, 2× House (áreas); Academy (saída, "Building", para `academy`); Training Field 1 (saída, Northwest) | Hostess (Main Square), Sailor (Port) | nenhum | `training_field_1`, `academy` |
 | `training_field_1` | Training Field 1 | 1 - 10 | `hostile_passive` | Training Grounds (área); Novice Island (saída, Southeast); Training Field 2 (saída, Northeast, para `training_field_2`) | Trainer (Training Grounds) | Poring (50), Lunatic (25), Fabre (25) | `novice_academy`, `training_field_2` |
-| `training_field_2` | Training Field 2 | 1 - 10 | `hostile_passive` | Camp (área); Training Field 1 (saída, Southwest) | nenhum | Wilow (40), Poring (40), Lunatic (20) | `training_field_1` |
+| `training_field_2` | Training Field 2 | 1 - 10 | `hostile_passive` | Training Grounds (área); Training Field 1 (saída, Southwest) | nenhum | Wilow (40), Poring (40), Lunatic (20) | `training_field_1` |
 | `academy` | Academy | (vazio) | `safe` | nenhum (só a imagem por enquanto) | nenhum | nenhum | `novice_academy` |
 
 Todo personagem novo começa em `novice_academy`. Sempre que o personagem muda de mapa pela seta de uma rota, `PATCH /api/v1/characters/{id}/place` grava o novo `current_map` e `current_map_id`, e o personagem da sessão é atualizado com a resposta. Assim o botão **Enter** do perfil leva ao último mapa visitado. Se a chamada falhar, a navegação não acontece.
