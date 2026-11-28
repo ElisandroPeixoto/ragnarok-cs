@@ -47,7 +47,7 @@ DEFAULT_PLACE_ICON = ft.Icons.PLACE_OUTLINED
 
 # The player's card in "In the area": standing (Idle) while still, walking while travelling to another map
 WALK_CLIP = "walk_se"
-CARD_HEIGHT = 127   # the cards stretch to the card's width; NPCs go NPCS_PER_ROW to a row, extra ones below
+CARD_HEIGHT = 127   # every card is 1/NPCS_PER_ROW of the section wide; extra NPCs go to the rows below
 CARD_SPRITE_WIDTH = 70
 CARD_SPRITE_HEIGHT = 106
 CARD_GAP = 10
@@ -343,18 +343,23 @@ def npcs_here(npcs: list, area_id) -> list:
     return [npc for npc in npcs if npc.get("place_id") == area_id]
 
 
+def card_row(cards: list[ft.Control]) -> ft.Row:
+    """A row of NPCS_PER_ROW equal slots: every card is a slot wide, however many cards the row has."""
+    slots = cards + [ft.Container(expand=True) for _ in range(NPCS_PER_ROW - len(cards))]
+    return ft.Row(spacing=CARD_GAP, controls=slots)
+
+
 def in_the_area_content(areas: list, npcs: list, selected_area_id, on_area_click, player: ft.Control):
-    """The player's card first, then the area chips and the selected area's NPCs, NPCS_PER_ROW to a row (a row
-    with fewer NPCs stretches them to the full width)."""
-    controls = [ft.Row(controls=[player])]
+    """The player's card first, then the area chips and the selected area's NPCs, NPCS_PER_ROW to a row. Every
+    card, the player's included, is one slot of such a row wide, even alone in its row."""
+    controls = [card_row([player])]
     if areas:
         here = npcs_here(npcs, selected_area_id)
         controls.append(ft.Row(wrap=True, spacing=6, run_spacing=6,
                                controls=[area_chip(area, area["id"] == selected_area_id, on_area_click)
                                          for area in areas]))
         if here:
-            controls.extend(ft.Row(spacing=CARD_GAP, controls=[npc_card(npc) for npc in row])
-                            for row in npc_rows(here))
+            controls.extend(card_row([npc_card(npc) for npc in row]) for row in npc_rows(here))
         else:
             controls.append(cinzel("No one around", 12, t.MAP_MUTED_TEXT))
     return ft.Column(spacing=CONTENT_GAP, controls=controls)
