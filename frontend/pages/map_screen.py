@@ -47,10 +47,15 @@ DEFAULT_PLACE_ICON = ft.Icons.PLACE_OUTLINED
 
 # The player's card in "In the area": standing (Idle) while still, walking while travelling to another map
 WALK_CLIP = "walk_se"
-CARD_WIDTH = 252
-CARD_HEIGHT = 127
+CARD_HEIGHT = 127   # the cards stretch to the card's width; NPCs go NPCS_PER_ROW to a row, extra ones below
 CARD_SPRITE_WIDTH = 70
 CARD_SPRITE_HEIGHT = 106
+CARD_GAP = 10
+NPCS_PER_ROW = 2
+CONTENT_GAP = 14            # between the player card, the area chips and the NPC rows
+CHIPS_HEIGHT = 26
+SECTION_CHROME = 80         # a section's padding, title and divider, around its content
+MIN_ROUTES_HEIGHT = 200     # "In the area" grows with its content but always leaves Routes this much
 
 # MapModel.zone -> (label, icon, color). Only safe zones are labeled: any other zone shows nothing
 ZONES = {
@@ -282,9 +287,10 @@ def talk_button():
 
 
 def area_card(picture: ft.Control, title: str, subtitle: ft.Control, actions: list[ft.Control]):
-    """A card of "In the area": picture on the left; name, a muted line and the action buttons on the right."""
+    """A card of "In the area": picture on the left; name, a muted line and the action buttons on the right.
+    It stretches to the width it is given."""
     return ft.Container(
-        width=CARD_WIDTH, height=CARD_HEIGHT, padding=9.6, border_radius=7.2,
+        expand=True, height=CARD_HEIGHT, padding=9.6, border_radius=7.2,
         border=ft.Border.all(1.2, t.MAP_SECTION_BORDER),
         content=ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
             picture,
@@ -328,17 +334,41 @@ def player_card(character: dict, trip: dict | None, on_stop):
                                     tooltip="Stop walking" if trip else None)])
 
 
+def npc_rows(npcs: list) -> list[list]:
+    """NPCs split into rows of NPCS_PER_ROW."""
+    return [npcs[start:start + NPCS_PER_ROW] for start in range(0, len(npcs), NPCS_PER_ROW)]
+
+
+def npcs_here(npcs: list, area_id) -> list:
+    return [npc for npc in npcs if npc.get("place_id") == area_id]
+
+
 def in_the_area_content(areas: list, npcs: list, selected_area_id, on_area_click, player: ft.Control):
-    """The player's card first, then the area chips and the selected area's NPCs."""
-    controls = [player]
+    """The player's card first, then the area chips and the selected area's NPCs, NPCS_PER_ROW to a row (a row
+    with fewer NPCs stretches them to the full width)."""
+    controls = [ft.Row(controls=[player])]
     if areas:
-        here = [npc for npc in npcs if npc.get("place_id") == selected_area_id]
+        here = npcs_here(npcs, selected_area_id)
         controls.append(ft.Row(wrap=True, spacing=6, run_spacing=6,
                                controls=[area_chip(area, area["id"] == selected_area_id, on_area_click)
                                          for area in areas]))
-        controls.append(ft.Row(wrap=True, spacing=10, run_spacing=10, controls=[npc_card(npc) for npc in here])
-                        if here else cinzel("No one around", 12, t.MAP_MUTED_TEXT))
-    return ft.Column(spacing=14, controls=controls)
+        if here:
+            controls.extend(ft.Row(spacing=CARD_GAP, controls=[npc_card(npc) for npc in row])
+                            for row in npc_rows(here))
+        else:
+            controls.append(cinzel("No one around", 12, t.MAP_MUTED_TEXT))
+    return ft.Column(spacing=CONTENT_GAP, controls=controls)
+
+
+def in_the_area_height(areas: list, npcs: list, selected_area_id, column_height: int) -> int:
+    """Height that shows the whole "In the area" content (player card, chips, every NPC row), capped so that
+    Routes keeps MIN_ROUTES_HEIGHT below it; past the cap the card scrolls."""
+    content = CARD_HEIGHT
+    if areas:
+        rows = len(npc_rows(npcs_here(npcs, selected_area_id)))
+        content += CONTENT_GAP + CHIPS_HEIGHT + CONTENT_GAP
+        content += rows * CARD_HEIGHT + max(rows - 1, 0) * CONTENT_GAP if rows else 20
+    return min(SECTION_CHROME + content, column_height - GAP - MIN_ROUTES_HEIGHT)
 
 
 def route_card(route: dict, selected: bool, on_select, on_travel):
@@ -512,7 +542,7 @@ def map_screen(map_data: dict, character: dict):
         section("In the area", ft.Icons.EXPLORE_OUTLINED,
                 in_the_area_content(areas, npcs, selected_area_id, select_place,
                                     player_card(character, trip, lambda e: stop_walking())),
-                expand=1, scroll=True),
+                height=in_the_area_height(areas, npcs, selected_area_id, main_height), scroll=True),
         section("Routes", ft.Icons.ROUTE, routes_content, expand=1, scroll=True),
     ]))
     main_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[left_column, right_column])
