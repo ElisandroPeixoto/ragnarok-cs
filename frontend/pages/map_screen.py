@@ -1,15 +1,17 @@
+import asyncio
 import flet as ft
 import themes as t
 from components.sidebar import sidebar
 from components.item_card import item_card
-from components.sheet_sprite import monster_sprite
+from components.sheet_sprite import monster_sprite, sheet_sprite
+from components.job_sprite import STAND_CLIP
 from services.session_state import get_current_character, pop_battle_result
 from components.battle_result_dialog import battle_result_dialog
 from services.map_service import MapService
 from services.api_client import ApiError
-from services.sprite_selector import badge_selector
+from services.sprite_selector import badge_selector, sheet_selector, sprite_selector
 from typing import cast
-from services.map_router_manager import map_route, navigate_to_battle, change_place
+from services.map_router_manager import map_route, navigate_to_battle, change_place, walk_to
 from services.battle_service import BattleService
 from services import map_zoom
 from pages.battle_page import CONTENT_WIDTH as BATTLE_CONTENT_WIDTH
@@ -42,6 +44,13 @@ PLACE_ICONS = {
     "training": ft.Icons.SPORTS_MARTIAL_ARTS,
 }
 DEFAULT_PLACE_ICON = ft.Icons.PLACE_OUTLINED
+
+# The player's card in "In the area": standing (Idle) while still, walking while travelling to another map
+WALK_CLIP = "walk_se"
+CARD_WIDTH = 252
+CARD_HEIGHT = 127
+CARD_SPRITE_WIDTH = 70
+CARD_SPRITE_HEIGHT = 106
 
 # MapModel.zone -> (label, icon, color). Only safe zones are labeled: any other zone shows nothing
 ZONES = {
@@ -257,40 +266,79 @@ def area_chip(place: dict, selected: bool, on_click):
     )
 
 
-def talk_button():
-    return ft.Container(  # TODO: open the NPC's dialogue
+def action_button(label: str, on_click=None, tooltip: str | None = None):
+    """Small outlined button of the "In the area" cards; without on_click it is drawn faded and does nothing."""
+    enabled = on_click is not None
+    return ft.Container(
         padding=ft.Padding.symmetric(horizontal=12, vertical=3.6), border_radius=4.8,
-        border=ft.Border.all(1.2, t.MAP_MARKER_BORDER), tooltip="Coming soon", on_click=lambda e: None,
-        content=cinzel("Talk", 13),
+        border=ft.Border.all(1.2, t.MAP_MARKER_BORDER), tooltip=tooltip, opacity=1 if enabled else 0.4,
+        on_click=on_click,
+        content=cinzel(label, 13),
     )
 
 
-def npc_card(npc: dict):
+def talk_button():
+    return action_button("Talk", lambda e: None, tooltip="Coming soon")   # TODO: open the NPC's dialogue
+
+
+def area_card(picture: ft.Control, title: str, subtitle: ft.Control, actions: list[ft.Control]):
+    """A card of "In the area": picture on the left; name, a muted line and the action buttons on the right."""
     return ft.Container(
-        width=252, height=127, padding=9.6, border_radius=7.2, border=ft.Border.all(1.2, t.MAP_SECTION_BORDER),
+        width=CARD_WIDTH, height=CARD_HEIGHT, padding=9.6, border_radius=7.2,
+        border=ft.Border.all(1.2, t.MAP_SECTION_BORDER),
         content=ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
-            ft.Image(src=npc["image"], width=55, height=106, fit=ft.BoxFit.CONTAIN),
+            picture,
             ft.Column(expand=True, spacing=4.8, alignment=ft.MainAxisAlignment.CENTER, controls=[
-                cinzel(npc["name"], 18),
-                cinzel(npc.get("greeting", ""), 10.8, t.MAP_MUTED_TEXT, max_lines=3,
-                       overflow=ft.TextOverflow.ELLIPSIS),
-                ft.Row(controls=[talk_button()]),
+                cinzel(title, 18), subtitle, ft.Row(controls=actions),
             ]),
         ]),
     )
 
 
-def in_the_area_content(areas: list, npcs: list, selected_area_id, on_area_click):
-    if not areas:
-        return cinzel("Nothing to see here", 12, t.MAP_MUTED_TEXT)
-    here = [npc for npc in npcs if npc.get("place_id") == selected_area_id]
-    people = (ft.Row(wrap=True, spacing=10, run_spacing=10, controls=[npc_card(npc) for npc in here])
-              if here else cinzel("No one around", 12, t.MAP_MUTED_TEXT))
-    return ft.Column(spacing=14, controls=[
-        ft.Row(wrap=True, spacing=6, run_spacing=6,
-               controls=[area_chip(area, area["id"] == selected_area_id, on_area_click) for area in areas]),
-        people,
-    ])
+def npc_card(npc: dict):
+    return area_card(ft.Image(src=npc["image"], width=55, height=CARD_SPRITE_HEIGHT, fit=ft.BoxFit.CONTAIN),
+                     npc["name"],
+                     cinzel(npc.get("greeting", ""), 10.8, t.MAP_MUTED_TEXT, max_lines=3,
+                            overflow=ft.TextOverflow.ELLIPSIS),
+                     [talk_button()])
+
+
+def player_picture(job: str, walking: bool):
+    """The player's sprite: the Idle pose (stand_s) or, while travelling, the walk clip. Jobs without a sprite
+    sheet show their old GIF either way."""
+    sheet_name = sheet_selector(job)
+    if sheet_name:
+        clip = WALK_CLIP if walking else STAND_CLIP
+        return sheet_sprite(sheet_name, clip, height=CARD_SPRITE_HEIGHT, width=CARD_SPRITE_WIDTH, key=clip)
+    gif = sprite_selector(job)
+    if gif:
+        return ft.Image(src=gif, width=CARD_SPRITE_WIDTH, height=CARD_SPRITE_HEIGHT, fit=ft.BoxFit.CONTAIN)
+    return ft.Container(width=CARD_SPRITE_WIDTH, height=CARD_SPRITE_HEIGHT)
+
+
+def player_card(character: dict, trip: dict | None, on_stop):
+    """The player's own character, always first in "In the area". trip = {"map_id", "name"} while walking to
+    another map; Stop ends that trip."""
+    subtitle = ft.Column(spacing=2, controls=[cinzel(character["job"], 11, t.MAP_MUTED_TEXT)])
+    if trip:
+        subtitle.controls.append(cinzel(f"Walking to {trip['name']}", 10.8, t.MAP_MUTED_TEXT, max_lines=1,
+                                        overflow=ft.TextOverflow.ELLIPSIS))
+    return area_card(player_picture(character["job"], walking=trip is not None), character["name"], subtitle,
+                     [action_button("Stop", on_stop if trip else None,
+                                    tooltip="Stop walking" if trip else None)])
+
+
+def in_the_area_content(areas: list, npcs: list, selected_area_id, on_area_click, player: ft.Control):
+    """The player's card first, then the area chips and the selected area's NPCs."""
+    controls = [player]
+    if areas:
+        here = [npc for npc in npcs if npc.get("place_id") == selected_area_id]
+        controls.append(ft.Row(wrap=True, spacing=6, run_spacing=6,
+                               controls=[area_chip(area, area["id"] == selected_area_id, on_area_click)
+                                         for area in areas]))
+        controls.append(ft.Row(wrap=True, spacing=10, run_spacing=10, controls=[npc_card(npc) for npc in here])
+                        if here else cinzel("No one around", 12, t.MAP_MUTED_TEXT))
+    return ft.Column(spacing=14, controls=controls)
 
 
 def route_card(route: dict, selected: bool, on_select, on_travel):
@@ -390,6 +438,8 @@ def map_screen(map_data: dict, character: dict):
     selected_area_id, set_selected_area_id = ft.use_state(lambda: default_area_id(areas, npcs))
     selected_route_key, set_selected_route_key = ft.use_state(cast("int | str | None", None))
     view, set_view = ft.use_state(map_zoom.DEFAULT_VIEW)   # town map zoom: (zoom, center x, center y)
+    trip, set_trip = ft.use_state(cast("dict | None", None))   # {"map_id", "name"} while walking to another map
+    walk, _ = ft.use_state(lambda: {"stopped": None})   # the current trip's Stop signal (an asyncio.Event)
 
     def show_battle_result():
         """Back from a battle: pop up with Victory!/Defeat and the damage report (shown once)."""
@@ -397,7 +447,11 @@ def map_screen(map_data: dict, character: dict):
         if result:
             ft.context.page.show_dialog(battle_result_dialog(result, lambda e: ft.context.page.pop_dialog()))
 
-    ft.use_effect(show_battle_result, [])
+    def stop_walking():
+        if walk["stopped"]:
+            walk["stopped"].set()
+
+    ft.use_effect(show_battle_result, [], cleanup=stop_walking)   # leaving the screen also ends a trip
 
     def select_place(place: dict):
         """Markers and chips: an area shows its NPCs below; an exit or building highlights its route."""
@@ -418,7 +472,23 @@ def map_screen(map_data: dict, character: dict):
         set_view(lambda current: map_zoom.pan(current, dx, dy, VIEW_WIDTH, VIEW_HEIGHT))
 
     def travel(route: dict):
-        change_place(character, route["map_id"], instant=route.get("building", False))
+        """Buildings are entered (and left) at once; any other map takes a walk the Stop button can end."""
+        if trip:
+            return   # already walking somewhere: Stop first
+        if route.get("building"):
+            change_place(character, route["map_id"])
+            return
+        stopped = asyncio.Event()
+        walk["stopped"] = stopped
+        set_trip({"map_id": route["map_id"], "name": route["name"]})
+
+        async def go():
+            arrived = await walk_to(character, route["map_id"], stopped)
+            walk["stopped"] = None
+            if not arrived:   # stopped, or the backend refused the move: back to Idle
+                set_trip(None)
+
+        ft.context.page.run_task(go)
 
     routes_content = (ft.Column(spacing=10, controls=[
         route_card(route, route["key"] == selected_route_key,
@@ -440,7 +510,9 @@ def map_screen(map_data: dict, character: dict):
     left_column = ft.Column(width=LEFT_WIDTH, spacing=GAP, controls=left_controls)
     right_column = ft.Container(expand=True, height=main_height, content=ft.Column(spacing=GAP, expand=True, controls=[
         section("In the area", ft.Icons.EXPLORE_OUTLINED,
-                in_the_area_content(areas, npcs, selected_area_id, select_place), expand=1, scroll=True),
+                in_the_area_content(areas, npcs, selected_area_id, select_place,
+                                    player_card(character, trip, lambda e: stop_walking())),
+                expand=1, scroll=True),
         section("Routes", ft.Icons.ROUTE, routes_content, expand=1, scroll=True),
     ]))
     main_row = ft.Row(spacing=GAP, vertical_alignment=ft.CrossAxisAlignment.START, controls=[left_column, right_column])

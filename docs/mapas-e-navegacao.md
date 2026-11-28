@@ -46,8 +46,9 @@ Helpers em `services/map_router_manager.py`:
 │         │ Novice - Lv: 1 / HP: 50/50                                   │
 │         │ ─────────────────────────────────────────────────────────── │
 │         │ ┌ title_card (800 × 64) ──────┐ ┌ In the area ────────────┐ │
-│         │ │ Título + "Recommended Level"│ │ [Main Square] [Port] .. │ │
-│         │ └─────────────────────────────┘ │ npc_card (Hostess·Talk) │ │
+│         │ │ Título + "Recommended Level"│ │ player_card (você·Stop) │ │
+│         │ └─────────────────────────────┘ │ [Main Square] [Port] .. │ │
+│         │                                 │ npc_card (Hostess·Talk) │ │
 │         │ ┌ town_frame (800 × 600) ─────┐ └─────────────────────────┘ │
 │         │ │          [👁 Hide Places]   │ ┌ Routes ─────────────────┐ │
 │         │ │  (Academy) (Main Square)    │ │ Training Field 1    [↗] │ │
@@ -81,12 +82,13 @@ Os lugares vêm do backend (`map_places`) com um `kind`:
 
 | kind | No mapa | Embaixo | Clique (marcador ou card) |
 |---|---|---|---|
-| `area` | marcador | aba em "In the area" (`area_chip`) | seleciona a área e mostra os NPCs dela (`npc_card`: imagem, nome, `greeting` e botão **Talk**) |
+| `area` | marcador | aba em "In the area" (`area_chip`) | seleciona a área e mostra os NPCs dela (`npc_card`: imagem, nome, `greeting` e botão **Talk**) abaixo do card do jogador |
 | `building` | marcador | card em "Routes": "Safe Zone", "Building", sem seta | destaca o card (entrar no prédio vem depois) |
 | `exit` | marcador | card em "Routes" com o mesmo ícone do marcador antes do nome, o mapa de destino: nível, zona, direção e a seta ↗ | destaca o card; a seta chama `change_place(character, map_id)` (ver "Viagem entre mapas") |
 
 - A área inicial é a primeira com NPCs (`default_area_id`); sem ninguém na área, aparece "No one around".
-- **Viagem entre mapas**: `change_place` (`services/map_router_manager.py`) abre um pop up modal (`components/travel_dialog.py`) com a animação do personagem andando para a direita (clip `walk_se` da sheet do job), parado no lugar, e um botão **Cancel** logo abaixo. O pop up fica aberto por `TRAVEL_SECONDS = 5` (duração provisória); só então o novo lugar é gravado no backend (`PATCH .../place`), o pop up fecha e o mapa de destino abre (a gravação leva uma fração de segundo a mais). **Cancel** fecha o pop up antes disso: nada é gravado, nenhuma navegação acontece e o personagem continua no mapa atual. Se a gravação falhar, o pop up fecha e o jogador também continua no mapa atual. **Entrar em um prédio** (rota cujo destino tem `parent_map`, `is_building` no `target`) **ou sair dele** para o mapa onde fica é instantâneo: `change_place(..., instant=True)` grava o lugar e abre o mapa, sem pop up nem os 5 segundos. O pop up não é um `@ft.component` (ele é criado fora de um render): o contêiner recebe os quadros num loop assíncrono que é cancelado ao fechar.
+- **Card do jogador** (`player_card`): é sempre o **primeiro** card de "In the area", em qualquer área selecionada (e também em mapas sem áreas, como a Academy). Mostra o personagem **em pé, de frente** (clip `stand_s`, a pose Idle), o **nome**, a **classe** em cinza logo abaixo e uma linha de botões de ação. Por enquanto o único botão é **Stop**, apagado (sem efeito) enquanto o personagem está parado. Jobs sem sprite sheet mostram o GIF antigo. Os NPCs da área vêm depois dos botões de área.
+- **Viagem entre mapas** (sem pop up): a seta de uma rota guarda a viagem no estado da tela (`trip`). O personagem do card passa a **andar** (clip `walk_se`), aparece "Walking to <destino>" abaixo da classe e o **Stop** fica ativo. `walk_to` (`services/map_router_manager.py`) espera `TRAVEL_SECONDS = 5` (duração provisória); só então grava o novo lugar no backend (`PATCH .../place`) e abre o mapa de destino. **Stop** encerra a viagem antes disso: nada é gravado, o personagem volta a ficar parado e continua no mapa atual. Se a gravação falhar, ele também volta a ficar parado. Enquanto anda, as outras setas não fazem nada (é preciso parar primeiro), e sair da tela (pela sidebar, por exemplo) também cancela a viagem. **Entrar em um prédio** (rota cujo destino tem `parent_map`, `is_building` no `target`) **ou sair dele** para o mapa onde fica é instantâneo: `change_place` grava o lugar e abre o mapa, sem andar nem os 5 segundos.
 - `build_routes` monta "Routes": saídas primeiro, depois prédios, e por último conexões de `navigation` que não têm marcador de saída (sem zona nem direção).
 - O botão **Talk** ainda não faz nada (tooltip "Coming soon").
 - Ícones: `PLACE_ICONS` traduz a chave `icon` do lugar (`square`, `port`, `house`, `building`, `exit`, `training`) para um ícone do Flet. **TODO**: trocar pelos PNG/SVG do projeto.
