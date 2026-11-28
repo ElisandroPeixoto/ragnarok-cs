@@ -177,8 +177,8 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 | `ITEMS` | `jellopy` (70%), `empty_bottle` (15%), `apple` (2%), `poring_card` (0,2%), todos Misc |
 | `SKILLS` | `Basic Attack` (1 AP, 10 de dano, alcance 1) |
 | `JOBS` | `Novice` (sheet `novice`, 5 AP, skill `Basic Attack`) |
-| `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (50 HP, 2 AP, `Basic Attack`, IA `approach_and_attack`) |
-| `MAPS` | `novice_academy` (2 NPCs, sem monstros) e `training_field_1` (1 NPC, 3 monstros); um conectado ao outro |
+| `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (nível 1, 50 HP) e `Fabre` (nível 2, 55 HP), todos com 2 AP, `Basic Attack` e IA `approach_and_attack`; o Wilow não está em nenhum mapa |
+| `MAPS` | `novice_academy` (2 NPCs, sem monstros) e `training_field_1` (1 NPC; Poring 50%, Lunatic 25%, Fabre 25%); um conectado ao outro |
 
 Ordem de execução de `seed()`:
 
@@ -187,7 +187,7 @@ Ordem de execução de `seed()`:
 3. **Skills**: cria ou atualiza por nome (upsert).
 4. **Jobs**: cria ou atualiza; apaga e regrava os vínculos em `job_skills`.
 5. **Monstros**: cria ou atualiza por nome; apaga e regrava os vínculos em `monster_skills` e os drops em `monster_drops` (lista `drops` do monstro).
-6. **Mapas**: se o mapa **já existe**, só atualiza nome, faixa de nível, imagem, `town_image`, descrição e `zone`. Os spawns **não** são reinseridos nem atualizados. Se não existe, cria com os spawns.
+6. **Mapas**: cria o mapa ou atualiza nome, faixa de nível, imagens, descrição e `zone`; os spawns (`map_monsters`) são **apagados e regravados** a cada execução, então a lista `monsters` do mapa sempre vale.
 7. **Lugares e NPCs**: apaga e regrava, a cada execução, os lugares (`map_places`) e os NPCs de cada mapa. O NPC aponta para a área pelo nome (precisa ser única entre as áreas do mapa).
 8. **Conexões**: cria as que ainda não existem.
 9. **Personagens**: o nível segue a EXP total, o nome do mapa atual é sincronizado.
@@ -203,7 +203,7 @@ O script é **idempotente**: pode rodar várias vezes sem duplicar dados.
 - **Mapa novo**: adicione em `MAPS` com `zone`, `places` (com uma saída `exit` para cada mapa vizinho), `npcs` e `navigation` nos dois sentidos, e, se houver, coloque o mapa da cidade em `assets/maps/` e aponte o `town_image` para ele (4:3, ex.: 1440 × 1080; sem `town_image` a tela mostra um quadrado vazio). Não existe mais arte de capa. O fundo da tela vem de `background_image` (`assets/maps/backgrounds/`; vários mapas podem usar o mesmo arquivo). As coordenadas `x`/`y` dos lugares são relativas ao `town_image`. Reinicie o frontend para registrar a rota nova.
 - **Lugar ou NPC novo**: edite `places`/`npcs` do mapa e rode o seed; eles são regravados a cada execução.
 
-> Limitação: **mudar os spawns de um mapa que já está no banco não tem efeito** ao rodar o seed de novo. Nesse caso é preciso apagar o banco e recriar.
+> Mudar os monstros de um mapa ou as chances deles (`spawn_rate`) vale ao rodar o seed de novo, sem apagar o banco.
 
 ## Mudanças de schema
 

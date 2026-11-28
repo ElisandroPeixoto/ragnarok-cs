@@ -60,7 +60,7 @@ O frontend ainda não usa esta rota.
 
 Função: `post_battle_result`. Status: **200**, **404** (`Character not found` ou `Monster '<nome>' not found`) ou **422** (corpo inválido, ou vitória sem nenhum monstro ou com mais de 6).
 
-Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Wilow"] }`. `victory` diz como a caçada acabou; `kills` são os nomes dos monstros da caçada (1 a 6) e só importam na vitória. O cliente **não envia EXP**:
+Corpo: `{ "victory": true, "kills": ["Poring", "Lunatic", "Fabre"] }`. `victory` diz como a caçada acabou; `kills` são os nomes dos monstros da caçada (1 a 6) e só importam na vitória. O cliente **não envia EXP**:
 - **Vitória**: o backend calcula o ganho de cada monstro pela diferença de nível (`core/exp_rule.py`), soma ao `exp` do personagem e recalcula o `level` (`core/level_progression.py`, pode subir vários).
 - **Derrota**: os nomes são ignorados; o backend tira 20% da EXP acumulada no nível atual (nunca perde nível).
 
@@ -150,9 +150,9 @@ A consulta carrega de forma antecipada (`selectinload`) os NPCs, os lugares (com
   "npcs": [ { "name": "Trainer", "image": "npcs/trainer.gif", "place_id": 18,
               "greeting": "Ready to train? Monsters roam these woods." } ],
   "monsters": [
-    { "name": "Poring",  "sheet": "poring",  "spawn_rate": 40 },
-    { "name": "Lunatic", "sheet": "lunatic", "spawn_rate": 40 },
-    { "name": "Wilow",   "sheet": "wilow",   "spawn_rate": 20 }
+    { "name": "Poring",  "sheet": "poring",  "spawn_rate": 50 },
+    { "name": "Lunatic", "sheet": "lunatic", "spawn_rate": 25 },
+    { "name": "Fabre",   "sheet": "fabre",   "spawn_rate": 25 }
   ],
   "navigation": [
     { "name": "Novice Island", "map_id": "novice_academy", "level_range": "1 - 10" }

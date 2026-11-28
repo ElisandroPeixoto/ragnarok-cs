@@ -1,0 +1,255 @@
+{
+  "src": "sprites/monsters/fabre/fabre_sheet.png",
+  "frame_w": 62,
+  "frame_h": 54,
+  "cols": 11,
+  "rows": 20,
+  "anchor_x": 31,
+  "anchor_y": 39,
+  "clips": {
+    "idle_se": {
+      "row": 0,
+      "frames": 4,
+      "fps": 10.0,
+      "loop": true,
+      "box": [
+        14,
+        21,
+        34,
+        27
+      ]
+    },
+    "idle_sw": {
+      "row": 1,
+      "frames": 4,
+      "fps": 10.0,
+      "loop": true,
+      "box": [
+        14,
+        21,
+        34,
+        27
+      ]
+    },
+    "idle_nw": {
+      "row": 2,
+      "frames": 4,
+      "fps": 10.0,
+      "loop": true,
+      "box": [
+        15,
+        21,
+        33,
+        26
+      ]
+    },
+    "idle_ne": {
+      "row": 3,
+      "frames": 4,
+      "fps": 10.0,
+      "loop": true,
+      "box": [
+        15,
+        21,
+        33,
+        26
+      ]
+    },
+    "walk_se": {
+      "row": 4,
+      "frames": 4,
+      "fps": 13.3,
+      "loop": true,
+      "box": [
+        14,
+        21,
+        34,
+        27
+      ]
+    },
+    "walk_sw": {
+      "row": 5,
+      "frames": 4,
+      "fps": 13.3,
+      "loop": true,
+      "box": [
+        14,
+        21,
+        34,
+        27
+      ]
+    },
+    "walk_nw": {
+      "row": 6,
+      "frames": 4,
+      "fps": 13.3,
+      "loop": true,
+      "box": [
+        15,
+        21,
+        33,
+        26
+      ]
+    },
+    "walk_ne": {
+      "row": 7,
+      "frames": 4,
+      "fps": 13.3,
+      "loop": true,
+      "box": [
+        15,
+        21,
+        33,
+        26
+      ]
+    },
+    "attack_se": {
+      "row": 8,
+      "frames": 7,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        13,
+        19,
+        43,
+        34
+      ]
+    },
+    "attack_sw": {
+      "row": 9,
+      "frames": 7,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        7,
+        19,
+        42,
+        34
+      ]
+    },
+    "attack_nw": {
+      "row": 10,
+      "frames": 7,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        6,
+        20,
+        44,
+        28
+      ]
+    },
+    "attack_ne": {
+      "row": 11,
+      "frames": 7,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        13,
+        20,
+        45,
+        28
+      ]
+    },
+    "hurt_se": {
+      "row": 12,
+      "frames": 5,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        9,
+        18,
+        44,
+        29
+      ]
+    },
+    "hurt_sw": {
+      "row": 13,
+      "frames": 5,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        10,
+        18,
+        44,
+        29
+      ]
+    },
+    "hurt_nw": {
+      "row": 14,
+      "frames": 5,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        13,
+        19,
+        37,
+        31
+      ]
+    },
+    "hurt_ne": {
+      "row": 15,
+      "frames": 5,
+      "fps": 10.0,
+      "loop": false,
+      "box": [
+        11,
+        19,
+        38,
+        31
+      ]
+    },
+    "dead_se": {
+      "row": 16,
+      "frames": 11,
+      "fps": 10.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        2,
+        1,
+        51,
+        46
+      ]
+    },
+    "dead_sw": {
+      "row": 17,
+      "frames": 11,
+      "fps": 10.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        10,
+        1,
+        52,
+        46
+      ]
+    },
+    "dead_nw": {
+      "row": 18,
+      "frames": 11,
+      "fps": 10.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        13,
+        7,
+        47,
+        43
+      ]
+    },
+    "dead_ne": {
+      "row": 19,
+      "frames": 11,
+      "fps": 10.0,
+      "loop": false,
+      "hold_last": true,
+      "box": [
+        4,
+        7,
+        45,
+        43
+      ]
+    }
+  }
+}

@@ -73,4 +73,4 @@ O cliente não envia valores de EXP, então não dá para gravar um número arbi
 
 ## O que ainda falta
 
-- Os `base_exp` atuais (Poring 6, Lunatic 8, Wilow 10) são valores provisórios.
+- Os `base_exp` atuais (Poring 6, Lunatic 8, Wilow 10, Fabre 12) são valores provisórios.

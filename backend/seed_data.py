@@ -69,8 +69,13 @@ MONSTERS = {
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
-    "Wilow": {
+    "Wilow": {   # not placed on any map for now
         "sheet": "wilow", "level": 1, "base_exp": 10, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
+        "offset_x": 0, "offset_y": 0,
+        "skills": ["Basic Attack"],
+    },
+    "Fabre": {
+        "sheet": "fabre", "level": 2, "base_exp": 12, "max_hp": 55, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
@@ -123,7 +128,7 @@ MAPS = {
         "npcs": [
             ("Trainer", "npcs/trainer.gif", "Training Grounds", "Ready to train? Monsters roam these woods."),
         ],
-        "monsters": [("Poring", 40), ("Lunatic", 40), ("Wilow", 20)],
+        "monsters": [("Poring", 50), ("Lunatic", 25), ("Fabre", 25)],   # spawn chances, in percent
         "navigation": ["novice_academy"],
     },
     "academy": {   # inside the Academy building: only the picture for now (no places, NPCs or monsters yet)
@@ -253,17 +258,18 @@ async def seed() -> None:
                 db.add(MonsterDropModel(monster_id=monster.id, item_id=item_id))
         await db.flush()
 
-        # 4) maps and monster spawns
+        # 4) maps and monster spawns (the spawn list is always rewritten, so a map's monsters follow MAPS)
         for map_id, data in MAPS.items():
             values = {"name": data["name"], "level_range": data["level_range"], "about": data["about"],
                       "zone": data.get("zone", "safe"), "town_image": data.get("town_image"),
                       "background_image": data.get("background_image"),
                       "parent_map_id": data.get("parent")}
             existing = await db.get(MapModel, map_id)
-            if existing:  # map already exists: only update its basic data (monster spawns are not duplicated)
+            if existing:
                 upsert(existing, values)
-                continue
-            db.add(MapModel(id=map_id, **values))
+            else:
+                db.add(MapModel(id=map_id, **values))
+            await db.execute(delete(MapMonsterModel).where(MapMonsterModel.map_id == map_id))
             for name, rate in data["monsters"]:
                 db.add(MapMonsterModel(map_id=map_id, monster_id=monster_ids[name], spawn_rate=rate))
         await db.flush()
