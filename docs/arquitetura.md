@@ -101,7 +101,7 @@ Observações:
 
 | Pasta em `assets/` | Conteúdo |
 |---|---|
-| `maps/` | o **mapa da cidade** de cada mapa, direto na pasta (`novice_academy.jpg`, `training_field_1.jpg`: a imagem 4:3 com os marcadores e o zoom; também é a miniatura do mapa no perfil) |
+| `maps/` | o **mapa da cidade** de cada mapa, direto na pasta (`novice_academy.jpg`, `training_field_1.jpg`, `training_field_2.jpg`: a imagem 4:3 com os marcadores e o zoom; também é a miniatura do mapa no perfil) |
 | `maps/backgrounds/` | as imagens de **fundo da tela do mapa** (escurecidas atrás do conteúdo), como `forest.jpg` |
 | `monsters/`, `npcs/`, `places/` | ícones dos cards da tela de mapa |
 | `characters_badges/` | avatares redondos por job |

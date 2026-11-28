@@ -177,8 +177,8 @@ Não existe painel de administração: os dados do jogo são declarados em dicio
 | `ITEMS` | `jellopy` (70%), `empty_bottle` (15%), `apple` (2%), `poring_card` (0,2%), todos Misc |
 | `SKILLS` | `Basic Attack` (1 AP, 10 de dano, alcance 1) |
 | `JOBS` | `Novice` (sheet `novice`, 5 AP, skill `Basic Attack`) |
-| `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (nível 1, 50 HP) e `Fabre` (nível 2, 55 HP), todos com 2 AP, `Basic Attack` e IA `approach_and_attack`; o Wilow não está em nenhum mapa |
-| `MAPS` | `novice_academy` (2 NPCs, sem monstros) e `training_field_1` (1 NPC; Poring 50%, Lunatic 25%, Fabre 25%); um conectado ao outro |
+| `MONSTERS` | `Poring`, `Lunatic` e `Wilow` (nível 1, 50 HP) e `Fabre` (nível 2, 55 HP), todos com 2 AP, `Basic Attack` e IA `approach_and_attack` |
+| `MAPS` | `novice_academy` (2 NPCs, sem monstros) , `training_field_1` (1 NPC; Poring 50%, Lunatic 25%, Fabre 25%) e `training_field_2` (sem NPCs; Wilow 40%, Poring 40%, Lunatic 20%), ligados em sequência |
 
 Ordem de execução de `seed()`:
 

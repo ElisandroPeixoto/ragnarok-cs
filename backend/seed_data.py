@@ -69,7 +69,7 @@ MONSTERS = {
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
     },
-    "Wilow": {   # not placed on any map for now
+    "Wilow": {
         "sheet": "wilow", "level": 1, "base_exp": 10, "max_hp": 50, "max_ap": 2, "ai": "approach_and_attack",
         "offset_x": 0, "offset_y": 0,
         "skills": ["Basic Attack"],
@@ -121,15 +121,28 @@ MAPS = {
             {"name": "Training Grounds", "kind": "area", "icon": "training", "x": 0.45, "y": 0.36},
             {"name": "Novice Island", "kind": "exit", "icon": "exit", "x": 0.47, "y": 0.92,
              "target": "novice_academy", "direction": "Southeast"},
-            # no map behind it yet: shows up in Routes without a link
             {"name": "Training Field 2", "kind": "exit", "icon": "exit", "x": 0.875, "y": 0.21,
-             "direction": "Northeast"},
+             "target": "training_field_2", "direction": "Northeast"},
         ],
         "npcs": [
             ("Trainer", "npcs/trainer.gif", "Training Grounds", "Ready to train? Monsters roam these woods."),
         ],
         "monsters": [("Poring", 50), ("Lunatic", 25), ("Fabre", 25)],   # spawn chances, in percent
-        "navigation": ["novice_academy"],
+        "navigation": ["novice_academy", "training_field_2"],
+    },
+    "training_field_2": {
+        "name": "Training Field 2", "level_range": "1 - 10", "zone": "hostile_passive",
+        "about": "...",
+        "town_image": "maps/training_field_2.jpg",
+        "background_image": "maps/backgrounds/forest.jpg",
+        "places": [
+            {"name": "Camp", "kind": "area", "icon": "square", "x": 0.57, "y": 0.30},
+            {"name": "Training Field 1", "kind": "exit", "icon": "exit", "x": 0.1, "y": 0.87,
+             "target": "training_field_1", "direction": "Southwest"},
+        ],
+        "npcs": [],
+        "monsters": [("Wilow", 40), ("Poring", 40), ("Lunatic", 20)],   # spawn chances, in percent
+        "navigation": ["training_field_1"],
     },
     "academy": {   # inside the Academy building: only the picture for now (no places, NPCs or monsters yet)
         "name": "Academy", "level_range": "", "zone": "safe",   # a building: no level range
